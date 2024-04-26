@@ -47,6 +47,7 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/get/customer/product', [MasterController::class, 'getCustomerProduct']);
     Route::post('/support/get/ticket', [SupportAPIController::class, 'GetTicket']);
     Route::post('/support/create-ticket', [SupportAPIController::class, 'CreateTicket']);
+    Route::post('homeSearch', [CustomerAPIController::class, 'homeSearch'])->name('homeSearch');
 });
 
 // Master

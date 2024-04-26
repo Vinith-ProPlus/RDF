@@ -247,4 +247,32 @@ class CustomerAPIController extends Controller{
             return $this->errorResponse($e, "Customer profile update Failed", 500);
         }
     }
+
+    public function homeSearch(Request $req){
+            if($req->SearchText){
+                $PCategories = DB::table('tbl_product_category as PC')
+                    ->where('PC.PCName', 'like', '%' . $req->SearchText . '%')
+                    ->groupBy('PC.PCID', 'PC.PCName')
+                    ->select('PC.PCID', 'PC.PCName')->take(3)->get();
+
+                $PSCategories = DB::table('tbl_product_subcategory as PSC')
+                    ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+                    ->where('PSC.PSCName', 'like', '%' . $req->SearchText . '%')
+                    ->groupBy('PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')
+                    ->select('PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')->take(3)->get();
+
+                $Products = DB::table('tbl_products as P')
+                    ->leftJoin('tbl_product_subcategory as PSC', 'P.SCID', 'PSC.PSCID')
+                    ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+                    ->where('P.ProductName', 'like', '%' . $req->SearchText . '%')
+                    ->groupBy('P.ProductID', 'P.ProductName', 'PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')
+                    ->select('P.ProductID', 'P.ProductName', 'PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')->take(3)->get();
+
+                $ProductData = ['PCategories'=>$PCategories,'PSCategories'=>$PSCategories,'Products'=>$Products];
+
+                return response()->json(['status' => true, 'data' => $ProductData ]);
+            } else{
+                return response()->json(['status' => false, 'message' => "search text is empty"]);
+            }
+    }
 }
