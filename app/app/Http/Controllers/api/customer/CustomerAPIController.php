@@ -216,7 +216,20 @@ class CustomerAPIController extends Controller{
         DB::beginTransaction();
         try {
             $oldCustomer = $customer->replicate();
-            $customer->update([
+            $CustomerImage="";
+            $dir="uploads/user-and-permissions/customers/".$customer->CustomerID."/";
+            if (!file_exists( $dir)) {mkdir( $dir, 0777, true);}
+
+            if($request->CustomerImage && Helper::isJSON($request->CustomerImage)==true){
+                $Img=json_decode($request->CustomerImage);
+                if (isset($Img->uploadPath) && file_exists($Img->uploadPath)) {
+                    $fileName1=$Img->fileName!=""?$Img->fileName:Helper::RandomString(10)."png";
+                    copy($Img->uploadPath,$dir.$fileName1);
+                    $CustomerImage=$dir.$fileName1;
+                    // unlink($Img->uploadPath);
+                }
+            }
+            $data=[
                 "nick_name" => $request->nick_name,
                 "CustomerName" => $request->full_name,
                 "Email" => $request->Email,
@@ -226,7 +239,12 @@ class CustomerAPIController extends Controller{
                 "CityID" => $request->CityID,
                 "DistrictID" => $request->DistrictID,
                 "StateID" => $request->StateID,
-            ]);
+                "UpdatedOn"=>date("Y-m-d H:i:s")
+            ];
+            if($CustomerImage){
+                $data['CustomerImage']=$CustomerImage;
+            }
+            $customer->update($data);
 
             $logData = array(
                 "Description" => "Customer profile update",

@@ -234,16 +234,41 @@ class GeneralAPIController extends Controller{
 		return $image;
 	}
 
-	public function getStages(Request $req){
+    public function getStages(Request $req){
+        logger("reg sta");
         $Stages = DB::Table($this->generalDB.'tbl_stages')->where('ActiveStatus','Active')->where('DFlag',0)
-		->select('StageID','StageName','Description')->get();
+            ->select('StageID','StageName','Description')->get();
         return response()->json(['status' => true,'data' => $Stages]);
     }
 
-	public function getBuildingMeasurements(Request $req){
-        $Measurements = DB::Table($this->generalDB.'tbl_building_measurements')->where('ActiveStatus','Active')->where('DFlag',0)
-		->select('MeasurementID','MeasurementName','Description')->get();
-        return response()->json(['status' => true,'data' => $Measurements]);
+    public function getSupportType(request $req){
+        $return = [
+            'status' => true,
+            'data' => DB::Table('tbl_support_type')->where('ActiveStatus',1)->where('DFlag',0)->select('SLNO as SupportTypeID', 'SupportType')->get(),
+        ];
+        return $return;
+    }
+
+    public function getCMS(request $req){
+        $query = DB::Table('tbl_page_content');
+        if ($req->has('PageName') && !empty($req->PageName)) {
+            $query->where('PageName',$req->PageName);
+        }
+        $CMS = $query->select('PageName', 'PageContent')->where('DFlag',0)->where('ActiveStatus',1)->get();
+        $return = [
+            'status' => true,
+            'data' => $CMS,
+        ];
+        return $return;
+    }
+
+    public function getBannerImages(request $req){
+        $BannerImages = DB::Table('tbl_banner_images')->where('BannerType','Mobile')->where('DFlag',0)->select('BannerType', DB::raw('CONCAT("' . url('/') . '/", BannerImage) AS BannerImage'))->get();
+        $return = [
+            'status' => true,
+            'data' => $BannerImages,
+        ];
+        return $return;
     }
 
 

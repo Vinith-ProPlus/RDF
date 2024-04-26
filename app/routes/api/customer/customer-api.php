@@ -5,6 +5,7 @@ use App\Http\Controllers\api\customer\CustomerAPIController;
 use App\Http\Controllers\api\customer\CustomerTransactionAPIController;
 use App\Http\Controllers\api\customer\MasterController;
 use App\Http\Controllers\api\customer\WishlistController;
+use App\Http\Controllers\api\GeneralAPIController;
 use App\Http\Controllers\api\SupportAPIController;
 use App\Http\Middleware\app\Http\Middleware\AuthenticateWithToken;
 use Illuminate\Support\Facades\Route;
@@ -62,3 +63,9 @@ Route::post('/get/category-type', [MasterController::class, 'GetCategoryType']);
 Route::post('/get/category', [MasterController::class, 'getCategory']);
 Route::post('/get/sub-category', [MasterController::class, 'getSubCategory']);
 Route::post('/get/products', [MasterController::class, 'getProducts']);
+Route::post('/tmp/file-upload', [GeneralAPIController::class, 'tmpFileUpload']);
+
+Route::post('/get/stages', [GeneralAPIController::class, 'getStages']);
+Route::post('/get/support-type', [GeneralAPIController::class, 'getSupportType']);
+Route::post('/get/cms', [GeneralAPIController::class, 'getCMS']);
+Route::post('/get/banner-images', [GeneralAPIController::class, 'getBannerImages']);

@@ -24,4 +24,6 @@ Route::post('/get/vendor-type', [GeneralAPIController::class, 'getVendorType']);
 Route::post('/tmp/file-upload', [GeneralAPIController::class, 'tmpFileUpload']);
 
 Route::post('/get/stages', [GeneralAPIController::class, 'getStages']);
-Route::post('/get/building-measurements', [GeneralAPIController::class, 'getBuildingMeasurements']);
+Route::post('/get/support-type', [GeneralAPIController::class, 'getSupportType']);
+Route::post('/get/cms', [GeneralAPIController::class, 'getCMS']);
+Route::post('/get/banner-images', [GeneralAPIController::class, 'getBannerImages']);
