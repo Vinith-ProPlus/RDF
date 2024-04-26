@@ -51,7 +51,6 @@ class SupportAPIController extends Controller{
                 "SupportID" => $SupportID,
                 "UserID" => $customer->CustomerID,
                 "Subject" => $req->Subject,
-                "TicketFor" => $req->TicketFor,
                 "Priority" => $req->Priority,
                 "SupportType" => $req->SupportType,
                 "DFlag" => 0,
@@ -110,6 +109,7 @@ class SupportAPIController extends Controller{
                 }
             }
         }catch(Exception $e) {
+            logger($e);
             $status=false;
         }
         if($status==true){
