@@ -83,16 +83,40 @@ class WishlistController extends Controller
 
     public function my_wishlist(Request $request): JsonResponse
     {
-        logger("Rewv wis");
-        logger($request);
         try {
             $customer_id = $request->auth_customer->CustomerID;
+            $wishlistProducts = Wishlist::where('customer_id', $customer_id)->get();
 
-            $wishlistProductIds = Wishlist::where('customer_id', $customer_id)->pluck('product_id');
-            logger($wishlistProductIds);
-
-            $wishlistProducts = Wishlist::where('customer_id', $customer_id)->pluck('product_id');
-                return $this->successResponse([], "Wishlist items fetched successfully");
+            $formattedWishlist = [];
+            foreach ($wishlistProducts as $wishlistProduct) {
+                if ($wishlistProduct->product_variation_id) {
+                    $productDetails = DB::table('tbl_products_variation')
+                        ->where('VariationID', $wishlistProduct->product_variation_id)
+                        ->first();
+                    $formattedProduct = [
+                        'product_id' => $wishlistProduct->product_id,
+                        'product_variation_id' => $wishlistProduct->product_variation_id,
+                        'Title' => $productDetails->Title,
+                        'PRate' => $productDetails->PRate,
+                        'SRate' => $productDetails->SRate,
+                        'ProductImage' => $productDetails->VImage ? url($productDetails->VImage) : url('assets/images/no-image-b.png'), // Assuming VImage contains the image URL
+                    ];
+                } else {
+                    $productDetails = DB::table('tbl_products')
+                        ->where('ProductID', $wishlistProduct->product_id)
+                        ->first();
+                    $formattedProduct = [
+                        'product_id' => $wishlistProduct->product_id,
+                        'product_variation_id' => null,
+                        'Title' => $productDetails->ProductName,
+                        'PRate' => $productDetails->PRate,
+                        'SRate' => $productDetails->SRate,
+                        'ProductImage' => $productDetails->ProductImage ? url($productDetails->ProductImage) : url('assets/images/no-image-b.png'), // Assuming ProductImage contains the image URL
+                    ];
+                }
+                $formattedWishlist[] = $formattedProduct;
+            }
+            return $this->successResponse($formattedWishlist, "Wishlist items fetched successfully");
 
         } catch (Exception $e) {
             logger($e);
