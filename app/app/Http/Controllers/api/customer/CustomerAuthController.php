@@ -5,7 +5,11 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
+use App\Models\CustomerCart;
+use App\Models\Wishlist;
+use App\Traits\ApiResponse;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -24,6 +28,7 @@ use logs;
 use function Laravel\Prompts\select;
 
 class CustomerAuthController extends Controller{
+    use ApiResponse;
     private $generalDB;
     private $tmpDB;
     private $ActiveMenuName;
@@ -145,40 +150,120 @@ class CustomerAuthController extends Controller{
     }
     public function getCart(Request $req){
         $customer = $req->auth_customer;
-        $Cart = DB::table('tbl_customer_cart as C')->join('tbl_products as P','P.ProductID','C.ProductID')->join('tbl_product_category_type as PCT', 'PCT.PCTID', 'P.CTID')->join('tbl_product_category as PC', 'PC.PCID', 'P.CID')->join('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')->join('tbl_uom as U', 'U.UID', 'P.UID')
-        ->where('C.CustomerID', $customer->CustomerID)->where('P.ActiveStatus', 'Active')->where('P.DFlag', 0)->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)
-        ->select('P.ProductName','P.ProductID','C.Qty', 'PCT.PCTName', 'PCT.PCTID', 'PC.PCName', 'PC.PCID', 'PSC.PSCName','U.UName','U.UCode','U.UID', 'PSC.PSCID')->get();
+        $Cart = DB::table('tbl_customer_cart as C')
+            ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
+            ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
+            ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
+            ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
+            ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
+            ->join('tbl_uom as U', 'U.UID', '=', 'P.UID')
+            ->where('C.CustomerID', $customer->CustomerID)
+            ->where('P.ActiveStatus', 'Active')
+            ->where('P.DFlag', 0)
+            ->where('PC.ActiveStatus', 'Active')
+            ->where('PC.DFlag', 0)
+            ->where('PSC.ActiveStatus', 'Active')
+            ->where('PSC.DFlag', 0)
+            ->select(
+                'P.ProductName as product_name',
+                'P.ProductID',
+                'P.PRate as PRate',
+                'P.SRate as SRate',
+                'PV.VariationID as product_variation_id',
+                'C.Qty',
+                'PCT.PCTName',
+                'PCT.PCTID',
+                'PC.PCName',
+                'PC.PCID',
+                'PSC.PSCName',
+                'U.UName',
+                'U.UCode',
+                'U.UID',
+                'PSC.PSCID',
+                'PV.Title as variation_title',
+                'PV.PRate as variation_PRate',
+                'PV.SRate as variation_SRate',
+                'PV.VImage as variation_image',
+                DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage')
+            )
+            ->get();
+
+        foreach ($Cart as $item) {
+            if ($item->product_variation_id) {
+                $item->product_name = $item->variation_title;
+                $item->PRate = $item->variation_PRate;
+                $item->SRate = $item->variation_SRate;
+                $item->ProductImage = $item->variation_image ? url($item->variation_image) : url("assets/images/no-image-b.png");
+            }
+            unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
+        }
 
         return response()->json(['status' => true,'data' => $Cart]);
     }
-    public function AddCart(Request $req){
-        $customer = $req->auth_customer;
+
+    public function AddCart(Request $request){
+        $customer = $request->auth_customer;
         DB::beginTransaction();
         try {
-            $isProductExists = DB::table('tbl_customer_cart')->where('CustomerID',$customer->CustomerID)->where('ProductID',$req->ProductID)->exists();
-            if($isProductExists){
-                return response()->json(['status' => false,'message' => "Product already exists!"]);
-            }else{
-                DB::Table('tbl_customer_cart')->insert([
-                    "CustomerID"=>$customer->CustomerID,
-                    "ProductID"=>$req->ProductID,
-                ]);
+            $validatedData = Validator::make($request->all(), [
+                'ProductID' => 'required|string|exists:tbl_products,ProductID',
+                'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
             }
+
+            $ProductID = $request->ProductID;
+            $ProductVariationID = $request->ProductVariationID;
+            $CustomerID = $customer->CustomerID;
+            $cart = CustomerCart::firstOrCreate(['CustomerID' => $CustomerID, 'ProductID' => $ProductID,
+                'ProductVariationID' => $ProductVariationID]);
             DB::commit();
-            return response()->json(['status' => true,'message' => "Product added to Cart Successfully"]);
+            if ($cart->wasRecentlyCreated) {
+                return $this->successResponse([], "Product added to Cart Successfully");
+            }
+            return $this->errorResponse([], "Product already exists!", 422);
         }catch(Exception $e) {
+            logger($e);
             DB::rollback();
             return response()->json(['status' => false,'message' => "Product add to Cart Failed!"]);
         }
     }
-    public function UpdateCart(Request $req){
-        $customer = $req->auth_customer;
+    public function UpdateCart(Request $request){
+        $customer = $request->auth_customer;
         DB::beginTransaction();
         try {
-            DB::Table('tbl_customer_cart')->where('CustomerID',$customer->CustomerID)->where('ProductID',$req->ProductID)->update(['Qty'=>$req->Qty]);
+            $validatedData = Validator::make($request->all(), [
+                'Qty' => 'required|integer',
+                'ProductID' => 'required|string|exists:tbl_products,ProductID',
+                'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
+
+            $Qty = $request->Qty;
+            $ProductID = $request->ProductID;
+            $ProductVariationID = $request->ProductVariationID;
+            $CustomerID = $customer->CustomerID;
+
+            $cart = CustomerCart::where('CustomerID', $CustomerID)
+                ->where('ProductID', $ProductID);
+            if (isset($ProductVariationID)){
+                $updated = $cart->where('ProductVariationID', $ProductVariationID)->update(["Qty" => $Qty]);
+            } else {
+                $updated = $cart->where('ProductVariationID', null)->update(["Qty" => $Qty]);
+            }
             DB::commit();
-            return response()->json(['status' => true,'message' => "Product Update Successfully"]);
+            if ($updated) {
+                return $this->successResponse([], "Product Update Successfully");
+            } else {
+                return $this->errorResponse([], "Product not exists!", 422);
+            }
         }catch(Exception $e) {
+            logger($e);
             DB::rollback();
             return response()->json([
                 'status' => false,
@@ -186,17 +271,42 @@ class CustomerAuthController extends Controller{
             ]);
         }
     }
-    public function DeleteCart(Request $req){
-        $customer = $req->auth_customer;
+
+    public function DeleteCart(Request $request): JsonResponse
+    {
+        $customer = $request->auth_customer;
         DB::beginTransaction();
         try {
-            DB::Table('tbl_customer_cart')->where('CustomerID',$customer->CustomerID)->where('ProductID',$req->ProductID)->delete();
+            $validatedData = Validator::make($request->all(), [
+                'ProductID' => 'required|string|exists:tbl_products,ProductID',
+                'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
+
+            $ProductID = $request->ProductID;
+            $ProductVariationID = $request->ProductVariationID;
+            $CustomerID = $customer->CustomerID;
+
+            $cart = CustomerCart::where('CustomerID', $CustomerID)
+                ->where('ProductID', $ProductID);
+            if (isset($ProductVariationID)){
+                $deleted = $cart->where('ProductVariationID', $ProductVariationID)->delete();
+            } else {
+                $deleted = $cart->where('ProductVariationID', null)->delete();
+            }
             DB::commit();
-            return response()->json(['status' => true,'message' => "Product Deleted Successfully"]);
-        }catch(Exception $e) {
-            DB::rollback();
-            return response()->json(['status' => false,'message' => "Product Deleted Failed!"]);
+            if ($deleted) {
+                return $this->successResponse([], "Product Deleted Successfully");
+            } else {
+                return $this->errorResponse([], "This Product was not listed in your cart", 422);
+            }
+        } catch (Exception $e) {
+            logger($e);
+            DB::rollBack();
+            return $this->errorResponse($e, "Product Deleted Failed!", 422);
         }
     }
-
 }
