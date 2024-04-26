@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -143,49 +144,41 @@ class CustomerAuthController extends Controller{
         ]);
     }
     public function getCart(Request $req){
-        $Cart = DB::table('tbl_customer_cart as C')->join('tbl_products as P','P.ProductID','C.ProductID')->join('tbl_product_category as PC', 'PC.PCID', 'P.CID')->join('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')->join('tbl_uom as U', 'U.UID', 'P.UID')
-        ->where('C.CustomerID', $this->ReferID)->where('P.ActiveStatus', 'Active')->where('P.DFlag', 0)->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)
-        ->select('P.ProductName','P.ProductID','C.Qty', 'PC.PCName', 'PC.PCID', 'PSC.PSCName','U.UName','U.UCode','U.UID', 'PSC.PSCID')->get();
+        $customer = $req->auth_customer;
+        $Cart = DB::table('tbl_customer_cart as C')->join('tbl_products as P','P.ProductID','C.ProductID')->join('tbl_product_category_type as PCT', 'PCT.PCTID', 'P.CTID')->join('tbl_product_category as PC', 'PC.PCID', 'P.CID')->join('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')->join('tbl_uom as U', 'U.UID', 'P.UID')
+        ->where('C.CustomerID', $customer->CustomerID)->where('P.ActiveStatus', 'Active')->where('P.DFlag', 0)->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)
+        ->select('P.ProductName','P.ProductID','C.Qty', 'PCT.PCTName', 'PCT.PCTID', 'PC.PCName', 'PC.PCID', 'PSC.PSCName','U.UName','U.UCode','U.UID', 'PSC.PSCID')->get();
 
         return response()->json(['status' => true,'data' => $Cart]);
     }
     public function AddCart(Request $req){
+        $customer = $req->auth_customer;
         DB::beginTransaction();
-        $status=false;
         try {
-            $isProductExists = DB::table('tbl_customer_cart')->where('CustomerID',$this->ReferID)->where('ProductID',$req->ProductID)->exists();
+            $isProductExists = DB::table('tbl_customer_cart')->where('CustomerID',$customer->CustomerID)->where('ProductID',$req->ProductID)->exists();
             if($isProductExists){
                 return response()->json(['status' => false,'message' => "Product already exists!"]);
             }else{
-                $data=array(
-                    "CustomerID"=>$this->ReferID,
+                DB::Table('tbl_customer_cart')->insert([
+                    "CustomerID"=>$customer->CustomerID,
                     "ProductID"=>$req->ProductID,
-                );
-                $status=DB::Table('tbl_customer_cart')->insert($data);
+                ]);
             }
-        }catch(Exception $e) {
-            $status=false;
-        }
-        if($status==true){
             DB::commit();
             return response()->json(['status' => true,'message' => "Product added to Cart Successfully"]);
-        }else{
+        }catch(Exception $e) {
             DB::rollback();
             return response()->json(['status' => false,'message' => "Product add to Cart Failed!"]);
         }
     }
     public function UpdateCart(Request $req){
+        $customer = $req->auth_customer;
         DB::beginTransaction();
-        $status=false;
         try {
-            $status=DB::Table('tbl_customer_cart')->where('CustomerID',$this->ReferID)->where('ProductID',$req->ProductID)->update(['Qty'=>$req->Qty]);
-        }catch(Exception $e) {
-            $status=false;
-        }
-        if($status==true){
+            DB::Table('tbl_customer_cart')->where('CustomerID',$customer->CustomerID)->where('ProductID',$req->ProductID)->update(['Qty'=>$req->Qty]);
             DB::commit();
             return response()->json(['status' => true,'message' => "Product Update Successfully"]);
-        }else{
+        }catch(Exception $e) {
             DB::rollback();
             return response()->json([
                 'status' => false,
@@ -194,17 +187,13 @@ class CustomerAuthController extends Controller{
         }
     }
     public function DeleteCart(Request $req){
+        $customer = $req->auth_customer;
         DB::beginTransaction();
-        $status=false;
         try {
-            $status=DB::Table('tbl_customer_cart')->where('CustomerID',$this->ReferID)->where('ProductID',$req->ProductID)->delete();
-        }catch(Exception $e) {
-            $status=false;
-        }
-        if($status==true){
+            DB::Table('tbl_customer_cart')->where('CustomerID',$customer->CustomerID)->where('ProductID',$req->ProductID)->delete();
             DB::commit();
             return response()->json(['status' => true,'message' => "Product Deleted Successfully"]);
-        }else{
+        }catch(Exception $e) {
             DB::rollback();
             return response()->json(['status' => false,'message' => "Product Deleted Failed!"]);
         }

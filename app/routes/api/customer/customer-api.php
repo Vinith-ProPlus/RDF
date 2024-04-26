@@ -22,10 +22,7 @@ Route::post('/get/customer-type', [CustomerAuthController::class, 'getCustomerTy
 //Route::post('/get/sub-category/search', [CustomerAuthController::class, 'getSubCategorySearch']);
 //Route::post('/get/products/search', [CustomerAuthController::class, 'getProductsSearch']);
 
-Route::post('/get/cart', [CustomerAuthController::class, 'getCart']);
-Route::post('/add-cart', [CustomerAuthController::class, 'AddCart']);
-Route::post('/update-cart', [CustomerAuthController::class, 'UpdateCart']);
-Route::post('/delete-cart', [CustomerAuthController::class, 'DeleteCart']);
+
 
 
 Route::post('/google-register', [CustomerAPIController::class, 'GoogleRegister']);
@@ -49,6 +46,11 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/support/get/ticket', [SupportAPIController::class, 'GetTicket']);
     Route::post('/support/create-ticket', [SupportAPIController::class, 'CreateTicket']);
     Route::post('homeSearch', [CustomerAPIController::class, 'homeSearch'])->name('homeSearch');
+
+    Route::post('/customer/get/cart', [CustomerAuthController::class, 'getCart']);
+    Route::post('/customer/add-cart', [CustomerAuthController::class, 'AddCart']);
+    Route::post('/customer/update-cart', [CustomerAuthController::class, 'UpdateCart']);
+    Route::post('/customer/delete-cart', [CustomerAuthController::class, 'DeleteCart']);
 });
 
 // Master
