@@ -509,6 +509,19 @@
                                     </div>
                                 </div>
                                 <div class="row mt-20">
+                                    <div class="col-4 col-lg-2 d-flex align-items-center"><div >Related Products </div></div>
+                                    <div class="col-6 col-lg-8">
+                                        <select class="form-control {{$Theme['input-size']}} select2" size=1 id="lstRProducts" multiple>
+                                            @if ($isEdit && count($data->RelatedProducts))
+                                                @foreach ($data->RelatedProducts as $item)
+                                                    <option value="{{$item->ProductID}}" selected>{{$item->ProductName}}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                        <div class="errors err-sm" id="lstRProducts-err"></div>
+                                    </div>
+                                </div>
+                                <div class="row mt-20">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >Regular Price <span class="required"> * </span></div></div>
                                     <div class="col-6 col-lg-8">
                                         <input type="number" id="txtRegularPrice" class="form-control" min=0 step="{{Helper::NumberSteps($Settings["PRICE-DECIMALS"])}}" placeholder="Regular Price" value="<?php if($isEdit){ echo Helper::NumberFormat($data->PRate,$Settings['PRICE-DECIMALS']);} ?>">
@@ -1074,6 +1087,36 @@
                 });
             });
         }
+
+        $('#lstRProducts').select2({
+            placeholder: 'Search Products',
+            multiple: true,
+            minimumInputLength: 3,
+            ajax: {
+                url: "{{ url('/') }}/admin/master/product/products/get/product-search",
+                type: "post",
+                headers: { 'X-CSRF-Token': $('meta[name=_token]').attr('content') },
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        SearchText: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: $.map(data, function(item) {
+                            return {
+                                text: item.ProductName,
+                                id: item.ProductID
+                            };
+                        })
+                    };
+                },
+                cache: true
+            }
+        });
+
         const getAttributes=async()=>{
             let PCID=$('#lstCategory').val();
             let PSCID=$('#lstSubCategory').val();
@@ -1704,6 +1747,7 @@
             formData.ProductType=$('#lstProductType').val();
             formData.ProductCode=$('#txtProductCode').val();
             formData.Stages=$('#lstStages').val();
+            formData.RelatedProducts=$('#lstRProducts').val();
             formData.VideoURL=$('#txtVideoURL').val();
             formData.HSNSAC=$('#txtHSNSAC').val();
             formData.CategoryType=$('#lstCategoryType').val();
@@ -1769,6 +1813,9 @@
             }
             if(data.Stages.length == 0){
                 $('#lstStages-err').html('Stages are required');status=false;isGeneral=true;
+            }
+            if(data.RelatedProducts.length > 10){
+                $('#lstRProducts-err').html('Related Products must be less than or equal to 10');status=false;isGeneral=true;
             }
             if(data.RegularPrice==""){
                 $('#txtRegularPrice-err').html('Regular Price is required');status=false;isGeneral=true;
