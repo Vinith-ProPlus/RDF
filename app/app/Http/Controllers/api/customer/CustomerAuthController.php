@@ -195,6 +195,10 @@ class CustomerAuthController extends Controller{
                 $item->SRate = $item->variation_SRate;
                 $item->ProductImage = $item->variation_image ? url($item->variation_image) : url("assets/images/no-image-b.png");
             }
+            $item->PTotalRate = Helper::formatAmount($item->SRate * $item->Qty);
+            $item->PRate = Helper::formatAmount($item->PRate);
+            $item->SRate = Helper::formatAmount($item->SRate);
+
             unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
         }
 

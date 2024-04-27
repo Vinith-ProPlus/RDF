@@ -41,7 +41,6 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/update/nick_name', [CustomerAPIController::class, 'updateNickName']);
     Route::post('/update/language', [CustomerAPIController::class, 'updateLanguage']);
     Route::post('/update/profile', [CustomerAPIController::class, 'profileUpdate']);
-    Route::post('/get/product', [MasterController::class, 'getProduct']);
     Route::post('/wishlist/add', [WishlistController::class, 'addWishlist']);
     Route::post('/wishlist/remove', [WishlistController::class, 'removeWishlist']);
     Route::post('/wishlist/my_wishlist', [WishlistController::class, 'my_wishlist']);
@@ -69,6 +68,7 @@ Route::post('/get/category-type', [MasterController::class, 'GetCategoryType']);
 Route::post('/get/category', [MasterController::class, 'getCategory']);
 Route::post('/get/sub-category', [MasterController::class, 'getSubCategory']);
 Route::post('/get/products', [MasterController::class, 'getProducts']);
+Route::post('/get/product', [MasterController::class, 'getProduct']);
 Route::post('/tmp/file-upload', [GeneralAPIController::class, 'tmpFileUpload']);
 
 Route::post('/get/stages', [GeneralAPIController::class, 'getStages']);

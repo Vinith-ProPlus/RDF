@@ -4,6 +4,10 @@ use DB;
 use Illuminate\Support\Facades\Config;
 use Session;
 class helper{
+    public static function formatAmount($amount)
+    {
+        return '₹ ' . number_format($amount, 2, '.', ',');
+    }
 	public static function getMainDB(){
 		return config('app.db_main').".";
 	}

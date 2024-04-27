@@ -316,7 +316,7 @@ class MasterController extends Controller
                     $galleryItem->gImage = Helper::apiCheckImageExistsUrl($galleryItem->gImage);
                 }
 
-                $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=Ad.AttrID ";
+                $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
                 $sql .= " Where D.ProductID='" . $product->ProductID . "' and D.VariationID='" . $variation->VariationID . "'";
                 $variation->AttributeDetails = DB::select($sql);
 
@@ -498,7 +498,7 @@ class MasterController extends Controller
                     $galleryItem->gImage = Helper::apiCheckImageExistsUrl($galleryItem->gImage);
                 }
 
-                $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=Ad.AttrID ";
+                $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
                 $sql .= " Where D.ProductID='" . $product->ProductID . "' and D.VariationID='" . $variation->VariationID . "'";
                 $variation->AttributeDetails = DB::select($sql);
 
