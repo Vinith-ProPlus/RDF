@@ -315,4 +315,199 @@ class CustomerAuthController extends Controller{
             return $this->errorResponse($e, "Product Deleted Failed!", 422);
         }
     }
+
+    public function getSAddress(Request $req){
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$CustomerID)->where('CA.DFlag',0)
+            ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+            ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+            ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+            ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
+            ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
+            ->orderBy('CA.CreatedOn','desc')
+            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+            ->get();
+
+        return response()->json(['status' => true,'data' => $SAddress]);
+    }
+    public function createSAddress(Request $req){
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $OldData=$NewData=[];
+        $OldData=DB::table('tbl_customer_address')->where('CustomerID',$CustomerID)->get();
+        $status=false;
+        try {
+            $validatedData = Validator::make($req->all(), [
+                'ReceiverName' => 'required|string',
+                'ReceiverEmail' => 'required|email',
+                'ReceiverMobile' => 'required|string',
+                'AddressType' => 'required|string',
+                'PostalCodeID' => 'required|exists:'.$this->generalDB.'tbl_postalcodes,PID',
+                'CityID' => 'required|exists:'.$this->generalDB.'tbl_cities,CityID',
+                'DistrictID' => 'required|exists:'.$this->generalDB.'tbl_districts,DistrictID',
+                'StateID' => 'required|exists:'.$this->generalDB.'tbl_states,StateID',
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
+
+            DB::beginTransaction();
+                $AID=DocNum::getDocNum(docTypes::CustomerAddress->value,"",Helper::getCurrentFY());
+            $city = DB::table($this->generalDB.'tbl_cities')->where('CityID', $req->CityID)->value('CityName');
+            $district = DB::table($this->generalDB.'tbl_districts')->where('DistrictID', $req->DistrictID)->value('DistrictName');
+            $state = DB::table($this->generalDB.'tbl_states')->where('StateID', $req->StateID)->value('StateName');
+            $postalCode = DB::table($this->generalDB.'tbl_postalcodes')->where('PID', $req->PostalCodeID)->value('PostalCode');
+
+            $completeAddress = $req->Address . ', ' . $city . ', ' . $district . ', ' . $state . ', ' . $postalCode;
+
+            $data=array(
+                    "AID"=>$AID,
+                    "CustomerID"=>$CustomerID,
+                    "ReceiverName"=>$req->ReceiverName,
+                    "ReceiverEmail"=>$req->ReceiverEmail,
+                    "ReceiverMobile"=>$req->ReceiverMobile,
+                    "CompleteAddress"=> $completeAddress,
+                    "Address"=>$req->Address,
+                    "AddressType"=>$req->AddressType,
+                    "PostalCodeID"=>$req->PostalCodeID,
+                    "CityID"=>$req->CityID,
+                    "DistrictID"=>$req->DistrictID,
+                    "StateID"=>$req->StateID,
+                    "isDefault"=>1,
+                    "CreatedOn"=>date("Y-m-d H:i:s")
+                );
+                $status=DB::Table('tbl_customer_address')->insert($data);
+                if($status==true){
+                    DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNot('AID',$AID)->update(['isDefault' =>0]);
+                    DocNum::updateDocNum(docTypes::CustomerAddress->value);
+                }
+        }catch(Exception $e) {
+            logger($e);
+            $status=false;
+        }
+        if($status==true){
+            DB::commit();
+            $NewData=DB::table('tbl_customer_address')->where('CustomerID',$CustomerID)->get();
+            $logData=array("Description"=>"Shipping Address Created","ModuleName"=>"Customer","Action"=>"Update","ReferID"=>$AID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$CustomerID,"IP"=>$req->ip());
+            logs::Store($logData);
+            return response()->json(['status' => true,'message' => "Shipping Address Created Successfully"]);
+        }else{
+            DB::rollback();
+            return response()->json(['status' => false,'message' => "Shipping Address Creation Failed"]);
+        }
+    }
+
+    public function updateSAddress(Request $req)
+    {
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $OldData = $NewData = [];
+        $OldData = DB::table('tbl_customer_address')->where('CustomerID', $CustomerID)->get();
+        $status = false;
+        try {
+            $validatedData = Validator::make($req->all(), [
+                'AID' => 'required|exists:tbl_customer_address,AID',
+                'ReceiverName' => 'required|string',
+                'ReceiverEmail' => 'required|email',
+                'ReceiverMobile' => 'required|string',
+                'AddressType' => 'required|string',
+                'PostalCodeID' => 'required|exists:' . $this->generalDB . 'tbl_postalcodes,PID',
+                'CityID' => 'required|exists:' . $this->generalDB . 'tbl_cities,CityID',
+                'DistrictID' => 'required|exists:' . $this->generalDB . 'tbl_districts,DistrictID',
+                'StateID' => 'required|exists:' . $this->generalDB . 'tbl_states,StateID',
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
+
+            DB::beginTransaction();
+            $city = DB::table($this->generalDB . 'tbl_cities')->where('CityID', $req->CityID)->value('CityName');
+            $district = DB::table($this->generalDB . 'tbl_districts')->where('DistrictID', $req->DistrictID)->value('DistrictName');
+            $state = DB::table($this->generalDB . 'tbl_states')->where('StateID', $req->StateID)->value('StateName');
+            $postalCode = DB::table($this->generalDB . 'tbl_postalcodes')->where('PID', $req->PostalCodeID)->value('PostalCode');
+
+            $completeAddress = $req->Address . ', ' . $city . ', ' . $district . ', ' . $state . ', ' . $postalCode;
+
+            $data = array(
+                "CustomerID" => $CustomerID,
+                "ReceiverName" => $req->ReceiverName,
+                "ReceiverEmail" => $req->ReceiverEmail,
+                "ReceiverMobile" => $req->ReceiverMobile,
+                "CompleteAddress" => $completeAddress,
+                "Address" => $req->Address,
+                "AddressType" => $req->AddressType,
+                "PostalCodeID" => $req->PostalCodeID,
+                "CityID" => $req->CityID,
+                "DistrictID" => $req->DistrictID,
+                "StateID" => $req->StateID,
+                "isDefault" => 1,
+                "CreatedOn" => date("Y-m-d H:i:s")
+            );
+            $status = DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->where('AID', $req->AID)->update($data);
+
+            if ($status == true) {
+                DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->whereNot('AID', $req->AID)->update(['isDefault' => 0]);
+            }
+        } catch (Exception $e) {
+            logger($e);
+            $status = false;
+        }
+        if ($status == true) {
+            DB::commit();
+            $NewData = DB::table('tbl_customer_address')->where('CustomerID', $CustomerID)->get();
+            $logData = array("Description" => "Shipping Address updated", "ModuleName" => "Customer", "Action" => "Update", "ReferID" => $req->AID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $CustomerID, "IP" => $req->ip());
+            logs::Store($logData);
+            return response()->json(['status' => true, 'message' => "Shipping Address Updated Successfully"]);
+        } else {
+            DB::rollback();
+            return response()->json(['status' => false, 'message' => "Shipping Address Updation Failed"]);
+        }
+    }
+    public function SetDefault(Request $req){
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        DB::beginTransaction();
+        $status=false;
+        try {
+            $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNot('AID',$req->AID)->update(['isDefault' =>0]);
+            $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->update(['isDefault' =>1,'UpdatedBy'=>$CustomerID,'UpdatedOn'=>date("Y-m-d H:i:s")]);
+        }catch(Exception $e) {
+            $status=false;
+        }
+        if($status==true){
+            DB::commit();
+            DB::Table('tbl_customer_cart')->where('CustomerID',$CustomerID)->delete();
+            return response()->json(['status' => true,'message' => "Default Address Set Successfully"]);
+        }else{
+            DB::rollback();
+            return response()->json(['status' => false,'message' => "Default Address Set Failed!"]);
+        }
+    }
+
+    public function DeleteSAddress(Request $req){
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        DB::beginTransaction();
+        $status=false;
+        try {
+            $isDefault=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->where('isDefault',1)->exists();
+            if($isDefault){
+                return response()->json(['status' => false,'message' => "Default Address cannot be deleted!"]);
+            }else{
+                $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->update(['DFlag'=>1,'UpdatedBy'=>$CustomerID,'UpdatedOn'=>date('Y-m-d H:i:s')]);
+            }
+        }catch(Exception $e) {
+            $status=false;
+        }
+        if($status==true){
+            DB::commit();
+            return response()->json(['status' => true,'message' => "Shipping Address Deleted Successfully"]);
+        }else{
+            DB::rollback();
+            return response()->json(['status' => false,'message' => "Shipping Address Deleted Failed!"]);
+        }
+    }
 }

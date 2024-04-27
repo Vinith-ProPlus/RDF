@@ -50,10 +50,18 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/support/create-ticket', [SupportAPIController::class, 'CreateTicket']);
     Route::post('homeSearch', [CustomerAPIController::class, 'homeSearch'])->name('homeSearch');
 
+//    Cart
     Route::post('/customer/get/cart', [CustomerAuthController::class, 'getCart']);
     Route::post('/customer/add-cart', [CustomerAuthController::class, 'AddCart']);
     Route::post('/customer/update-cart', [CustomerAuthController::class, 'UpdateCart']);
     Route::post('/customer/delete-cart', [CustomerAuthController::class, 'DeleteCart']);
+
+//    Shipping Address
+    Route::post('/customer/get/saddress', [CustomerAuthController::class, 'getSAddress']);
+    Route::post('/customer/set-default', [CustomerAuthController::class, 'SetDefault']);
+    Route::post('/customer/create-saddress', [CustomerAuthController::class, 'createSAddress']);
+    Route::post('/customer/update-saddress', [CustomerAuthController::class, 'updateSAddress']);
+    Route::post('/customer/delete-saddress', [CustomerAuthController::class, 'DeleteSAddress']);
 });
 
 // Master
