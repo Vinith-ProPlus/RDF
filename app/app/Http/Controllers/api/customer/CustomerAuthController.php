@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
 use App\enums\activeMenuNames;
@@ -472,6 +473,18 @@ class CustomerAuthController extends Controller{
         DB::beginTransaction();
         $status=false;
         try {
+            $validatedData = Validator::make($req->all(), [
+                'AID' => [
+                    'required',
+                    Rule::exists('tbl_customer_address')->where(function ($query) {
+                        $query->where('DFlag', 0);
+                    }),
+                ],
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
             $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNot('AID',$req->AID)->update(['isDefault' =>0]);
             $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->update(['isDefault' =>1,'UpdatedBy'=>$CustomerID,'UpdatedOn'=>date("Y-m-d H:i:s")]);
         }catch(Exception $e) {

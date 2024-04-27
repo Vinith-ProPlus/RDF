@@ -58,7 +58,7 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
 
 //    Shipping Address
     Route::post('/customer/get/saddress', [CustomerAuthController::class, 'getSAddress']);
-    Route::post('/customer/set-default', [CustomerAuthController::class, 'SetDefault']);
+    Route::post('/customer/set-default-saddress', [CustomerAuthController::class, 'SetDefault']);
     Route::post('/customer/create-saddress', [CustomerAuthController::class, 'createSAddress']);
     Route::post('/customer/update-saddress', [CustomerAuthController::class, 'updateSAddress']);
     Route::post('/customer/delete-saddress', [CustomerAuthController::class, 'DeleteSAddress']);
