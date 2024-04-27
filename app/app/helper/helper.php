@@ -758,5 +758,16 @@ class helper{
 		}
 	}
 
+    public static function generateCoupon(){
+        $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $couponCode = '';
+
+        for ($i = 0; $i < 8; $i++) {
+            $couponCode .= $characters[rand(0, strlen($characters) - 1)];
+        }
+
+        return $couponCode;
+    }
+
 
 }

@@ -43,4 +43,5 @@ enum activeMenuNames: string
     case Company = "Company-Settings";
     case SupportTickets = "Support-Tickets";
     case Departments = "Departments";
+    case Coupon = "Coupon";
 }

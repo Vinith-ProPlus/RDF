@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\web\masters\product\AttributesController;
 use App\Http\Controllers\web\masters\product\BrandsController;
+use App\Http\Controllers\web\masters\product\CouponController;
 use App\Http\Controllers\web\masters\product\ProductCategoryController;
 use App\Http\Controllers\web\masters\product\ProductCategoryTypeController;
 use App\Http\Controllers\web\masters\product\ProductsController;
 use App\Http\Controllers\web\masters\product\ProductSubCategoryController;
 use App\Http\Controllers\web\masters\product\TaxController;
 use App\Http\Controllers\web\masters\product\UOMController;
+use App\Models\Coupon;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix'=>'category-type'],function (){
@@ -27,6 +29,22 @@ Route::group(['prefix'=>'category-type'],function (){
         Route::post('/create-form','GetNewProductCategoryType');
         Route::post('/get/PCategoryType','GetProductCategoryType');
         Route::post('/get/PCategory','GetProductCategory');
+    });
+});
+
+Route::group(['prefix'=>'coupon'],function (){
+    Route::controller(CouponController::class)->group(function () {
+        Route::get('/', 'view');
+        Route::get('/trash', 'TrashView');
+        Route::get('/create', 'Create');
+        Route::get('/edit/{ID}', 'Edit');
+
+        Route::post('/data', 'TableView');
+        Route::post('/create', 'Save');
+        Route::POST('/edit/{ID}', 'Update');
+        Route::POST('/delete/{ID}', 'Delete');
+        Route::POST('/restore/{ID}', 'Restore');
+        Route::post('/trash-data', 'TrashTableView');
     });
 });
 

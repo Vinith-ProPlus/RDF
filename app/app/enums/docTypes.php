@@ -73,5 +73,6 @@ enum docTypes:string{
     case Support="Support";
     case SupportDetails="Support-Details";
     case SupportAttachments="Support-Attachments";
+    case Coupon="Coupon";
 
 }
