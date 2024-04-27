@@ -153,7 +153,7 @@ class CustomerAPIController extends Controller{
     }
     #
     # Customer Nick name Update
-    # Need to Pass = mobile_no and otp
+    # Need to Pass = nick_name
     #
     public function updateNickName(Request $request): JsonResponse
     {
@@ -188,6 +188,45 @@ class CustomerAPIController extends Controller{
             logger($e);
             DB::rollback();
             return $this->errorResponse($e, "Customer nick name update Failed", 500);
+        }
+    }
+    #
+    # Customer Language Update
+    # Need to Pass = Language
+    #
+    public function updateLanguage(Request $request): JsonResponse
+    {
+        $customer = $request->auth_customer;
+        $validatedData = Validator::make($request->all(), [
+            'language' => 'required|string|in:en,ta',
+        ]);
+
+        if ($validatedData->fails()) {
+            return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $oldCustomer = $customer->replicate();
+            $customer->update(["language" => $request->language]);
+
+            $logData = array(
+                "Description" => "Customer Language",
+                "ModuleName" => "Customer",
+                "Action" => "Update",
+                "ReferID" => $customer->CustomerID,
+                "OldData" => $oldCustomer,
+                "NewData" => $customer,
+                "UserID" => $customer->CustomerID,
+                "IP" => $request->ip()
+            );
+            logController::Store($logData);
+            DB::commit();
+            return $this->successResponse([], "Customer language updated.");
+        } catch (\Exception $e) {
+            logger($e);
+            DB::rollback();
+            return $this->errorResponse($e, "Customer Language update Failed", 500);
         }
     }
 

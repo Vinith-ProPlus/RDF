@@ -6,6 +6,7 @@ use App\Http\Controllers\api\customer\CustomerTransactionAPIController;
 use App\Http\Controllers\api\customer\MasterController;
 use App\Http\Controllers\api\customer\WishlistController;
 use App\Http\Controllers\api\GeneralAPIController;
+use App\Http\Controllers\api\LanguageAPIController;
 use App\Http\Controllers\api\SupportAPIController;
 use App\Http\Middleware\app\Http\Middleware\AuthenticateWithToken;
 use Illuminate\Support\Facades\Route;
@@ -34,8 +35,11 @@ Route::post('/get/quote-enquiry', [CustomerTransactionAPIController::class, 'get
 // Customer Profile
 Route::post('/login', [CustomerAPIController::class, 'login']);
 Route::post('/otp_verification', [CustomerAPIController::class, 'OtpVerification']);
+Route::get('/guest/translation/{page}/{lang}', [LanguageAPIController::class, 'guestTranslations']);
 Route::middleware([AuthenticateWithToken::class])->group(function () {
+    Route::post('/customer/translation', [LanguageAPIController::class, 'customerTranslations']);
     Route::post('/update/nick_name', [CustomerAPIController::class, 'updateNickName']);
+    Route::post('/update/language', [CustomerAPIController::class, 'updateLanguage']);
     Route::post('/update/profile', [CustomerAPIController::class, 'profileUpdate']);
     Route::post('/get/product', [MasterController::class, 'getProduct']);
     Route::post('/wishlist/add', [WishlistController::class, 'addWishlist']);

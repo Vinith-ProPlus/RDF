@@ -38,6 +38,7 @@ class Customer extends Model
         "StateID",
         "CountryID",
         "PostalCodeID",
+        "language",
         "ActiveStatus",
         "DFlag",
         "otp",
