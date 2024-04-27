@@ -202,7 +202,7 @@ class CustomerAuthController extends Controller{
             unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
         }
 
-        return response()->json(['status' => true,'data' => $Cart]);
+        return response()->json(['status' => true, 'total_product' => $Cart->count(), 'data' => $Cart]);
     }
 
     public function AddCart(Request $request){
