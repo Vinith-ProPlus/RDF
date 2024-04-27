@@ -150,6 +150,7 @@ class CustomerAuthController extends Controller{
     }
     public function getCart(Request $req){
         $customer = $req->auth_customer;
+        $totalAmount = 0;
         $Cart = DB::table('tbl_customer_cart as C')
             ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
             ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
@@ -195,14 +196,15 @@ class CustomerAuthController extends Controller{
                 $item->SRate = $item->variation_SRate;
                 $item->ProductImage = $item->variation_image ? url($item->variation_image) : url("assets/images/no-image-b.png");
             }
-            $item->PTotalRate = Helper::formatAmount($item->SRate * $item->Qty);
+            $product_rate = $item->SRate * $item->Qty;
+            $item->PTotalRate = Helper::formatAmount($product_rate);
             $item->PRate = Helper::formatAmount($item->PRate);
             $item->SRate = Helper::formatAmount($item->SRate);
-
+            $totalAmount += $product_rate;
             unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
         }
 
-        return response()->json(['status' => true, 'total_product' => $Cart->count(), 'data' => $Cart]);
+        return response()->json(['status' => true, 'total_amount' => Helper::formatAmount($totalAmount),'total_product_count' => $Cart->count(), 'data' => $Cart]);
     }
 
     public function AddCart(Request $request){
