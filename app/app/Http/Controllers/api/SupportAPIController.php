@@ -46,18 +46,24 @@ class SupportAPIController extends Controller{
         DB::beginTransaction();
         $status=false;
         try {
-            $SupportID = DocNum::getDocNum(docTypes::Support->value, "", Carbon::now()->year);
-            $data = array(
-                "SupportID" => $SupportID,
-                "UserID" => $customer->CustomerID,
-                "Subject" => $req->Subject,
-                "Priority" => $req->Priority,
-                "SupportType" => $req->SupportType,
-                "DFlag" => 0,
-                "CreatedOn" => date("Y-m-d H:i:s"),
-                "CreatedBy" => $customer->CustomerID,
-            );
-            $status = DB::Table($this->supportDB . "tbl_support")->insert($data);
+            if($req->has('SupportID') && $req->SupportID){
+                $SupportID = $req->SupportID;
+                $status = true;
+            }else{
+                $SupportID = DocNum::getDocNum(docTypes::Support->value, "", Carbon::now()->year);
+                $data = array(
+                    "SupportID" => $SupportID,
+                    "UserID" => $customer->CustomerID,
+                    "Subject" => $req->Subject,
+                    "Priority" => $req->Priority,
+                    "SupportType" => $req->SupportType,
+                    "DFlag" => 0,
+                    "CreatedOn" => date("Y-m-d H:i:s"),
+                    "CreatedBy" => $customer->CustomerID,
+                );
+                $status = DB::Table($this->supportDB . "tbl_support")->insert($data);
+            }
+
             if($status==true){
                 $ReferID=DocNum::getDocNum(docTypes::SupportDetails->value,"",Carbon::now()->year);
                 $data=array(
