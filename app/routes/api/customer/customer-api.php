@@ -64,6 +64,11 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/customer/delete-saddress', [CustomerAuthController::class, 'DeleteSAddress']);
 //    Check Coupon
     Route::post('/customer/check-coupon', [MasterController::class, 'checkCoupon']);
+
+//    Notification
+    Route::post('/get/notifications', [CustomerAuthController::class, 'getNotifications']);
+    Route::post('/get/notifications-count', [CustomerAuthController::class, 'getNotificationsCount']);
+    Route::post('/notification-read', [CustomerAuthController::class, 'NotificationRead']);
 });
 
 // Master

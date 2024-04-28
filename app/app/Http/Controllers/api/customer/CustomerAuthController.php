@@ -559,4 +559,60 @@ class CustomerAuthController extends Controller{
             return response()->json(['status' => false,'message' => "Shipping Address Deleted Failed!"]);
         }
     }
+
+//    Notifications
+    public function getNotifications(Request $req){
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $pageNo = $req->PageNo ?? 1;
+        $perPage = 10;
+
+        $Notifications = DB::Table('tbl_notifications as N')->leftJoin('tbl_order as O','O.OrderID','N.RouteID')
+            ->where('N.CustomerID', $CustomerID)
+            ->orderBy('N.CreatedOn','desc')
+            ->select('N.*','O.isCustomerRated')
+            ->paginate($perPage, ['*'], 'page', $pageNo);
+
+        return response()->json([
+            'status' => true,
+            'data' => $Notifications->items(),
+            'CurrentPage' => $Notifications->currentPage(),
+            'LastPage' => $Notifications->lastPage(),
+        ]);
+    }
+    public function getNotificationsCount(Request $req){
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $NotificationsCount = DB::table('tbl_notifications')->where('CustomerID', $CustomerID)->where('ReadStatus',0)->count();
+        return response()->json([
+            'status' => true,
+            'data' => $NotificationsCount,
+        ]);
+    }
+    public function NotificationRead(Request $req){
+        $customer = $req->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        DB::beginTransaction();
+        try {
+            $validatedData = Validator::make($req->all(), [
+            'NID' => 'required|exists:tbl_notifications,NID'
+        ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
+            $status = DB::Table('tbl_notifications')
+                ->where('CustomerID', $CustomerID)
+                ->where('NID', $req->NID)->update(['ReadStatus' => 1,'ReadOn'=>date('Y-m-d H:i:s')]);
+        }catch(Exception $e) {
+            $status=false;
+        }
+        if($status === true){
+            DB::commit();
+            return response()->json(['status' => true ,'message' => "Notification Read Successfully!"]);
+        }else{
+            DB::rollback();
+            return response()->json(['status' => false,'message' => "Notification Read Failed!"]);
+        }
+    }
 }
