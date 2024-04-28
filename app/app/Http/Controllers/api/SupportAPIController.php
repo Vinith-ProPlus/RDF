@@ -132,13 +132,17 @@ class SupportAPIController extends Controller{
             ->leftJoin('tbl_customer as C','C.CustomerID','S.UserID')
             ->leftJoin('tbl_support_type as ST','ST.SLNO','S.SupportType')
             ->where('S.UserID', $customer->CustomerID)->where('S.DFlag', 0)->where('S.SupportID', $req->SupportID)
-            ->select('S.SupportID','S.Subject','ST.SupportType','S.Priority','C.CustomerName as CreatedBy','S.CreatedOn','S.Status', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))->first();
+            ->select('S.SupportID','S.Subject','ST.SupportType','S.Priority',
+                DB::raw('CASE WHEN C.nick_name IS NOT NULL THEN C.nick_name WHEN C.MobileNo1 IS NOT NULL THEN "Support Team" ELSE "Support Team" END AS CreatedBy'),
+                'S.CreatedOn','S.Status', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))->first();
 
             $SupportTickets->SupportChat = DB::table($this->supportDB.'tbl_support_details as SD')
                 ->leftJoin('tbl_customer as C','C.CustomerID','SD.UserID')
             ->where('SD.SupportID',$SupportTickets->SupportID)
             ->orderBy('SD.CreatedOn')
-            ->select('SD.Description','SD.SLNO','SD.CreatedOn','C.CustomerName as CreatedBy', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))
+            ->select('SD.Description','SD.SLNO','SD.CreatedOn',
+                DB::raw('CASE WHEN C.nick_name IS NOT NULL THEN C.nick_name WHEN C.MobileNo1 IS NOT NULL THEN "Support Team" ELSE "Support Team" END AS CreatedBy'),
+                DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))
 
             ->get();
             foreach($SupportTickets->SupportChat as $row){
@@ -165,7 +169,9 @@ class SupportAPIController extends Controller{
                 $SupportTickets->whereBetween('S.CreatedOn', [$fromDate, $toDate]);
             }
             $result = $SupportTickets
-            ->select('S.SupportID','S.Subject','ST.SupportType','S.Priority','C.CustomerName as CreatedBy','S.CreatedOn','S.Status', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))
+            ->select('S.SupportID','S.Subject','ST.SupportType','S.Priority',
+                DB::raw('CASE WHEN C.nick_name IS NOT NULL THEN C.nick_name WHEN C.MobileNo1 IS NOT NULL THEN "Support Team" ELSE "Support Team" END AS CreatedBy'),
+                'S.CreatedOn','S.Status', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))
             ->paginate($perPage, ['*'], 'page', $pageNo);
 
             foreach($result as $item){
@@ -174,7 +180,10 @@ class SupportAPIController extends Controller{
                     ->where('SD.SupportID',$item->SupportID)
                     ->orderBy('SD.CreatedOn')
 
-                    ->select('SD.Description','SD.SLNO','SD.CreatedOn','C.CustomerName as CreatedBy', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))
+                    ->select('SD.Description','SD.SLNO','SD.CreatedOn',
+                        DB::raw('CASE WHEN C.nick_name IS NOT NULL THEN C.nick_name WHEN C.MobileNo1 IS NOT NULL THEN "Support Team" ELSE "Support Team" END AS CreatedBy'),
+                        DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(C.CustomerImage, ""), "assets/images/male-icon.png")) AS ProfileImage'))
+//                    If the CreatedBy is Null then look for C.MobileNo1, If MobileNo1 also null then set the "Support Team" as CreatedBy
                     ->get();
                     foreach($item->SupportChat as $row){
                         $row->Attachments = DB::table($this->supportDB.'tbl_attachment')->where('ReferID',$row->SLNO)->select(DB::raw('CONCAT("' . url('/') . '/", UploadUrl) AS FileName '))->get();

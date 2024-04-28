@@ -16,7 +16,7 @@
             <select class="form-control mSelect2" id="lstCustomer">
                 <option value="">Select a Customer</option>
                 @foreach($Customers as $data)
-                    <option  value="{{$data->UserID}}">{{$data->Name}} ( {{$data->MobileNumber}} )</option>
+                    <option value="{{$data->CustomerID}}">{{ $data->CustomerName ?? '' }} ( {{ $data->MobileNo1 ?? '' }} )</option>
                 @endforeach
             </select>
             <span class="errors MTicket err-sm" id="lstCustomer-err"></span>

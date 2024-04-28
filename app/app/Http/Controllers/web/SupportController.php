@@ -3,23 +3,24 @@
 namespace App\Http\Controllers\web;
 
 
+use App\enums\docTypes;
+use App\helper\helper;
 use App\Http\Controllers\Controller;
+use App\Models\DocNum;
+use App\Rules\ValidDB;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
-use DocNum;
 use App\Models\general;
 use App\Models\ServerSideProcess;
-use DB;
-use Auth;
-use Helper;
-use ValidUnique;
-use ValidDB;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Rules\ValidUnique;
 use logs;
 use Mail;
-use docTypes;
-use activeMenuNames;
+use App\enums\activeMenuNames;
 
 class SupportController extends Controller{
 	private $general;
@@ -39,7 +40,7 @@ class SupportController extends Controller{
     public function __construct(){
 		$this->ActiveMenuName=activeMenuNames::SupportTickets->value;
         $this->PageTitle="Support Tickets";
-        $this->middleware('auth');    
+        $this->middleware('auth');
 		$this->middleware(function ($request, $next) {
 			$this->UserID=auth()->user()->UserID;
 			$this->general=new general($this->UserID,$this->ActiveMenuName);
@@ -51,7 +52,7 @@ class SupportController extends Controller{
 			return $next($request);
 		});
     }
-	public function SupportView(Request $req){ 
+	public function SupportView(Request $req){
         if($this->general->isCrudAllow($this->CRUD,"view")==true){
             $FormData=$this->general->UserInfo;
             $FormData['menus']=$this->Menus;
@@ -82,18 +83,18 @@ class SupportController extends Controller{
         }else{
             return view('errors.404');
         }
-		
+
     }
     private function ticketUserInfo($SupportID){
         $return=array(
             "Name"=>"",
             "MobileNumber"=>""
         );
-        $sql="SELECT U.LoginType FROM ".$this->supportDB."tbl_support as S LEFT JOIN users as U ON U.UserID=S.CreatedBy  Where S.SupportID='".$SupportID."'";
-        $result=DB::SELECT($sql);
-        if(count($result)>0){
-            if(intval($result[0]->LoginType)==2){
-                $sql="SELECT U.UserID, U.Name as UserName,CASE WHEN IFNULL(UI.MobileNumber,'')<>'' THEN CONCAT('+',C.PhoneCode,' ',UI.MobileNumber) ELSE '' END as MobileNumber FROM ".$this->supportDB."tbl_support as S LEFT JOIN users as U ON U.UserID=S.CreatedBy LEFT JOIN users as UI ON UI.UserID=S.CreatedBy LEFT JOIN ".$this->generalDB."tbl_countries as C ON C.CountryID=UI.CountryID Where S.SupportID='".$SupportID."'";
+//        $sql="SELECT U.LoginType FROM ".$this->supportDB."tbl_support as S LEFT JOIN tbl_customer as U ON U.CustomerID=S.CreatedBy  Where S.SupportID='".$SupportID."'";
+//        $result=DB::SELECT($sql);
+//        if(count($result)>0){
+//            if(intval($result[0]->LoginType)==2){
+                $sql="SELECT U.CustomerID, U.CustomerName as UserName, U.MobileNo1 as MobileNumber FROM ".$this->supportDB."tbl_support as S LEFT JOIN tbl_customer as U ON U.CustomerID=S.UserID LEFT JOIN tbl_customer as UI ON UI.CustomerID=S.UserID LEFT JOIN ".$this->generalDB."tbl_countries as C ON C.CountryID=UI.CountryID Where S.SupportID='".$SupportID."'";
                 $tmp=DB::SELECT($sql);
                 if(count($tmp)>0){
                     $return=array(
@@ -101,25 +102,25 @@ class SupportController extends Controller{
                         "MobileNumber"=>$tmp[0]->MobileNumber
                     );
                 }
-            }else{
-                $sql="SELECT U.UserID, U.Name as UserName,CASE WHEN IFNULL(UI.MobileNumber,'')<>'' THEN CONCAT('+',C.PhoneCode,' ',UI.MobileNumber) ELSE '' END as MobileNumber FROM ".$this->supportDB."tbl_support as S LEFT JOIN users as U ON U.UserID=S.UserID LEFT JOIN users as UI ON UI.UserID=S.UserID LEFT JOIN ".$this->generalDB."tbl_countries as C ON C.CountryID=UI.CountryID Where S.SupportID='".$SupportID."'";
-                $tmp=DB::SELECT($sql);
-                if(count($tmp)>0){
-                    $return=array(
-                        "Name"=>$tmp[0]->UserName,
-                        "MobileNumber"=>$tmp[0]->MobileNumber
-                    );
-                }
-            }
-        }
+//            }else{
+//                $sql="SELECT U.CustomerID, U.CustomerName as UserName,CASE WHEN IFNULL(UI.MobileNo1,'')<>'' THEN CONCAT('+',C.PhoneCode,' ',UI.MobileNo1) ELSE '' END as MobileNumber FROM ".$this->supportDB."tbl_support as S LEFT JOIN users as U ON U.CustomerID=S.UserID LEFT JOIN tbl_customer as UI ON UI.CustomerID=S.UserID LEFT JOIN ".$this->generalDB."tbl_countries as C ON C.CountryID=UI.CountryID Where S.SupportID='".$SupportID."'";
+//                $tmp=DB::SELECT($sql);
+//                if(count($tmp)>0){
+//                    $return=array(
+//                        "Name"=>$tmp[0]->UserName,
+//                        "MobileNumber"=>$tmp[0]->MobileNumber
+//                    );
+//                }
+//            }
+//        }
         return $return;
     }
 	public function NewTicket(Request $req){
 		if($this->general->isCrudAllow($this->CRUD,"add")==true){
-            // $sql="SELECT U.UserID, U.Name as UserName,CASE WHEN IFNULL(UI.MobileNumber,'')<>'' THEN CONCAT('+',C.PhoneCode,' ',UI.MobileNumber) ELSE '' END as MobileNumber FROM  users as U  LEFT JOIN users as UI ON UI.UserID=U.UserID LEFT JOIN ".$this->generalDB."tbl_countries as C ON C.CountryID=UI.CountryID Where U.LoginType=2 and U.DFlag=0";
+            // $sql="SELECT U.CustomerID, U.CustomerName as UserName,CASE WHEN IFNULL(UI.MobileNo1,'')<>'' THEN CONCAT('+',C.PhoneCode,' ',UI.MobileNo1) ELSE '' END as MobileNumber FROM  users as U  LEFT JOIN users as UI ON UI.CustomerID=U.CustomerID LEFT JOIN ".$this->generalDB."tbl_countries as C ON C.CountryID=UI.CountryID Where U.LoginType=2 and U.DFlag=0";
             $FormData=$this->general->UserInfo;
             $FormData['PageName']="Account Settings New Support";
-            $FormData['Customers']=DB::table('users')->where('DFlag',0)->where('LoginType','Customer')->get();
+            $FormData['Customers']=DB::table('tbl_customer')->where('DFlag',0)->get();
             $FormData['Vendors']=DB::table('users')->where('DFlag',0)->where('LoginType','Vendor')->get();
             $FormData['SupportType']=DB::Table('tbl_support_type')->where('isAll',0)->where('ActiveStatus',1)->where('DFlag',0)->get();
             $FormData['SaveButtonID']=md5(date("YmdHis"));
@@ -133,9 +134,9 @@ class SupportController extends Controller{
             $UInfo=$this->general->UserInfo;
             $OldData=$NewData=array();$SupportID="";
             $ValidDB=array();
-			$ValidDB['UserID']['TABLE']="users";
-			$ValidDB['UserID']['ErrMsg']="User does not exist";
-			$ValidDB['UserID']['WHERE'][]=array("COLUMN"=>"UserID","CONDITION"=>"=","VALUE"=>$req->UserID);
+			$ValidDB['UserID']['TABLE']="tbl_customer";
+			$ValidDB['UserID']['ErrMsg']="Customer does not exist";
+			$ValidDB['UserID']['WHERE'][]=array("COLUMN"=>"CustomerID","CONDITION"=>"=","VALUE"=>$req->UserID);
 			$ValidDB['UserID']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
             $rules=array(
                 'UserID'=>['required',new ValidDB($ValidDB['UserID'])],
@@ -152,9 +153,9 @@ class SupportController extends Controller{
                 'UserID.required'=>'Customer is required'
 			);
             $validator = Validator::make($req->all(), $rules,$message);
-                
+
             if ($validator->fails()) {
-                return array('status'=>false,'message'=>"New support ticket request has been submit failed",'errors'=>$validator->errors());			
+                return array('status'=>false,'message'=>"New support ticket request has been submit failed",'errors'=>$validator->errors());
             }
             DB::beginTransaction();
             $status=false;
@@ -175,17 +176,18 @@ class SupportController extends Controller{
                 if($status==true){
                     $status=$this->SaveSupportDetail($req,$SupportID);
                 }
-                if($status==true){
-                    $status1=$this->sendMail($req->SupportType,$SupportID);
-                    if($status1==false){
-                        DB::rollback();
-                        $status=false;
-                        return $status1;
-                    }else{
-                        $status=true;
-                    }
-                }
+//                if($status==true){
+//                    $status1=$this->sendMail($req->SupportType,$SupportID);
+//                    if($status1==false){
+//                        DB::rollback();
+//                        $status=false;
+//                        return $status1;
+//                    }else{
+//                        $status=true;
+//                    }
+//                }
             }catch(Exception $e) {
+                logger($e);
                 $status=false;
             }
             if($status==true){
@@ -211,7 +213,7 @@ class SupportController extends Controller{
             $data=array(
                 "SLNO"=>$SLNO,
                 "SupportID"=>$SupportID,
-                "UserID"=>$this->UserID,
+                "UserID"=>$req->UserID,
                 "Description"=>$req->Description,
                 "DFlag"=>0,
                 "CreatedOn"=>date("Y-m-d H:i:s"),
@@ -227,25 +229,35 @@ class SupportController extends Controller{
                         }
                     }
                 }
-                
+
             }
+//            if($status){
+//                $status=DB::Table($this->supportDB."tbl_support")->update(array('status'=>1,"UpdatedOn"=>date("Y-m-d H:i:s")));
+//            }
             if($status){
-                $status=DB::Table($this->supportDB."tbl_support")->update(array('status'=>1,"UpdatedOn"=>date("Y-m-d H:i:s")));
+                $ReferID = DB::table($this->supportDB.'tbl_support as S')->leftJoin('tbl_customer as U','U.CustomerID','S.UserID')->where('S.SupportID',$SupportID)->value('U.CustomerID');
+                $this->sendNotification($SupportID,$ReferID);
             }
-            if($status==true){
-                $status1=$this->sendMail($req->SupportType,$SupportID);
-                if($status1==false){
-                    DB::rollback();
-                    $status=false;
-                    return $status1;
-                }else{
-                    $status=true;
-                }
-            }
+//            if($status==true){
+//                $status1=$this->sendMail($req->SupportType,$SupportID);
+//                if($status1==false){
+//                    DB::rollback();
+//                    $status=false;
+//                    return $status1;
+//                }else{
+//                    $status=true;
+//                }
+//            }
 		}catch(Exception $e) {
         }
         return $status;
     }
+    public function sendNotification($SupportID,$UserID){
+        $Title = "Admin Respond your Ticket";
+        $Message = "Admin has responded to your ticket. Check now for updates and further instructions.";
+        $status = Helper::saveNotification($UserID,$Title,$Message,'Support',$SupportID);
+    }
+
     private function SaveAttachments($file,$SupportID,$ReferID){
         //DB::beginTransaction();
         $status=false;
@@ -275,7 +287,7 @@ class SupportController extends Controller{
 			$OldData=DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->get();
 			$status=DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->update(array("DFlag"=>1,"DeletedOn"=>date("Y-m-d H:i:s"),"DeletedBy"=>$this->UserID));
 		}catch(Exception $e) {
-			
+
 		}
 		if($status==true){
 			DB::commit();
@@ -296,7 +308,7 @@ class SupportController extends Controller{
 			$OldData=DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->get();
 			$status=DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->update(array("Status"=>1,"DFlag"=>0,"UpdatedOn"=>date("Y-m-d H:i:s"),"UpdatedBy"=>$this->UserID));
 		}catch(Exception $e) {
-			
+
 		}
 		if($status==true){
             DB::commit();
@@ -318,14 +330,18 @@ class SupportController extends Controller{
 			$OldData=DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->get();
 			$status=DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->update(array("Status"=>0,"DFlag"=>0,"UpdatedOn"=>date("Y-m-d H:i:s"),"UpdatedBy"=>$this->UserID));
 		}catch(Exception $e) {
-			
+
 		}
 		if($status==true){
             DB::commit();
             $NewData=DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->get();
-			$logData=array("Description"=>"Support Reopened ","ModuleName"=>"Support","Action"=>"Update","ReferID"=>$SupportID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
+			$logData=array("Description"=>"Support Closed ","ModuleName"=>"Support","Action"=>"Update","ReferID"=>$SupportID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
 			logs::Store($logData);
+            $ReferID = DB::table($this->supportDB.'tbl_support as S')->leftJoin('tbl_customer as U','U.CustomerID','S.UserID')->where('S.SupportID',$SupportID)->value('U.CustomerID');
 
+            $Title = "Admin closed ticket";
+            $Message = "Admin closed your ticket.";
+            $status = Helper::saveNotification($ReferID,$Title,$Message,'Support',$SupportID);
 			return array('status'=>true,'message'=>"Closed Successfully");
 		}else{
 			DB::rollback();
@@ -333,7 +349,12 @@ class SupportController extends Controller{
 		}
     }
     private function getSupportDetails($data){
-        $sql="SELECT D.SLNO,D.UserID,CASE WHEN IFNULL(U.Name,'') ='' THEN CASE WHEN U.LoginType=2 Then U.Name ELSE 'Team 10HP' end Else U.Name END as Name,U.Email,UI.ProfileImage,D.SupportID,D.Description,D.DeliveryStatus,D.ReadStatus,D.DFlag,D.CreatedOn,D.UpdatedOn,D.DeletedOn,D.CreatedBy,D.UpdatedBy,D.DeletedBy From ".$this->supportDB."tbl_support_details as D left join ".$this->supportDB."tbl_support as H On H.SupportID=D.SupportID Left join users as U ON U.UserID=D.UserID LEFT Join users AS UI ON UI.UserID=U.UserID Where 1=1";
+        $sql="SELECT D.SLNO,D.UserID, CASE
+        WHEN IFNULL(U.CustomerName, '') = '' AND IFNULL(U.MobileNo1, '') = '' THEN 'Support Team'
+        WHEN IFNULL(U.CustomerName, '') = '' THEN U.MobileNo1
+        ELSE U.CustomerName
+    END AS Name,U.Email,UI.CustomerImage,D.SupportID,D.Description,D.DeliveryStatus,D.ReadStatus,D.DFlag,D.CreatedOn,D.UpdatedOn,D.DeletedOn,D.CreatedBy,D.UpdatedBy,D.DeletedBy From ".$this->supportDB."tbl_support_details as D left join ".$this->supportDB."tbl_support as H On H.SupportID=D.SupportID Left join tbl_customer as U ON U.CustomerID=D.UserID LEFT Join tbl_customer AS UI ON UI.CustomerID=U.CustomerID Where 1=1";
+//        Here if the MobileNo1 also null then set the value as "Support Team"
         if(is_array($data)){
             if(array_key_exists("SLNO",$data)){ $sql.=" and D.SLNO='".$data['SLNO']."'";}
             if(array_key_exists("UserID",$data)){ $sql.=" and D.UserID='".$data['UserID']."'";}
@@ -363,7 +384,7 @@ class SupportController extends Controller{
 		if($status==true){
             DB::table($this->supportDB."tbl_support")->where('SupportID',$SupportID)->update(array('Status'=>1,"DFlag"=>0,"UpdatedOn"=>date("Y-m-d H:i:s")));
             DB::commit();
-            
+
 			return array('status'=>true,'message'=>"submit successfully");
 		}else{
 			DB::rollback();
@@ -428,8 +449,8 @@ class SupportController extends Controller{
 				array( 'db' => 'CreatedOn', 'dt' => '5','formatter' => function( $d, $row ) {
                     return date("d - M - Y",strtotime($d));
                 } ),
-				array( 
-					'db' => 'SupportID', 
+				array(
+					'db' => 'SupportID',
 					'dt' => '6',
 					'formatter' => function( $d, $row ) {
                         $html='';
@@ -450,11 +471,11 @@ class SupportController extends Controller{
                             }
                             $html.='</div>';
                         $html.='</div>';
-                        
-                        
-                        
+
+
+
 						return $html;
-					} 
+					}
 				)
 			);
             $Where=intval($this->LoginType)==2?" S.UserID='".$this->UserID."'":" 1=1 ";

@@ -1,5 +1,7 @@
 <?php
 namespace App\helper;
+use App\Models\DocNum;
+use Carbon\Carbon;
 use DB;
 use Illuminate\Support\Facades\Config;
 use Session;
@@ -769,5 +771,67 @@ class helper{
         return $couponCode;
     }
 
+    public static function saveNotification($ReferID,$Title,$Message,$Route,$RouteID){
+        $UserID = DB::table('tbl_customer')->where('CustomerID',$ReferID)->value('CustomerID');
+        $NID = DocNum::getDocNum("Notification", Helper::getMainDB(),Carbon::now()->year);
+        $Ndata = [
+            'NID'=> $NID,
+            'CustomerID'=> $UserID,
+            'Title'=> $Title,
+            'Message'=> $Message,
+            'Route'=> $Route,
+            'RouteID'=> $RouteID
+        ];
+        $status = DB::table('tbl_notifications')->insert($Ndata);
+        if($status){
+            logger("update sus");
+            DocNum::updateDocNum("Notification");
+            self::sendNotification($UserID,$Title,$Message);
+        }
+        return $status;
+    }
+
+    public static function sendNotification($UserID,$Title,$Message){
+        $firebaseToken=array();
+        $sql="Select IFNULL(fcmToken,'') as fcmToken From tbl_customer where ActiveStatus=1 and DFlag=0 and CustomerID='".$UserID."'";
+        logger($sql);
+        $result = DB::SELECT($sql);
+        logger($result);
+        for($i=0;$i<count($result);$i++){
+            if($result[$i]->fcmToken!=""){
+                $firebaseToken[]=$result[$i]->fcmToken;
+            }
+        }
+        if(count($firebaseToken)>0){
+            $SERVER_API_KEY = config('app.firebase_server_key');// firebase server key
+
+            $data = [
+                "registration_ids" => $firebaseToken,
+                "notification" => [
+                    "title" => $Title,
+                    "body" => $Message,
+                    "bodyLocKey" => "bharani",
+                ]
+            ];
+            $dataString = json_encode($data);
+
+            $headers = [
+                'Authorization: key=' . $SERVER_API_KEY,
+                'Content-Type: application/json',
+            ];
+
+            $ch = curl_init();
+
+            curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
+
+            $response = curl_exec($ch);
+            return $response;
+        }
+    }
 
 }

@@ -46,14 +46,14 @@
                             <div class="card-header">
                                 <div class="1">
                                     <?php
-                                        if (!file_exists($SupportDetails[$i]->ProfileImage)) {
-                                            $SupportDetails[$i]->ProfileImage="";
+                                        if (!file_exists($SupportDetails[$i]->CustomerImage)) {
+                                            $SupportDetails[$i]->CustomerImage="";
                                         }
-                                        if(($SupportDetails[$i]->ProfileImage=="")||($SupportDetails[$i]->ProfileImage==null)){
-                                            $SupportDetails[$i]->ProfileImage="assets/images/profile-default.png";
+                                        if(($SupportDetails[$i]->CustomerImage=="")||($SupportDetails[$i]->CustomerImage==null)){
+                                            $SupportDetails[$i]->CustomerImage="assets/images/profile-default.png";
                                         }
                                     ?>
-                                    <img src="{{url('/')}}/{{$SupportDetails[$i]->ProfileImage}}">
+                                    <img src="{{url('/')}}/{{$SupportDetails[$i]->CustomerImage}}">
                                 </div>
                                 <h4 class="card-title">{{$SupportDetails[$i]->Name}} <br> <span>Posted on : {{date('d/m/Y',strtotime($SupportDetails[$i]->CreatedOn))}} at {{date('h:iA',strtotime($SupportDetails[$i]->CreatedOn))}}</span></h4>
                                 <a class="heading-elements-toggle"><i class="fa fa-ellipsis font-medium-3"></i></a>
@@ -74,7 +74,7 @@
                                                     @for($j=0;$j<count($SupportDetails[$i]->Attachments);$j++)
                                                         @if($SupportDetails[$i]->Attachments[$j]->UploadUrl!="")
                                                             <div class="col-sm-2">
-                                                                <?php 
+                                                                <?php
                                                                     if(file_exists($SupportDetails[$i]->Attachments[$j]->UploadUrl)){
                                                                         $ext = pathinfo($SupportDetails[$i]->Attachments[$j]->UploadUrl, PATHINFO_EXTENSION);
                                                                         $ext=strtolower($ext);
@@ -149,7 +149,7 @@
                                     <div class="col-sm-12">
                                         <div class="form-group">
                                             <label for="txtDescription">Description <span class="required">*</span></label>
-                                            <textarea class="form-control" id="txtDescription" rows=5></textarea>
+                                            <textarea class="form-control" id="txtDescription" rows=5 autocomplete="off"></textarea>
                                             <span class="errors" id="txtDescription-err"></span>
                                         </div>
                                     </div>

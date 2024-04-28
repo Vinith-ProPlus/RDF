@@ -570,7 +570,8 @@ class CustomerAuthController extends Controller{
         $Notifications = DB::Table('tbl_notifications as N')->leftJoin('tbl_order as O','O.OrderID','N.RouteID')
             ->where('N.CustomerID', $CustomerID)
             ->orderBy('N.CreatedOn','desc')
-            ->select('N.*','O.isCustomerRated')
+            ->select('N.*')
+//            ->select('N.*','O.isCustomerRated')
             ->paginate($perPage, ['*'], 'page', $pageNo);
 
         return response()->json([
