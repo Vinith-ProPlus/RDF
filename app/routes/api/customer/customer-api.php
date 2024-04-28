@@ -62,6 +62,8 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/customer/create-saddress', [CustomerAuthController::class, 'createSAddress']);
     Route::post('/customer/update-saddress', [CustomerAuthController::class, 'updateSAddress']);
     Route::post('/customer/delete-saddress', [CustomerAuthController::class, 'DeleteSAddress']);
+//    Check Coupon
+    Route::post('/customer/check-coupon', [MasterController::class, 'checkCoupon']);
 });
 
 // Master

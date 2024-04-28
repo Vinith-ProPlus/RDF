@@ -4,10 +4,12 @@ namespace App\Http\Controllers\api\customer;
 
 use App\helper\helper;
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use PHPUnit\Exception;
 
 class MasterController extends Controller
@@ -516,6 +518,33 @@ class MasterController extends Controller
         } catch (\Exception $e) {
             logger($e);
             return $this->errorResponse($e, "Can't get product data", 500);
+        }
+    }
+
+    public function checkCoupon(Request $request)
+    {
+        $validatedData = Validator::make($request->all(), [
+            'coupon_code' => 'required|exists:tbl_coupons,coupon_code',
+        ]);
+
+        if ($validatedData->fails()) {
+            return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+        }
+
+        $coupon = Coupon::where('coupon_code', $request->coupon_code)
+            ->where('DFlag', 0)
+            ->where('ActiveStatus', 'Active')
+            ->first(['COID', 'type', 'value']);
+
+        if($coupon) {
+            if ($coupon->type === 'Percentage') {
+                $coupon->value = $coupon->value . '%';
+            } else {
+                $coupon->value = Helper::formatAmount($coupon->value);
+            }
+            return $this->successResponse($coupon, "Valid Coupon!");
+        }else{
+            return $this->errorResponse([], "In-Valid Coupon!");
         }
     }
 }

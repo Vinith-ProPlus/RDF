@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
+use App\Models\Coupon;
 use App\Models\CustomerCart;
 use App\Models\Wishlist;
 use App\Traits\ApiResponse;
@@ -151,7 +152,10 @@ class CustomerAuthController extends Controller{
     }
     public function getCart(Request $req){
         $customer = $req->auth_customer;
-        $totalAmount = 0;
+        $coupon_code = $req->coupon_code;
+        $coupon_value = 0;
+        $subTotalAmount = 0;
+        $grandTotalAmount = 0;
         $Cart = DB::table('tbl_customer_cart as C')
             ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
             ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
@@ -201,11 +205,43 @@ class CustomerAuthController extends Controller{
             $item->PTotalRate = Helper::formatAmount($product_rate);
             $item->PRate = Helper::formatAmount($item->PRate);
             $item->SRate = Helper::formatAmount($item->SRate);
-            $totalAmount += $product_rate;
+            $subTotalAmount += $product_rate;
             unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
         }
 
-        return response()->json(['status' => true, 'total_amount' => Helper::formatAmount($totalAmount),'total_product_count' => $Cart->count(), 'data' => $Cart]);
+        if($coupon_code) {
+            $coupon = Coupon::where('coupon_code', $coupon_code)
+                ->where('DFlag', 0)
+                ->where('ActiveStatus', 'Active')
+                ->first(['COID', 'type', 'value']);
+            if ($coupon->type === 'Percentage') {
+                $coupon_value = ($subTotalAmount / 100) * $coupon->value;
+            } else {
+                $coupon_value = $coupon->value;
+            }
+        }
+
+        $shipping_charge = ($subTotalAmount > 0) ? 120 : 0;
+        if($coupon_value > $subTotalAmount){
+            $coupon_value = $subTotalAmount;
+        }
+        $grandTotalAmount = ($subTotalAmount + $shipping_charge) - $coupon_value;
+
+        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$customer->CustomerID)
+            ->where('CA.DFlag',0)->where('CA.isDefault',1)
+            ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+            ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+            ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+            ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
+            ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
+            ->orderBy('CA.CreatedOn','desc')
+            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+            ->first();
+
+        return response()->json(['status' => true, 'sub_total_amount' => Helper::formatAmount($subTotalAmount),
+            'coupon_value' => Helper::formatAmount($coupon_value), 'shipping_charge' => Helper::formatAmount($shipping_charge),
+            'grand_total_amount' => Helper::formatAmount($grandTotalAmount),'total_product_count' => $Cart->count(),
+            'shipping_address'=> $SAddress, 'data' => $Cart]);
     }
 
     public function AddCart(Request $request){
