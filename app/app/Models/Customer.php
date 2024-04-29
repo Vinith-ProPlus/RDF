@@ -44,6 +44,7 @@ class Customer extends Model
         "otp",
         "otp_verified",
         "api_token",
+        "fcmToken",
         "CreatedBy",
         "CreatedOn",
         "UpdatedBy",

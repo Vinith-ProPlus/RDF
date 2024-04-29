@@ -110,7 +110,8 @@ class CustomerAPIController extends Controller{
     {
         $validatedData = Validator::make($request->all(), [
             'mobile_no' => 'required|integer|digits:10|exists:tbl_customer,MobileNo1',
-            'otp' => 'required|integer|digits:4'
+            'otp' => 'required|digits:4',
+            'fcmToken' => 'required|string'
         ]);
 
         if ($validatedData->fails()) {
@@ -126,8 +127,8 @@ class CustomerAPIController extends Controller{
 
             $oldCustomer = $customer->replicate();
             if ($customer->otp == $request->otp) {
-                $token = Str::random(60);
-                $customer->update(["api_token"=>$token, "otp" => "", "otp_verified" => true]);
+                $token = $customer->api_token ?? Str::random(60);
+                $customer->update(["api_token" => $token, "fcmToken" => $request->fcmToken, "otp" => "", "otp_verified" => true]);
             } else {
                 return $this->errorResponse([], "Customer OTP is wrong", 422);
             }
