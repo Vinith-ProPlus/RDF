@@ -7,22 +7,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
 use App\Models\Coupon;
 use App\Models\CustomerCart;
+use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\Wishlist;
 use App\Traits\ApiResponse;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
-use Laravel\Passport\RefreshToken;
-use Laravel\Passport\Token;
 use App\enums\activeMenuNames;
-use App\Rules\ValidUnique;
-use App\Rules\ValidDB;
 use App\Models\DocNum;
 use App\enums\docTypes;
 use logs;
@@ -614,6 +611,428 @@ class CustomerAuthController extends Controller{
         }else{
             DB::rollback();
             return response()->json(['status' => false,'message' => "Notification Read Failed!"]);
+        }
+    }
+
+    public function cartOrder(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $customer = $request->auth_customer;
+            $coupon_code = $request->coupon_code;
+            $CustomerID = $customer->CustomerID;
+            $DiscountPer = Helper::formatAmount(0);
+            $coupon_value = 0;
+            $subTotalAmount = 0;
+            $grandTotalAmount = 0;
+            $Cart = DB::table('tbl_customer_cart as C')
+                ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
+                ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
+                ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
+                ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
+                ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
+                ->join('tbl_uom as U', 'U.UID', '=', 'P.UID')
+                ->where('C.CustomerID', $CustomerID)
+                ->where('P.ActiveStatus', 'Active')
+                ->where('P.DFlag', 0)
+                ->where('PC.ActiveStatus', 'Active')
+                ->where('PC.DFlag', 0)
+                ->where('PSC.ActiveStatus', 'Active')
+                ->where('PSC.DFlag', 0)
+                ->select(
+                    'P.ProductName as product_name',
+                    'P.ProductID',
+                    'P.PRate as PRate',
+                    'P.SRate as SRate',
+                    'PV.VariationID as product_variation_id',
+                    'C.Qty',
+                    'PCT.PCTName',
+                    'PCT.PCTID',
+                    'PC.PCName',
+                    'PC.PCID',
+                    'PSC.PSCName',
+                    'U.UName',
+                    'U.UCode',
+                    'U.UID',
+                    'PSC.PSCID',
+                    'PV.Title as variation_title',
+                    'PV.PRate as variation_PRate',
+                    'PV.SRate as variation_SRate'
+                )
+                ->get();
+
+            foreach ($Cart as $item) {
+                if ($item->product_variation_id) {
+                    $item->product_name = $item->variation_title;
+                    $item->PRate = $item->variation_PRate;
+                    $item->SRate = $item->variation_SRate;}
+                $item->PRate = round($item->PRate,2);
+                $item->SRate = round($item->SRate,2);
+                $product_rate = $item->SRate * $item->Qty;
+                $item->PTotalRate = round($product_rate,2);
+                $subTotalAmount += $product_rate;
+                unset($item->variation_title, $item->variation_PRate, $item->variation_SRate);
+            }
+
+            if ($coupon_code) {
+                $coupon = Coupon::where('coupon_code', $coupon_code)->where('DFlag', 0)->where('ActiveStatus', 'Active')
+                    ->first(['COID', 'type', 'value']);
+                if ($coupon->type === 'Percentage') {
+                    $coupon_value = round(($subTotalAmount / 100) * $coupon->value,2);
+                } else {
+                    $coupon_value = $coupon->value;
+                }
+                if ($coupon_value > $subTotalAmount) {
+                    $coupon_value = round($subTotalAmount,2);
+                }
+                if ($coupon->type === 'Percentage') {
+                    $DiscountPer = $coupon->value . "%";
+                } else {
+                    $DiscountPer = Helper::formatAmount($coupon_value);
+                }
+            }
+
+            $shipping_charge = round((($subTotalAmount > 0) ? 120 : 0),2);
+            $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
+
+            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $CustomerID)
+                ->where('CA.DFlag', 0)->where('CA.isDefault', 1)
+                ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+                ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+                ->leftJoin($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+                ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
+                ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
+                ->orderBy('CA.CreatedOn', 'desc')
+                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
+                ->first();
+
+            if ($SAddress && ($grandTotalAmount > 0)) {
+                $OrderID = DocNum::getDocNum(docTypes::Order->value);
+                $data = [
+                    "OrderID" => $OrderID,
+                    "OrderNo" => sprintf("%02d%06d", date('y'), Order::count() + 1),
+                    "CustomerName" => $SAddress->ReceiverName,
+                    "MobileNo1" => $SAddress->ReceiverMobile,
+                    "Email" => $SAddress->ReceiverEmail,
+                    "Address" => $SAddress->Address,
+                    "State" => $SAddress->StateName,
+                    "District" => $SAddress->DistrictName,
+                    "City" => $SAddress->CityName,
+                    "PostalCode" => $SAddress->PostalCode,
+                    "CompleteAddress" => $SAddress->CompleteAddress,
+                    "OrderDate" => date('Y-m-d'),
+                    "SubTotal" => round($subTotalAmount,2),
+                    "DiscountType" => $coupon->type . " Coupon",
+                    "DiscountPer" => $DiscountPer,
+                    "DiscountAmount" => $coupon_value,
+                    "ShippingCharge" => $shipping_charge,
+                    "TotalAmount" => $grandTotalAmount,
+                    "CreatedBy" => $CustomerID,
+                ];
+                $status = Order::create($data);
+                if ($status) {
+                    foreach ($Cart as $item) {
+                        $OrderDetailID = DocNum::getDocNum(docTypes::OrderDetails->value);
+                        $data1 = [
+                            'DetailID' => $OrderDetailID,
+                            'OrderID' => $OrderID,
+                            'CTID' => $item->PCTID,
+                            'CID' => $item->PCID,
+                            'SCID' => $item->PSCID,
+                            'ProductID' => $item->ProductID,
+                            'ProductName' => $item->product_name,
+                            'ProductVariationID' => $item->product_variation_id,
+                            'Qty' => $item->Qty,
+                            'PRate' => $item->PRate,
+                            'SRate' => $item->SRate,
+                            'UOMID' => $item->UID,
+                            'Amount' => $item->PTotalRate,
+                            'CreatedOn' => date('Y-m-d'),
+                            'CreatedBy' => $CustomerID,
+                        ];
+                        $status1 = OrderDetail::create($data1);
+                        if ($status1) {
+                            DocNum::updateDocNum(docTypes::OrderDetails->value);
+                        }
+                    }
+                    DocNum::updateDocNum(docTypes::Order->value);
+                }
+                CustomerCart::where('CustomerID', $CustomerID)->delete();
+                DB::commit();
+                return $this->successResponse(Order::find($status->OrderID), "Cart Order Created Successfully!");
+            } else {
+                return $this->errorResponse([], "Cart is Empty, Can't create Order", 422);
+            }
+        } catch(Exception $e) {
+            logger($e);
+            DB::rollback();
+            return $this->errorResponse($e, "Cart Order Creation Failed!", 422);
+        }
+    }
+    public function buyNowOrder(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $customer = $request->auth_customer;
+            $coupon_code = $request->coupon_code;
+            $CustomerID = $customer->CustomerID;
+            $DiscountPer = Helper::formatAmount(0);
+            $coupon_value = 0;
+            $subTotalAmount = 0;
+            $grandTotalAmount = 0;
+
+            $validatedData = Validator::make($request->all(), [
+                'ProductID' => 'required|string|exists:tbl_products,ProductID',
+                'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
+
+            $ProductID = $request->ProductID;
+            $ProductVariationID = $request->ProductVariationID;
+            $deleteCart = DB::table('tbl_temp_customer_cart')->where('CustomerID', $CustomerID)->delete();
+            $tempCart = DB::table('tbl_temp_customer_cart')->insert(['CustomerID' => $CustomerID, 'ProductID' => $ProductID,
+                'ProductVariationID' => $ProductVariationID]);
+
+            $Cart = DB::table('tbl_temp_customer_cart as C')
+                ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
+                ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
+                ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
+                ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
+                ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
+                ->join('tbl_uom as U', 'U.UID', '=', 'P.UID')
+                ->where('C.CustomerID', $CustomerID)
+                ->where('P.ActiveStatus', 'Active')
+                ->where('P.DFlag', 0)
+                ->where('PC.ActiveStatus', 'Active')
+                ->where('PC.DFlag', 0)
+                ->where('PSC.ActiveStatus', 'Active')
+                ->where('PSC.DFlag', 0)
+                ->select(
+                    'P.ProductName as product_name',
+                    'P.ProductID',
+                    'P.PRate as PRate',
+                    'P.SRate as SRate',
+                    'PV.VariationID as product_variation_id',
+                    'C.Qty',
+                    'PCT.PCTName',
+                    'PCT.PCTID',
+                    'PC.PCName',
+                    'PC.PCID',
+                    'PSC.PSCName',
+                    'U.UName',
+                    'U.UCode',
+                    'U.UID',
+                    'PSC.PSCID',
+                    'PV.Title as variation_title',
+                    'PV.PRate as variation_PRate',
+                    'PV.SRate as variation_SRate')
+                ->get();
+
+            foreach ($Cart as $item) {
+                if ($item->product_variation_id) {
+                    $item->product_name = $item->variation_title;
+                    $item->PRate = $item->variation_PRate;
+                    $item->SRate = $item->variation_SRate;}
+                $item->PRate = round($item->PRate,2);
+                $item->SRate = round($item->SRate,2);
+                $product_rate = $item->SRate * $item->Qty;
+                $item->PTotalRate = round($product_rate,2);
+                $subTotalAmount += $product_rate;
+                unset($item->variation_title, $item->variation_PRate, $item->variation_SRate);
+            }
+
+            if ($coupon_code) {
+                $coupon = Coupon::where('coupon_code', $coupon_code)->where('DFlag', 0)->where('ActiveStatus', 'Active')
+                    ->first(['COID', 'type', 'value']);
+                if ($coupon->type === 'Percentage') {
+                    $coupon_value = round(($subTotalAmount / 100) * $coupon->value,2);
+                } else {
+                    $coupon_value = $coupon->value;
+                }
+                if ($coupon_value > $subTotalAmount) {
+                    $coupon_value = round($subTotalAmount,2);
+                }
+                if ($coupon->type === 'Percentage') {
+                    $DiscountPer = $coupon->value . "%";
+                } else {
+                    $DiscountPer = Helper::formatAmount($coupon_value);
+                }
+            }
+
+            $shipping_charge = round((($subTotalAmount > 0) ? 120 : 0),2);
+            $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
+
+            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $CustomerID)
+                ->where('CA.DFlag', 0)->where('CA.isDefault', 1)
+                ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+                ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+                ->leftJoin($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+                ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
+                ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
+                ->orderBy('CA.CreatedOn', 'desc')
+                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
+                ->first();
+
+            if ($SAddress && ($grandTotalAmount > 0)) {
+                $OrderID = DocNum::getDocNum(docTypes::Order->value);
+                $data = [
+                    "OrderID" => $OrderID,
+                    "OrderNo" => sprintf("%02d%06d", date('y'), Order::count() + 1),
+                    "CustomerName" => $SAddress->ReceiverName,
+                    "MobileNo1" => $SAddress->ReceiverMobile,
+                    "Email" => $SAddress->ReceiverEmail,
+                    "Address" => $SAddress->Address,
+                    "State" => $SAddress->StateName,
+                    "District" => $SAddress->DistrictName,
+                    "City" => $SAddress->CityName,
+                    "PostalCode" => $SAddress->PostalCode,
+                    "CompleteAddress" => $SAddress->CompleteAddress,
+                    "OrderDate" => date('Y-m-d'),
+                    "SubTotal" => round($subTotalAmount,2),
+                    "DiscountType" => $coupon->type . " Coupon",
+                    "DiscountPer" => $DiscountPer,
+                    "DiscountAmount" => $coupon_value,
+                    "ShippingCharge" => $shipping_charge,
+                    "TotalAmount" => $grandTotalAmount,
+                    "CreatedBy" => $CustomerID,
+                ];
+                $status = Order::create($data);
+                if ($status) {
+                    foreach ($Cart as $item) {
+                        $OrderDetailID = DocNum::getDocNum(docTypes::OrderDetails->value);
+                        $data1 = [
+                            'DetailID' => $OrderDetailID,
+                            'OrderID' => $OrderID,
+                            'CTID' => $item->PCTID,
+                            'CID' => $item->PCID,
+                            'SCID' => $item->PSCID,
+                            'ProductID' => $item->ProductID,
+                            'ProductName' => $item->product_name,
+                            'ProductVariationID' => $item->product_variation_id,
+                            'Qty' => $item->Qty,
+                            'PRate' => $item->PRate,
+                            'SRate' => $item->SRate,
+                            'UOMID' => $item->UID,
+                            'Amount' => $item->PTotalRate,
+                            'CreatedOn' => date('Y-m-d'),
+                            'CreatedBy' => $CustomerID,
+                        ];
+                        $status1 = OrderDetail::create($data1);
+                        if ($status1) {
+                            DocNum::updateDocNum(docTypes::OrderDetails->value);
+                        }
+                    }
+                    DocNum::updateDocNum(docTypes::Order->value);
+                }
+                DB::commit();
+                return $this->successResponse(Order::find($status->OrderID), "Buy Now Order Created Successfully!");
+            } else {
+                return $this->errorResponse([], "Can't create Buy Now Order", 422);
+            }
+        } catch(Exception $e) {
+            logger($e);
+            DB::rollback();
+            return $this->errorResponse($e, "Buy Now Order Creation Failed!", 422);
+        }
+    }
+
+    public function customerOrderList(Request $request)
+    {
+        $customer = $request->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        if($request->has('OrderID') && $request->OrderID){
+            try {
+                $CustomerID = $request->auth_customer->CustomerID;
+                $orderDetails = Order::with('orderDetails')
+                    ->where('CreatedBy', $CustomerID)
+                    ->where('OrderID', $request->OrderID)
+                    ->get();
+                $orderDetails->transform(function ($order) {
+                    if ($order->orderDetails) {
+                        $order->orderDetails->transform(function ($detail) {
+                            $detail->PRate = Helper::addRupeesSymbol($detail->PRate);
+                            $detail->SRate = Helper::addRupeesSymbol($detail->SRate);
+                            $detail->Amount = Helper::addRupeesSymbol($detail->Amount);
+                            return $detail;
+                        });
+                    }
+                    $order->SubTotal = Helper::addRupeesSymbol($order->SubTotal);
+                    $order->DiscountAmount = Helper::addRupeesSymbol($order->DiscountAmount);
+                    $order->ShippingCharge = Helper::addRupeesSymbol($order->ShippingCharge);
+                    $order->TotalAmountInString = Helper::addRupeesSymbol($order->TotalAmount);
+                    $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
+                    return $order;
+                });
+
+                return response()->json([
+                    'status' => true,
+                    'data' => $orderDetails,
+                ]);
+            } catch (Exception $e) {
+                logger($e);
+                return $this->errorResponse($e, "Failed to fetch order details", 500);
+            }
+        }else{
+            $pageNo = $request->PageNo ?? 1;
+            $perPage = 15;
+            $orderDetails = Order::with('orderDetails')
+                ->where('CreatedBy', $CustomerID)
+                ->OrderBy('CreatedOn', 'desc')
+                ->paginate($perPage, ['*'], 'page', $pageNo);
+
+            $orderDetails->transform(function ($order) {
+                if ($order->orderDetails) {
+                    $order->orderDetails->transform(function ($detail) {
+                        $detail->PRate = Helper::formatAmount($detail->PRate);
+                        $detail->SRate = Helper::formatAmount($detail->SRate);
+                        $detail->Amount = Helper::formatAmount($detail->Amount);
+                        return $detail;
+                    });
+                }
+                $order->SubTotal = Helper::formatAmount($order->SubTotal);
+                $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
+                $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
+                $order->TotalAmountInString = Helper::formatAmount($order->TotalAmount);
+                $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
+                return $order;
+            });
+
+            return response()->json([
+                'status' => true,
+                'data' => $orderDetails->items(),
+                'CurrentPage' => $orderDetails->currentPage(),
+                'LastPage' => $orderDetails->lastPage(),
+            ]);
+        }
+    }
+
+    public function paymentSuccessStatus(Request $request)
+    {
+        $customer = $request->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $validatedData = Validator::make($request->all(), [
+            'OrderID' => 'required|string|exists:tbl_order,OrderID',
+            'PaymentID' => 'required|string',
+        ]);
+
+        if ($validatedData->fails()) {
+            return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $orderDetails = Order::where('CreatedBy', $CustomerID)
+                ->where('OrderID', $request->OrderID)
+                ->update(['PaymentID', $request->PaymentID]);
+            DB::commit();
+            return $this->successResponse($orderDetails, "Payment Status Successfully Updated");
+        } catch (Exception $e) {
+            logger($e);
+            DB::rollBack();
+            return $this->errorResponse($e, "Failed to update Payment status", 500);
         }
     }
 }
