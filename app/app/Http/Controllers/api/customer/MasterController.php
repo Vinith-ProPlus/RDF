@@ -6,11 +6,11 @@ use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Traits\ApiResponse;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use PHPUnit\Exception;
 
 class MasterController extends Controller
 {
@@ -347,8 +347,8 @@ class MasterController extends Controller
             $customerID = $req->auth_customer->CustomerID;
 
             $products = DB::table('tbl_products as P')
-                ->join('tbl_product_category_type as PCT', 'PCT.PCTID', 'P.CTID')->join('tbl_product_category as PC', 'PC.PCID', 'P.CID')
-                ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')->join('tbl_uom as U', 'U.UID', 'P.UID')
+                ->leftjoin('tbl_product_category_type as PCT', 'PCT.PCTID', 'P.CTID')->leftjoin('tbl_product_category as PC', 'PC.PCID', 'P.CID')
+                ->leftjoin('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
                 ->leftJoin('tbl_wishlists as W', function ($join) use ($customerID) {
                     $join->on('W.product_id', '=', 'P.ProductID')
                         ->where('W.customer_id', '=', $customerID);
@@ -407,6 +407,7 @@ class MasterController extends Controller
                     $direction = $req->has('sorting_direction') && in_array($req->sorting_direction, ['asc', 'desc']) ? $req->sorting_direction : 'asc';
                     return $query->orderBy($sortingKey, $direction);
                 })
+                ->distinct()
                 ->paginate($perPage, ['*'], 'page', $pageNo);
 
             return response()->json([
@@ -510,6 +511,7 @@ class MasterController extends Controller
                 $variation->VImage = Helper::apiCheckImageExistsUrl($variation->VImage);
                 $variation->VImageExt = pathinfo($variation->VImage, PATHINFO_EXTENSION);
                 $variation->VImageFileName = basename($variation->VImage);
+                $variation->IsInWishList = DB::table('tbl_wishlists')->where('customer_id', $req->auth_customer->CustomerID)->where('product_variation_id', $variation->VariationID)->exists();
             }
 
             $result->variation = $variations;

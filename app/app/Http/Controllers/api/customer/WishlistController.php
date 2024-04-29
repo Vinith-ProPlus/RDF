@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\customer;
 
+use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Models\Wishlist;
 use App\Traits\ApiResponse;
@@ -84,38 +85,45 @@ class WishlistController extends Controller
     public function my_wishlist(Request $request): JsonResponse
     {
         try {
-            $customer_id = $request->auth_customer->CustomerID;
-            $wishlistProducts = Wishlist::where('customer_id', $customer_id)->get();
+            $customerId = $request->auth_customer->CustomerID;
+            $searchText = $request->input('SearchText', '');
+
+            $wishlistProducts = Wishlist::where('customer_id', $customerId)->get();
 
             $formattedWishlist = [];
             foreach ($wishlistProducts as $wishlistProduct) {
-                if ($wishlistProduct->product_variation_id) {
-                    $productDetails = DB::table('tbl_products_variation')
-                        ->where('VariationID', $wishlistProduct->product_variation_id)
-                        ->first();
-                    $formattedProduct = [
-                        'product_id' => $wishlistProduct->product_id,
+                $productQuery = $wishlistProduct->product_variation_id
+                    ? DB::table('tbl_products_variation')->where('VariationID', $wishlistProduct->product_variation_id)
+                    : DB::table('tbl_products')->where('ProductID', $wishlistProduct->product_id);
+
+                if (!empty($searchText)) {
+                    if($wishlistProduct->product_variation_id) {
+                        $productQuery->where('Title', 'like', "%$searchText%");
+                    } else {
+                        $productQuery->where('ProductName', 'like', "%$searchText%");
+                    }
+                }
+
+                $productDetails = $productQuery->first();
+                if ($productDetails) {
+                    if ($wishlistProduct->product_variation_id) {
+                        $productImage = $productDetails->VImage ? url($productDetails->VImage) : url('assets/images/no-image-b.png');
+                        $productName = $productDetails->Title;
+                    } else {
+                        $productImage = $productDetails->ProductImage ? url($productDetails->ProductImage) : url('assets/images/no-image-b.png');
+                        $productName = $productDetails->ProductName;
+                    }
+                    $formattedWishlist[] = [
+                        'product_id' => $productDetails->ProductID,
                         'product_variation_id' => $wishlistProduct->product_variation_id,
-                        'Title' => $productDetails->Title,
-                        'PRate' => $productDetails->PRate,
-                        'SRate' => $productDetails->SRate,
-                        'ProductImage' => $productDetails->VImage ? url($productDetails->VImage) : url('assets/images/no-image-b.png'), // Assuming VImage contains the image URL
-                    ];
-                } else {
-                    $productDetails = DB::table('tbl_products')
-                        ->where('ProductID', $wishlistProduct->product_id)
-                        ->first();
-                    $formattedProduct = [
-                        'product_id' => $wishlistProduct->product_id,
-                        'product_variation_id' => null,
-                        'Title' => $productDetails->ProductName,
-                        'PRate' => $productDetails->PRate,
-                        'SRate' => $productDetails->SRate,
-                        'ProductImage' => $productDetails->ProductImage ? url($productDetails->ProductImage) : url('assets/images/no-image-b.png'), // Assuming ProductImage contains the image URL
+                        'Title' => $productName,
+                        'PRate' => Helper::formatAmount($productDetails->PRate),
+                        'SRate' => Helper::formatAmount($productDetails->SRate),
+                        'ProductImage' => $productImage
                     ];
                 }
-                $formattedWishlist[] = $formattedProduct;
             }
+
             return $this->successResponse($formattedWishlist, "Wishlist items fetched successfully");
 
         } catch (Exception $e) {
@@ -123,4 +131,5 @@ class WishlistController extends Controller
             return $this->errorResponse($e, "Wishlist item fetch failed", 422);
         }
     }
+
 }
