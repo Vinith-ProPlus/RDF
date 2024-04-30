@@ -539,7 +539,9 @@ class OrderController extends Controller{
 
             try {
                 $OldData = Order::where('OrderID', $OrderID)->first();
-
+                if(!$OldData->PaymentID){
+                    return array('status' => false, 'message' => "Payment not completed. So, This Request can't be processed!");
+                }
                 $data = array(
                     "TrackStatus" => $req->TrackStatus,
                     "UpdatedBy" => $this->UserID,
@@ -567,7 +569,8 @@ class OrderController extends Controller{
                     $Title = "Order Delivered";
                     $Message = "Your Order delivered successfully";
                 }
-                CustomerOrderTrack::where('OrderID', $OrderID)->where('Status', $req->TrackStatus)
+                $TrackStatus = ($req->TrackStatus == "Delivered") ? "Delivery Expected On" : $req->TrackStatus;
+                CustomerOrderTrack::where('OrderID', $OrderID)->where('Status', $TrackStatus)
                     ->update(["Status" => $req->TrackStatus, "Description"=> $Description, "StatusDate" => Carbon::now(), "UpdatedBy" => $this->UserID]);
 
                 Helper::saveNotification($OldData->CreatedBy,$Title,$Message,'Order',$OrderID);

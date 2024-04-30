@@ -60,7 +60,7 @@
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstCOType"><b>Payment ID :</b></label>
-                                <label>{{ $EditData[0]->PaymentID }}</label>
+                                <label>{{ $EditData[0]->PaymentID ?? '-' }}</label>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
@@ -69,7 +69,7 @@
                                 <label>{{ $EditData[0]->paymentStatus }}</label>
                             </div>
                         </div>
-                        <div class="col-sm-12 mt-20">
+                        <div class="col-sm-12 mt-20 {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}">
                             <div class="form-group">
                                 <label for="trackStatus"><b>Track status <span class="required"> * </span></b></label>
                                 <select class="form-control {{$Theme['input-size']}}" id="trackStatus">
@@ -106,7 +106,7 @@
                                 @foreach($EditData[0]->orderDetails as $index=>$product)
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td><img src="{{ $product->productImageUrl ?? '-' }}"></td>
+                                        <td><img src="{{ $product->productImageUrl ?? '-' }}" width="150" height="150"></td>
                                         <td>{{ $product->ProductName ?? '-' }}</td>
                                         <td>{{ $product->Qty ?? '-' }}</td>
                                         <td>{{ $product->SRate ?? '-' }}</td>
@@ -114,35 +114,19 @@
                                     </tr>
                                 @endforeach
                                 <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>Sub-Total :</td>
+                                    <td colspan="5" class="text-end">Sub-Total :</td>
                                     <td>{{ $EditData[0]->SubTotal ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>Shipping Charge :</td>
+                                    <td colspan="5" class="text-end">Shipping Charge :</td>
                                     <td>{{ $EditData[0]->ShippingCharge ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>Discount :</td>
+                                    <td colspan="5" class="text-end">Discount :</td>
                                     <td>{{ $EditData[0]->DiscountAmount ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>Grand-Total :</td>
+                                    <td colspan="5" class="text-end">Grand-Total :</td>
                                     <td>{{ $EditData[0]->TotalAmountInString ?? '-' }}</td>
                                 </tr>
                                 </tbody>
@@ -158,7 +142,7 @@
                             @endif
 
                             @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
-                                <button class="btn {{$Theme['button-size']}} btn-outline-success btn-air-success" id="btnSave">@if($isEdit==true) Update @endif</button>
+                                <button class="btn {{$Theme['button-size']}} btn-outline-success btn-air-success {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}" id="btnSave">@if($isEdit==true) Update @endif</button>
                             @endif
                         </div>
                     </div>
