@@ -7,6 +7,7 @@ use App\Http\Controllers\web\generalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\SocialController;
+use App\Http\Controllers\web\OrderController;
 use App\Http\Controllers\web\SupportController;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Route;
@@ -154,6 +155,15 @@ Route::group(['prefix'=>'admin'],function (){
                 Route::post('/activate/{SID}', 'ActivateSupport');
                 Route::post('/deactivate/{SID}', 'DeactivateSupport');
                 Route::get('/details/{SID}', 'SupportDetailsView');
+            });
+        });
+        Route::group(['prefix'=>'orders'],function (){
+            Route::controller(OrderController::class)->group(function () {
+                Route::get('/', 'OrderView');
+                Route::post('/data', 'TableView');
+                Route::get('/edit/{ID}', 'Edit');
+                Route::POST('/edit/{ID}', 'Update');
+                Route::post('/get/order', 'getDetails');
             });
         });
         Route::group(['prefix'=>'master'],function (){

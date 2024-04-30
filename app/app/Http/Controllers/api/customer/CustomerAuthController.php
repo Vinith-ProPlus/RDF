@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
 use App\Models\Coupon;
 use App\Models\CustomerCart;
+use App\Models\CustomerOrderTrack;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Wishlist;
@@ -938,7 +939,6 @@ class CustomerAuthController extends Controller{
             return $this->errorResponse($e, "Buy Now Order Creation Failed!", 422);
         }
     }
-
     public function customerOrderList(Request $request)
     {
         $customer = $request->auth_customer;
@@ -964,6 +964,11 @@ class CustomerAuthController extends Controller{
                     $order->ShippingCharge = Helper::addRupeesSymbol($order->ShippingCharge);
                     $order->TotalAmountInString = Helper::addRupeesSymbol($order->TotalAmount);
                     $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
+                    $order->orderTrackDetails->sortBy('orderBy');
+                    $order->orderTrackDetails->transform(function ($orderTrack) {
+                        $orderTrack->StatusDate = $orderTrack->StatusDate ? Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y') : null;
+                        return $orderTrack;
+                    });
                     return $order;
                 });
 
@@ -978,7 +983,7 @@ class CustomerAuthController extends Controller{
         }else{
             $pageNo = $request->PageNo ?? 1;
             $perPage = 15;
-            $orderDetails = Order::with('orderDetails')
+            $orderDetails = Order::with('orderDetails', 'orderTrackDetails')
                 ->where('CreatedBy', $CustomerID)
                 ->OrderBy('CreatedOn', 'desc')
                 ->paginate($perPage, ['*'], 'page', $pageNo);
@@ -997,6 +1002,11 @@ class CustomerAuthController extends Controller{
                 $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
                 $order->TotalAmountInString = Helper::formatAmount($order->TotalAmount);
                 $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
+                $order->orderTrackDetails->sortBy('orderBy');
+                $order->orderTrackDetails->transform(function ($orderTrack) {
+                    $orderTrack->StatusDate = $orderTrack->StatusDate ? Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y') : null;
+                    return $orderTrack;
+                });
                 return $order;
             });
 
@@ -1024,9 +1034,54 @@ class CustomerAuthController extends Controller{
 
         DB::beginTransaction();
         try {
+            $OrderID = $request->OrderID;
             $orderDetails = Order::where('CreatedBy', $CustomerID)
-                ->where('OrderID', $request->OrderID)
-                ->update(['PaymentID', $request->PaymentID]);
+                ->where('OrderID', $OrderID)
+                ->update(['PaymentID' => $request->PaymentID, 'TrackStatus' => 'Order Confirmed']);
+            $orderTracks = [
+                [
+                    "CustomerID"=> $CustomerID,
+                    "OrderID"=> $OrderID,
+                    "Status"=> "Order Confirmed",
+                    "Description" => "Your Order Has Been Confirmed, You Will Receive Shipped Within 4 To 5 Working Days",
+                    "StatusDate" => Carbon::now(),
+                    "orderBy" => 1,
+                    "UpdatedBy" => $CustomerID
+                ],
+                [
+                    "CustomerID"=> $CustomerID,
+                    "OrderID"=> $OrderID,
+                    "Status"=> "Shipped",
+                    "Description" => "Will Be Updated Soon",
+                    "StatusDate" => null,
+                    "orderBy" => 2,
+                    "UpdatedBy" => $CustomerID
+                ],
+                [
+                    "CustomerID"=> $CustomerID,
+                    "OrderID"=> $OrderID,
+                    "Status"=> "Out To Delivery",
+                    "Description" => "Will Be Updated Once Shipping Is Completed",
+                    "StatusDate" => null,
+                    "orderBy" => 3,
+                    "UpdatedBy" => $CustomerID
+                ],
+                [
+                    "CustomerID"=> $CustomerID,
+                    "OrderID"=> $OrderID,
+                    "Status"=> "Delivery Expected On",
+                    "Description" => "",
+                    "StatusDate" => Carbon::now()->addDays(5),
+                    "orderBy" => 4,
+                    "UpdatedBy" => $CustomerID
+                ]
+            ];
+
+            CustomerOrderTrack::insert($orderTracks);
+
+            $Title = "Order Place Successfully";
+            $Message = "Your Order placed successfully";
+            Helper::saveNotification($CustomerID,$Title,$Message,'Order',$OrderID);
             DB::commit();
             return $this->successResponse($orderDetails, "Payment Status Successfully Updated");
         } catch (Exception $e) {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +19,7 @@ class Order extends Model
     const UPDATED_AT = 'UpdatedOn';
 
 
-    protected $appends = ['productCount'];
+    protected $appends = ['productCount', 'paymentStatus'];
 
     protected $fillable = [
         "OrderID",
@@ -33,6 +34,7 @@ class Order extends Model
         "PostalCode",
         "CompleteAddress",
         "Status",
+        "TrackStatus",
         "OrderDate",
         "SubTotal",
         "DiscountType",
@@ -54,8 +56,14 @@ class Order extends Model
     {
         return $this->hasMany(OrderDetail::class,'OrderID','OrderID');
     }
-
+    public function orderTrackDetails()
+    {
+        return $this->hasMany(CustomerOrderTrack::class, 'OrderID', 'OrderID');
+    }
     public function getproductCountAttribute(){
         return OrderDetail::where('OrderID', $this->OrderID)->count();
+    }
+    public function getpaymentStatusAttribute(){
+        return $this->PaymentID ? "Payment Completed" : "Payment Pending";
     }
 }
