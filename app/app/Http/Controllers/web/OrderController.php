@@ -539,14 +539,15 @@ class OrderController extends Controller{
 
             try {
                 $OldData = Order::where('OrderID', $OrderID)->first();
-                logger($OldData);
-                logger($OldData);
 
                 $data = array(
                     "TrackStatus" => $req->TrackStatus,
                     "UpdatedBy" => $this->UserID,
                     "UpdatedOn" => date("Y-m-d H:i:s")
                 );
+                if($req->TrackStatus === "Delivered"){
+                    $data['Status'] = "Delivered";
+                }
                 $status = Order::where('OrderID', $OrderID)->update($data);
 
                 if ($req->TrackStatus === "Shipped") {
@@ -557,7 +558,11 @@ class OrderController extends Controller{
                     $Description = "Your Order Is Out For Delivery, Our Delivery Person Will Reach You AnyTime";
                     $Title = "Shipment update";
                     $Message = "Your Order in Out of delivery stage";
-                } else if ($req->TrackStatus === "Shipped") {
+                } else if ($req->TrackStatus === "Delivery Expected On") {
+                    $Description = null;
+                    $Title = "Delivery Expected Today";
+                    $Message = "Your Order may delivered today..";
+                } else if ($req->TrackStatus === "Delivered") {
                     $Description = "Your Order Has Been Delivered";
                     $Title = "Order Delivered";
                     $Message = "Your Order delivered successfully";

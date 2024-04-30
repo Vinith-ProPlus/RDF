@@ -788,7 +788,6 @@ class helper{
         ];
         $status = DB::table('tbl_notifications')->insert($Ndata);
         if($status){
-            logger("update sus");
             DocNum::updateDocNum("Notification");
             self::sendNotification($UserID,$Title,$Message);
         }
@@ -798,9 +797,7 @@ class helper{
     public static function sendNotification($UserID,$Title,$Message){
         $firebaseToken=array();
         $sql="Select IFNULL(fcmToken,'') as fcmToken From tbl_customer where ActiveStatus=1 and DFlag=0 and CustomerID='".$UserID."'";
-        logger($sql);
         $result = DB::SELECT($sql);
-        logger($result);
         for($i=0;$i<count($result);$i++){
             if($result[$i]->fcmToken!=""){
                 $firebaseToken[]=$result[$i]->fcmToken;
