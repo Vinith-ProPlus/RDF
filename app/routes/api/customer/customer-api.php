@@ -41,6 +41,7 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/update/nick_name', [CustomerAPIController::class, 'updateNickName']);
     Route::post('/update/language', [CustomerAPIController::class, 'updateLanguage']);
     Route::post('/update/profile', [CustomerAPIController::class, 'profileUpdate']);
+    Route::post('/customer/delete-account', [CustomerAPIController::class, 'deleteAccount']);
     Route::post('/wishlist/add', [WishlistController::class, 'addWishlist']);
     Route::post('/wishlist/remove', [WishlistController::class, 'removeWishlist']);
     Route::post('/wishlist/my_wishlist', [WishlistController::class, 'my_wishlist']);

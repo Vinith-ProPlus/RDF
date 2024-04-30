@@ -305,6 +305,44 @@ class CustomerAPIController extends Controller{
             return $this->errorResponse($e, "Customer profile update Failed", 500);
         }
     }
+    #
+    # Customer Delete Account
+    #
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $customer = $request->auth_customer;
+
+        DB::beginTransaction();
+        try {
+            $oldCustomer = $customer->replicate();
+            $data=[
+                "DFlag" => 1,
+                "UpdatedBy"=>$customer->CustomerID,
+                "UpdatedOn"=>date("Y-m-d H:i:s"),
+                "DeletedBy"=>$customer->CustomerID,
+                "DeletedOn"=>date("Y-m-d H:i:s")
+            ];
+            $customer->update($data);
+
+            $logData = array(
+                "Description" => "Customer Account deleted",
+                "ModuleName" => "Customer",
+                "Action" => "Delete",
+                "ReferID" => $customer->CustomerID,
+                "OldData" => $oldCustomer,
+                "NewData" => $customer,
+                "UserID" => $customer->CustomerID,
+                "IP" => $request->ip()
+            );
+            logController::Store($logData);
+            DB::commit();
+            return $this->successResponse([], "Customer Account Deleted.");
+        } catch (\Exception $e) {
+            logger($e);
+            DB::rollback();
+            return $this->errorResponse($e, "Customer Account deletion Failed", 500);
+        }
+    }
 
     public function homeSearch(Request $req){
             if($req->SearchText){

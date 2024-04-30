@@ -23,7 +23,7 @@ class AuthenticateWithToken
         }
 
         $token = str_replace('Bearer ', '', $token);
-        $customer = Customer::where('api_token', $token)->first();
+        $customer = Customer::where('api_token', $token)->where('DFlag', 0)->first();
 
         if (!$customer) {
             return response()->json(['message' => 'Unauthorized'], 401);
