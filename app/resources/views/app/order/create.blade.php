@@ -98,8 +98,8 @@
                                     <td>Product Image</td>
                                     <td>Product Name</td>
                                     <td>Qty</td>
-                                    <td>Rate</td>
-                                    <td>Total</td>
+                                    <td style="width: 140px !important;">Rate</td>
+                                    <td style="width: 140px !important;">Total</td>
                                 </tr>
                                 </thead>
                                 <tbody>
