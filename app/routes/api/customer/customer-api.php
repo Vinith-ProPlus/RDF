@@ -31,7 +31,6 @@ Route::post('/google-register', [CustomerAPIController::class, 'GoogleRegister']
 Route::post('/place-order', [CustomerTransactionAPIController::class, 'PlaceOrder']);
 Route::post('/get/quote-enquiry', [CustomerTransactionAPIController::class, 'getQuoteEnquiry']);
 
-
 // Customer Profile
 Route::post('/login', [CustomerAPIController::class, 'login']);
 Route::post('/otp_verification', [CustomerAPIController::class, 'OtpVerification']);
@@ -69,6 +68,10 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/order/create/buy-now', [CustomerAuthController::class, 'buyNowOrder']);
     Route::post('/get/OrderList', [CustomerAuthController::class, 'customerOrderList']);
     Route::post('/order/update/payment-success', [CustomerAuthController::class, 'paymentSuccessStatus']);
+
+//    Review
+    Route::post('/review/create', [CustomerAuthController::class, 'createReview']);
+    Route::post('/review/like/create', [CustomerAuthController::class, 'saveReviewLike']);
 
 //    Check Coupon
     Route::post('/customer/check-coupon', [MasterController::class, 'checkCoupon']);

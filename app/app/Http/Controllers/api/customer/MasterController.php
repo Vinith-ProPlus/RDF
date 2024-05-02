@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\ProductReview;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\Request;
@@ -265,6 +266,28 @@ class MasterController extends Controller
                 ->where('P.ProductID', $req->ProductID)
                 ->first();
 
+                $reviews = ProductReview::with('customerDetails')->where('ProductID', $product->ProductID)
+                        ->orderBy('CreatedOn', 'desc')
+                        ->get();
+
+                        $relatedProductIds = unserialize($product->RelatedProducts);
+
+                        if (!is_array($relatedProductIds)) {
+                            $relatedProductIds = explode(',', $relatedProductIds);
+                        }
+        
+                        $relatedProducts = DB::table('tbl_products')
+                            ->whereIn('ProductID', $relatedProductIds)
+                            ->select('ProductID', 'ProductName',
+                                DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
+                                DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
+                                    THEN (SELECT PRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                                    ELSE ' . $product->PRate . ' END) as PRate'),
+                                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
+                                    THEN (SELECT SRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                                    ELSE ' . $product->SRate . ' END) as SRate')
+                            )->get();
+
             $result = (object)[
                 'ProductName' => $product->ProductName,
                 'ProductID' => $product->ProductID,
@@ -284,6 +307,8 @@ class MasterController extends Controller
                 'SRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
                     $product->SRate,
+                    'reviews' => $reviews,
+                    'RelatedProducts' => $relatedProducts,
             ];
 
             $pGallery = DB::table('tbl_products_gallery')
@@ -425,8 +450,9 @@ class MasterController extends Controller
     public function getCustomerProduct(Request $req)
     {
         try {
+            $CustomerID = $req->auth_customer->CustomerID;
             $validatedData = Validator::make($req->all(), [
-                'ProductID' => 'required|string|exists:tbl_products,ProductID'
+                'ProductID' => 'required|string'
             ]);
 
             if ($validatedData->fails()) {
@@ -447,27 +473,32 @@ class MasterController extends Controller
                 ->where('P.ProductID', $req->ProductID)
                 ->first();
 
-            $result = (object)[
-                'ProductName' => $product->ProductName,
-                'ProductID' => $product->ProductID,
-                'PCTName' => $product->PCTName,
-                'PCTID' => $product->PCTID,
-                'PCName' => $product->PCName,
-                'PCID' => $product->PCID,
-                'PSCName' => $product->PSCName,
-                'PSCID' => $product->PSCID,
-                'UName' => $product->UName,
-                'UCode' => $product->UCode,
-                'UID' => $product->UID,
-                'ProductImage' => config('app.url') . '/' . (!empty($product->ProductImage) ? $product->ProductImage : 'assets/images/no-image-b.png'),
-                'PRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
-                    DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->orderBy('SRate')->value('PRate') :
-                    $product->PRate,
-                'SRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
-                    DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
-                    $product->SRate,
-                'IsInWishlist' => DB::table('tbl_wishlists')->where('customer_id', $req->auth_customer->CustomerID)->where('product_id', $product->ProductID)->exists()
-            ];
+            if (!$product) {
+                return $this->errorResponse('Product not found', 'Product not found', 404);
+            }
+
+            $relatedProductIds = unserialize($product->RelatedProducts);
+
+                if (!is_array($relatedProductIds)) {
+                    $relatedProductIds = explode(',', $relatedProductIds);
+                }
+
+                $relatedProducts = DB::table('tbl_products')
+                ->leftJoin('tbl_wishlists', function($join) use ($CustomerID) {
+                    $join->on('tbl_products.ProductID', '=', 'tbl_wishlists.product_id')
+                         ->where('tbl_wishlists.customer_id', '=', $CustomerID);
+                })
+                    ->whereIn('ProductID', $relatedProductIds)
+                    ->select('ProductID', 'ProductName',
+                        DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
+                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
+                            THEN (SELECT PRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                            ELSE ' . $product->PRate . ' END) as PRate'),
+                            DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
+                            THEN (SELECT SRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                            ELSE ' . $product->SRate . ' END) as SRate'),
+                            DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
+                    )->get();
 
             $pGallery = DB::table('tbl_products_gallery')
                 ->select('gImage', 'ImgID')
@@ -479,8 +510,6 @@ class MasterController extends Controller
                 $galleryItem->ext = pathinfo($galleryItem->gImage, PATHINFO_EXTENSION);
                 $galleryItem->gImage = Helper::apiCheckImageExistsUrl($galleryItem->gImage);
             }
-
-            $result->gallery = $pGallery;
 
             $variations = DB::table('tbl_products_variation')
                 ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate', 'VImage', 'Attributes', 'CombinationID')
@@ -511,10 +540,46 @@ class MasterController extends Controller
                 $variation->VImage = Helper::apiCheckImageExistsUrl($variation->VImage);
                 $variation->VImageExt = pathinfo($variation->VImage, PATHINFO_EXTENSION);
                 $variation->VImageFileName = basename($variation->VImage);
-                $variation->IsInWishList = DB::table('tbl_wishlists')->where('customer_id', $req->auth_customer->CustomerID)->where('product_variation_id', $variation->VariationID)->exists();
             }
 
-            $result->variation = $variations;
+            $reviews = ProductReview::with('customerDetails')->where('ProductID', $product->ProductID)
+                        ->orderBy('CreatedOn', 'desc')
+                        ->get()
+                        ->map(function ($review) use ($CustomerID, $product) {
+                            $review->isHelpful = DB::table('tbl_review_likes')
+                                ->where('ProductID', $product->ProductID)
+                                ->where('CustomerID', $CustomerID)
+                                ->where('ReviewID', $review->ReviewID)
+                                ->exists();
+                            return $review;
+                        });
+                        // Need to check the ReviewID also match with the record
+
+            $result = (object)[
+                'ProductName' => $product->ProductName,
+                'ProductID' => $product->ProductID,
+                'PCTName' => $product->PCTName,
+                'PCTID' => $product->PCTID,
+                'PCName' => $product->PCName,
+                'PCID' => $product->PCID,
+                'PSCName' => $product->PSCName,
+                'PSCID' => $product->PSCID,
+                'UName' => $product->UName,
+                'UCode' => $product->UCode,
+                'UID' => $product->UID,
+                'ProductImage' => config('app.url') . '/' . (!empty($product->ProductImage) ? $product->ProductImage : 'assets/images/no-image-b.png'),
+                'PRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
+                    DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->orderBy('SRate')->value('PRate') :
+                    $product->PRate,
+                'SRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
+                    DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
+                    $product->SRate,
+                'IsInWishlist' => DB::table('tbl_wishlists')->where('customer_id', $CustomerID)->where('product_id', $product->ProductID)->exists(),
+                'RelatedProducts' => $relatedProducts,
+                'gallery' => $pGallery,
+                'variation' => $variations,
+                'reviews' => $reviews,
+            ];
 
             return $this->successResponse($result, "Product found!");
         } catch (\Exception $e) {

@@ -10,7 +10,11 @@ use App\Models\CustomerCart;
 use App\Models\CustomerOrderTrack;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Product;
+use App\Models\ProductReview;
+use App\Models\ReviewLike;
 use App\Models\Wishlist;
+use App\Rules\ValidDB;
 use App\Traits\ApiResponse;
 use Carbon\Carbon;
 use Exception;
@@ -373,17 +377,38 @@ class CustomerAuthController extends Controller{
         $OldData=DB::table('tbl_customer_address')->where('CustomerID',$CustomerID)->get();
         $status=false;
         try {
+            $ValidDB=[];
+            $ValidDB['City']['TABLE']=$this->generalDB."tbl_cities";
+            $ValidDB['City']['ErrMsg']="City name does  not exist";
+            $ValidDB['City']['WHERE'][]=array("COLUMN"=>"CityID","CONDITION"=>"=","VALUE"=>$req->CityID);
+            $ValidDB['City']['WHERE'][]=array("COLUMN"=>"StateID","CONDITION"=>"=","VALUE"=>$req->StateID);
+
+            //States
+            $ValidDB['State']['TABLE']=$this->generalDB."tbl_states";
+            $ValidDB['State']['ErrMsg']="State name does  not exist";
+            $ValidDB['State']['WHERE'][]=array("COLUMN"=>"StateID","CONDITION"=>"=","VALUE"=>$req->StateID);
+
+            //District
+            $ValidDB['District']['TABLE']=$this->generalDB."tbl_districts";
+            $ValidDB['District']['ErrMsg']="District name does  not exist";
+            $ValidDB['District']['WHERE'][]=array("COLUMN"=>"DistrictID","CONDITION"=>"=","VALUE"=>$req->DistrictID);
+
+            //Postal Code
+            $ValidDB['PostalCode']['TABLE']=$this->generalDB."tbl_postalcodes";
+            $ValidDB['PostalCode']['ErrMsg']="Postal Code  does not exist";
+            $ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"PID","CONDITION"=>"=","VALUE"=>$req->PostalCodeID);
+            $ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"StateID","CONDITION"=>"=","VALUE"=>$req->StateID);
+
             $validatedData = Validator::make($req->all(), [
                 'ReceiverName' => 'required|string',
                 'ReceiverEmail' => 'required|email',
                 'ReceiverMobile' => 'required|string',
                 'AddressType' => 'required|string',
-                'PostalCodeID' => 'required|exists:'.$this->generalDB.'tbl_postalcodes,PID',
-                'CityID' => 'required|exists:'.$this->generalDB.'tbl_cities,CityID',
-                'DistrictID' => 'required|exists:'.$this->generalDB.'tbl_districts,DistrictID',
-                'StateID' => 'required|exists:'.$this->generalDB.'tbl_states,StateID',
+                'PostalCodeID' => ['required',new ValidDB($ValidDB['PostalCode'])],
+                'CityID' => ['required',new ValidDB($ValidDB['City'])],
+                'StateID' => ['required',new ValidDB($ValidDB['State'])],
+                'DistrictID' => ['required',new ValidDB($ValidDB['District'])]
             ]);
-
             if ($validatedData->fails()) {
                 return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
             }
@@ -526,7 +551,6 @@ class CustomerAuthController extends Controller{
         }
         if($status==true){
             DB::commit();
-            DB::Table('tbl_customer_cart')->where('CustomerID',$CustomerID)->delete();
             return response()->json(['status' => true,'message' => "Default Address Set Successfully"]);
         }else{
             DB::rollback();
@@ -678,18 +702,20 @@ class CustomerAuthController extends Controller{
             if ($coupon_code) {
                 $coupon = Coupon::where('coupon_code', $coupon_code)->where('DFlag', 0)->where('ActiveStatus', 'Active')
                     ->first(['COID', 'type', 'value']);
-                if ($coupon->type === 'Percentage') {
-                    $coupon_value = round(($subTotalAmount / 100) * $coupon->value,2);
-                } else {
-                    $coupon_value = $coupon->value;
-                }
-                if ($coupon_value > $subTotalAmount) {
-                    $coupon_value = round($subTotalAmount,2);
-                }
-                if ($coupon->type === 'Percentage') {
-                    $DiscountPer = $coupon->value . "%";
-                } else {
-                    $DiscountPer = Helper::formatAmount($coupon_value);
+                if($coupon) {
+                    if ($coupon->type === 'Percentage') {
+                        $coupon_value = round(($subTotalAmount / 100) * $coupon->value, 2);
+                    } else {
+                        $coupon_value = $coupon->value;
+                    }
+                    if ($coupon_value > $subTotalAmount) {
+                        $coupon_value = round($subTotalAmount, 2);
+                    }
+                    if ($coupon->type === 'Percentage') {
+                        $DiscountPer = $coupon->value . "%";
+                    } else {
+                        $DiscountPer = Helper::formatAmount($coupon_value);
+                    }
                 }
             }
 
@@ -723,7 +749,7 @@ class CustomerAuthController extends Controller{
                     "CompleteAddress" => $SAddress->CompleteAddress,
                     "OrderDate" => date('Y-m-d'),
                     "SubTotal" => round($subTotalAmount,2),
-                    "DiscountType" => $coupon->type . " Coupon",
+                    "DiscountType" => isset($coupon) ? $coupon->type . " Coupon" : "",
                     "DiscountPer" => $DiscountPer,
                     "DiscountAmount" => $coupon_value,
                     "ShippingCharge" => $shipping_charge,
@@ -893,7 +919,7 @@ class CustomerAuthController extends Controller{
                     "CompleteAddress" => $SAddress->CompleteAddress,
                     "OrderDate" => date('Y-m-d'),
                     "SubTotal" => round($subTotalAmount,2),
-                    "DiscountType" => $coupon->type . " Coupon",
+                    "DiscountType" => isset($coupon) ? $coupon->type . " Coupon" : "",
                     "DiscountPer" => $DiscountPer,
                     "DiscountAmount" => $coupon_value,
                     "ShippingCharge" => $shipping_charge,
@@ -1088,6 +1114,73 @@ class CustomerAuthController extends Controller{
             logger($e);
             DB::rollBack();
             return $this->errorResponse($e, "Failed to update Payment status", 500);
+        }
+    }
+
+    public function createReview(Request $request)
+    {
+        $customer = $request->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $validatedData = Validator::make($request->all(), [
+            'OrderID' => 'required|string|exists:tbl_order,OrderID',
+            'ProductID' => 'required|string',
+            'rating' => 'required|string',
+            'review' => 'required|string',
+        ]);
+
+        if ($validatedData->fails()) {
+            return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+        }
+        DB::beginTransaction();
+        try {
+            $OrderID = $request->OrderID;
+            $order = OrderDetail::where('CreatedBy', $CustomerID)->where('OrderID', $OrderID)
+                ->where('ProductID', $request->ProductID)->exists();
+            $ProductReview = ProductReview::where([
+                "CustomerID" => $CustomerID,
+                "OrderID" => $request->OrderID,
+                "ProductID" => $request->ProductID
+            ])->exists();
+            if ($order && (!$ProductReview)) {
+                $data = [
+                    "CustomerID" => $CustomerID,
+                    "OrderID" => $request->OrderID,
+                    "ProductID" => $request->ProductID,
+                    "rating" => $request->rating,
+                    "review" => $request->review,
+                ];
+                $productReview = ProductReview::create($data);
+            } else {
+                return $this->errorResponse([], "Not eligible to review this product", 500);
+            }
+            DB::commit();
+            return $this->successResponse($productReview, "Review saved Successfully.");
+        } catch (Exception $e) {
+            logger($e);
+            DB::rollBack();
+            return $this->errorResponse($e, "Failed to save the review", 500);
+        }
+    }
+    public function saveReviewLike(Request $request)
+    {
+        $customer = $request->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        DB::beginTransaction();
+        try {
+            $validation = ((DB::table('tbl_product_reviews')->where('ReviewID', $request->ReviewID)->count() > 0)
+                && (DB::table('tbl_products')->where('ProductID', $request->ProductID)->count() > 0));
+            if($validation){
+                $reviewLike = ReviewLike::firstOrCreate(['CustomerID' => $CustomerID, 'ReviewID' => $request->ReviewID,
+                    'ProductID' => $request->ProductID]);
+                DB::commit();
+                return $this->successResponse($reviewLike, "Review Liked Successfully.");
+            } else {
+                return $this->errorResponse([], "Review ID or Product ID mismatch with the DB", 422);
+            }
+        } catch (Exception $e) {
+            logger($e);
+            DB::rollBack();
+            return $this->errorResponse($e, "Failed to like the review", 500);
         }
     }
 }
