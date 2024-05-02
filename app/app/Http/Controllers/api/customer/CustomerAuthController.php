@@ -1113,6 +1113,7 @@ class CustomerAuthController extends Controller{
                     $order->DiscountAmount = Helper::addRupeesSymbol($order->DiscountAmount);
                     $order->ShippingCharge = Helper::addRupeesSymbol($order->ShippingCharge);
                     $order->TotalAmountInString = Helper::addRupeesSymbol($order->TotalAmount);
+                    $order->isReviewed = ProductReview::where('OrderID', $order->OrderID)->exists();
                     $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
                     $order->orderTrackDetails->sortBy('orderBy');
                     $order->orderTrackDetails->transform(function ($orderTrack) {
@@ -1186,54 +1187,69 @@ class CustomerAuthController extends Controller{
         try {
             $OrderID = $request->OrderID;
             $orderDetails = Order::where('CreatedBy', $CustomerID)
-                ->where('OrderID', $OrderID)
-                ->update(['PaymentID' => $request->PaymentID, 'TrackStatus' => 'Order Confirmed']);
-            $orderTracks = [
-                [
-                    "CustomerID"=> $CustomerID,
-                    "OrderID"=> $OrderID,
-                    "Status"=> "Order Confirmed",
-                    "Description" => "Your Order Has Been Confirmed, You Will Receive Shipped Within 4 To 5 Working Days",
-                    "StatusDate" => Carbon::now(),
-                    "orderBy" => 1,
-                    "UpdatedBy" => $CustomerID
-                ],
-                [
-                    "CustomerID"=> $CustomerID,
-                    "OrderID"=> $OrderID,
-                    "Status"=> "Shipped",
-                    "Description" => "Will Be Updated Soon",
-                    "StatusDate" => null,
-                    "orderBy" => 2,
-                    "UpdatedBy" => $CustomerID
-                ],
-                [
-                    "CustomerID"=> $CustomerID,
-                    "OrderID"=> $OrderID,
-                    "Status"=> "Out To Delivery",
-                    "Description" => "Will Be Updated Once Shipping Is Completed",
-                    "StatusDate" => null,
-                    "orderBy" => 3,
-                    "UpdatedBy" => $CustomerID
-                ],
-                [
-                    "CustomerID"=> $CustomerID,
-                    "OrderID"=> $OrderID,
-                    "Status"=> "Delivery Expected On",
-                    "Description" => "",
-                    "StatusDate" => Carbon::now()->addDays(5),
-                    "orderBy" => 4,
-                    "UpdatedBy" => $CustomerID
-                ]
-            ];
+                ->where('OrderID', $OrderID)->first();
+            if ($orderDetails->PaymentID === null) {
+                $orderDetails->update(['PaymentID' => $request->PaymentID, 'TrackStatus' => 'Order Confirmed']);
 
-            CustomerOrderTrack::insert($orderTracks);
+                $orderTracks = [
+                    [
+                        "CustomerID" => $CustomerID,
+                        "OrderID" => $OrderID,
+                        "Status" => "Order Confirmed",
+                        "Description" => "Your Order Has Been Confirmed, You Will Receive Shipped Within 4 To 5 Working Days",
+                        "StatusDate" => Carbon::now(),
+                        "orderBy" => 1,
+                        "UpdatedBy" => $CustomerID
+                    ],
+                    [
+                        "CustomerID" => $CustomerID,
+                        "OrderID" => $OrderID,
+                        "Status" => "Shipped",
+                        "Description" => "Will Be Updated Soon",
+                        "StatusDate" => null,
+                        "orderBy" => 2,
+                        "UpdatedBy" => $CustomerID
+                    ],
+                    [
+                        "CustomerID" => $CustomerID,
+                        "OrderID" => $OrderID,
+                        "Status" => "Out To Delivery",
+                        "Description" => "Will Be Updated Once Shipping Is Completed",
+                        "StatusDate" => null,
+                        "orderBy" => 3,
+                        "UpdatedBy" => $CustomerID
+                    ],
+                    [
+                        "CustomerID" => $CustomerID,
+                        "OrderID" => $OrderID,
+                        "Status" => "Delivery Expected On",
+                        "Description" => "",
+                        "StatusDate" => Carbon::now()->addDays(5),
+                        "orderBy" => 4,
+                        "UpdatedBy" => $CustomerID
+                    ]
+                ];
 
-            $Title = "Order Place Successfully";
-            $Message = "Your Order placed successfully";
-            Helper::saveNotification($CustomerID,$Title,$Message,'Order',$OrderID);
-            DB::commit();
-            return $this->successResponse($orderDetails, "Payment Status Successfully Updated");
+                foreach ($orderTracks as $orderTrack) {
+                    $existingOrderTrack = CustomerOrderTrack::where([
+                        'CustomerID' => $orderTrack['CustomerID'],
+                        'OrderID' => $orderTrack['OrderID'],
+                        'Status' => $orderTrack['Status']
+                    ])->first();
+
+                    if (!$existingOrderTrack) {
+                        CustomerOrderTrack::create($orderTrack);
+                    }
+                }
+
+                $Title = "Order Place Successfully";
+                $Message = "Your Order placed successfully";
+                Helper::saveNotification($CustomerID, $Title, $Message, 'Order', $OrderID);
+                DB::commit();
+                return $this->successResponse([], "Payment Status Successfully Updated");
+            } else {
+                return $this->errorResponse([], "Payment status already updated!.", 500);
+            }
         } catch (Exception $e) {
             logger($e);
             DB::rollBack();
