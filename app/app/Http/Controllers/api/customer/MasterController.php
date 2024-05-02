@@ -486,28 +486,28 @@ class MasterController extends Controller
 
             $relatedProductIds = unserialize($product->RelatedProducts);
 
-                if (!is_array($relatedProductIds)) {
-                    $relatedProductIds = explode(',', $relatedProductIds);
-                }
+            if (!is_array($relatedProductIds)) {
+                $relatedProductIds = explode(',', $relatedProductIds);
+            }
 
-                $relatedProducts = DB::table('tbl_products as P')
-                ->leftJoin('tbl_wishlists', function($join) use ($CustomerID) {
+            $relatedProducts = DB::table('tbl_products as P')
+                ->leftJoin('tbl_wishlists', function ($join) use ($CustomerID) {
                     $join->on('P.ProductID', '=', 'tbl_wishlists.product_id')
-                         ->where('tbl_wishlists.customer_id', '=', $CustomerID);
+                        ->where('tbl_wishlists.customer_id', '=', $CustomerID);
                 })->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
                 ->where('P.ActiveStatus', 'Active')
                 ->where('P.DFlag', 0)
-                    ->whereIn('P.ProductID', $relatedProductIds)
-                    ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
-                        DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
-                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                ->whereIn('P.ProductID', $relatedProductIds)
+                ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
+                    DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
+                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
                             THEN (SELECT PRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
                             ELSE P.PRate END) as PRate'),
-                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
                             THEN (SELECT SRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
                             ELSE P.SRate END) as SRate'),
-                        DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
-                    )->get();
+                    DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
+                )->get();
 
             $pGallery = DB::table('tbl_products_gallery')
                 ->select('gImage', 'ImgID')
@@ -552,16 +552,16 @@ class MasterController extends Controller
             }
 
             $reviews = ProductReview::with('customerDetails')->where('ProductID', $product->ProductID)
-                        ->orderBy('CreatedOn', 'desc')
-                        ->get()
-                        ->map(function ($review) use ($CustomerID, $product) {
-                            $review->isHelpful = DB::table('tbl_review_likes')
-                                ->where('ProductID', $product->ProductID)
-                                ->where('CustomerID', $CustomerID)
-                                ->where('ReviewID', $review->ReviewID)
-                                ->exists();
-                            return $review;
-                        });
+                ->orderBy('CreatedOn', 'desc')
+                ->get()
+                ->map(function ($review) use ($CustomerID, $product) {
+                    $review->isHelpful = DB::table('tbl_review_likes')
+                        ->where('ProductID', $product->ProductID)
+                        ->where('CustomerID', $CustomerID)
+                        ->where('ReviewID', $review->ReviewID)
+                        ->exists();
+                    return $review;
+                });
             $ratings = ProductReview::where('ProductID', $product->ProductID)
                 ->avg('rating');
 
