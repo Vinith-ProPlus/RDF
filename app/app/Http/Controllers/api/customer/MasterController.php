@@ -285,8 +285,27 @@ class MasterController extends Controller
                                     ELSE ' . $product->PRate . ' END) as PRate'),
                                     DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
                                     THEN (SELECT SRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                                    ELSE ' . $product->SRate . ' END) as SRate'),
+                                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
+                                    THEN (SELECT SRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
                                     ELSE ' . $product->SRate . ' END) as SRate')
                             )->get();
+                            
+                $relatedProducts = DB::table('tbl_products as P')
+                ->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
+                ->where('P.ActiveStatus', 'Active')
+                ->where('P.DFlag', 0)
+                    ->whereIn('P.ProductID', $relatedProductIds)
+                    ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
+                        DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
+                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                            THEN (SELECT PRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                            ELSE P.PRate END) as PRate'),
+                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                            THEN (SELECT SRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                            ELSE P.SRate END) as SRate')
+                    )->get();
+
 
             $result = (object)[
                 'ProductName' => $product->ProductName,
@@ -483,21 +502,23 @@ class MasterController extends Controller
                     $relatedProductIds = explode(',', $relatedProductIds);
                 }
 
-                $relatedProducts = DB::table('tbl_products')
+                $relatedProducts = DB::table('tbl_products as P')
                 ->leftJoin('tbl_wishlists', function($join) use ($CustomerID) {
-                    $join->on('tbl_products.ProductID', '=', 'tbl_wishlists.product_id')
+                    $join->on('P.ProductID', '=', 'tbl_wishlists.product_id')
                          ->where('tbl_wishlists.customer_id', '=', $CustomerID);
-                })
-                    ->whereIn('ProductID', $relatedProductIds)
-                    ->select('ProductID', 'ProductName',
-                        DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
-                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
-                            THEN (SELECT PRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                            ELSE ' . $product->PRate . ' END) as PRate'),
-                            DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
-                            THEN (SELECT SRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                            ELSE ' . $product->SRate . ' END) as SRate'),
-                            DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
+                })->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
+                ->where('P.ActiveStatus', 'Active')
+                ->where('P.DFlag', 0)
+                    ->whereIn('P.ProductID', $relatedProductIds)
+                    ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
+                        DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
+                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                            THEN (SELECT PRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                            ELSE P.PRate END) as PRate'),
+                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                            THEN (SELECT SRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
+                            ELSE P.SRate END) as SRate'),
+                        DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
                     )->get();
 
             $pGallery = DB::table('tbl_products_gallery')
@@ -553,7 +574,6 @@ class MasterController extends Controller
                                 ->exists();
                             return $review;
                         });
-                        // Need to check the ReviewID also match with the record
 
             $result = (object)[
                 'ProductName' => $product->ProductName,
