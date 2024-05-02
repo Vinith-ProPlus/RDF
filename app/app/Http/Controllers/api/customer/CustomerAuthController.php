@@ -619,7 +619,7 @@ class CustomerAuthController extends Controller{
         try {
             $validatedData = Validator::make($req->all(), [
             'NID' => 'required|exists:tbl_notifications,NID'
-        ]);
+            ]);
 
             if ($validatedData->fails()) {
                 return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
@@ -627,13 +627,10 @@ class CustomerAuthController extends Controller{
             $status = DB::Table('tbl_notifications')
                 ->where('CustomerID', $CustomerID)
                 ->where('NID', $req->NID)->update(['ReadStatus' => 1,'ReadOn'=>date('Y-m-d H:i:s')]);
+                DB::commit();
+                return response()->json(['status' => true ,'message' => "Notification Read Successfully!"]);
         }catch(Exception $e) {
-            $status=false;
-        }
-        if($status === true){
-            DB::commit();
-            return response()->json(['status' => true ,'message' => "Notification Read Successfully!"]);
-        }else{
+            logger($e);
             DB::rollback();
             return response()->json(['status' => false,'message' => "Notification Read Failed!"]);
         }
@@ -812,6 +809,7 @@ class CustomerAuthController extends Controller{
             $validatedData = Validator::make($request->all(), [
                 'ProductID' => 'required|string|exists:tbl_products,ProductID',
                 'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
+                'Qty' => 'required|integer'
             ]);
 
             if ($validatedData->fails()) {
@@ -820,9 +818,10 @@ class CustomerAuthController extends Controller{
 
             $ProductID = $request->ProductID;
             $ProductVariationID = $request->ProductVariationID;
+            $Qty = $request->Qty ?? 1;
             $deleteCart = DB::table('tbl_temp_customer_cart')->where('CustomerID', $CustomerID)->delete();
             $tempCart = DB::table('tbl_temp_customer_cart')->insert(['CustomerID' => $CustomerID, 'ProductID' => $ProductID,
-                'ProductVariationID' => $ProductVariationID]);
+                'ProductVariationID' => $ProductVariationID, 'Qty' => $Qty]);
 
             $Cart = DB::table('tbl_temp_customer_cart as C')
                 ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
@@ -906,12 +905,12 @@ class CustomerAuthController extends Controller{
             ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
             ->first();
 
-        
+
             DB::commit();
             return response()->json(['status' => true, 'sub_total_amount' => Helper::formatAmount($subTotalAmount),
             'coupon_value' => Helper::formatAmount($coupon_value), 'shipping_charge' => Helper::formatAmount($shipping_charge),
             'grand_total_amount' => Helper::formatAmount($grandTotalAmount),'total_product_count' => $Cart->count(),
-            'shipping_address'=> $SAddress, 'data' => $Cart]);    
+            'shipping_address'=> $SAddress, 'data' => $Cart]);
     } catch(Exception $e) {
         logger($e);
         DB::rollback();
@@ -934,6 +933,7 @@ class CustomerAuthController extends Controller{
             $validatedData = Validator::make($request->all(), [
                 'ProductID' => 'required|string|exists:tbl_products,ProductID',
                 'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
+                'Qty' => 'required|integer'
             ]);
 
             if ($validatedData->fails()) {
@@ -942,9 +942,10 @@ class CustomerAuthController extends Controller{
 
             $ProductID = $request->ProductID;
             $ProductVariationID = $request->ProductVariationID;
+            $Qty = $request->Qty ?? 1;
             $deleteCart = DB::table('tbl_temp_customer_cart')->where('CustomerID', $CustomerID)->delete();
             $tempCart = DB::table('tbl_temp_customer_cart')->insert(['CustomerID' => $CustomerID, 'ProductID' => $ProductID,
-                'ProductVariationID' => $ProductVariationID]);
+                'ProductVariationID' => $ProductVariationID, 'Qty' => $Qty]);
 
             $Cart = DB::table('tbl_temp_customer_cart as C')
                 ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
