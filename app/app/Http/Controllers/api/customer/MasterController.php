@@ -270,27 +270,15 @@ class MasterController extends Controller
                         ->orderBy('CreatedOn', 'desc')
                         ->get();
 
+            $ratings = ProductReview::where('ProductID', $product->ProductID)
+                ->avg('rating');
+
                         $relatedProductIds = unserialize($product->RelatedProducts);
 
                         if (!is_array($relatedProductIds)) {
                             $relatedProductIds = explode(',', $relatedProductIds);
                         }
-        
-                        $relatedProducts = DB::table('tbl_products')
-                            ->whereIn('ProductID', $relatedProductIds)
-                            ->select('ProductID', 'ProductName',
-                                DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
-                                DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
-                                    THEN (SELECT PRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                                    ELSE ' . $product->PRate . ' END) as PRate'),
-                                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
-                                    THEN (SELECT SRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                                    ELSE ' . $product->SRate . ' END) as SRate'),
-                                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '")
-                                    THEN (SELECT SRate FROM tbl_products_variation WHERE ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                                    ELSE ' . $product->SRate . ' END) as SRate')
-                            )->get();
-                            
+
                 $relatedProducts = DB::table('tbl_products as P')
                 ->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
                 ->where('P.ActiveStatus', 'Active')
@@ -305,7 +293,6 @@ class MasterController extends Controller
                             THEN (SELECT SRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
                             ELSE P.SRate END) as SRate')
                     )->get();
-
 
             $result = (object)[
                 'ProductName' => $product->ProductName,
@@ -328,6 +315,7 @@ class MasterController extends Controller
                     $product->SRate,
                     'reviews' => $reviews,
                     'RelatedProducts' => $relatedProducts,
+                'ratings' => round($ratings)
             ];
 
             $pGallery = DB::table('tbl_products_gallery')
@@ -574,6 +562,8 @@ class MasterController extends Controller
                                 ->exists();
                             return $review;
                         });
+            $ratings = ProductReview::where('ProductID', $product->ProductID)
+                ->avg('rating');
 
             $result = (object)[
                 'ProductName' => $product->ProductName,
@@ -599,6 +589,7 @@ class MasterController extends Controller
                 'gallery' => $pGallery,
                 'variation' => $variations,
                 'reviews' => $reviews,
+                'ratings' => round($ratings)
             ];
 
             return $this->successResponse($result, "Product found!");
