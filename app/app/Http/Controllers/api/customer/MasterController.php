@@ -266,33 +266,37 @@ class MasterController extends Controller
                 ->where('P.ProductID', $req->ProductID)
                 ->first();
 
-                $reviews = ProductReview::with('customerDetails')->where('ProductID', $product->ProductID)
-                        ->orderBy('CreatedOn', 'desc')
-                        ->get();
+            $reviews = ProductReview::with('customerDetails')->where('ProductID', $product->ProductID)
+                ->orderBy('CreatedOn', 'desc')
+                ->get()
+                ->map(function ($review) {
+                    $review->CreatedOn = date('M d, Y', strtotime($review->CreatedOn));
+                    return $review;
+                });
 
             $ratings = ProductReview::where('ProductID', $product->ProductID)
                 ->avg('rating');
 
-                        $relatedProductIds = unserialize($product->RelatedProducts);
+            $relatedProductIds = unserialize($product->RelatedProducts);
 
-                        if (!is_array($relatedProductIds)) {
-                            $relatedProductIds = explode(',', $relatedProductIds);
-                        }
+            if (!is_array($relatedProductIds)) {
+                $relatedProductIds = explode(',', $relatedProductIds);
+            }
 
-                $relatedProducts = DB::table('tbl_products as P')
+            $relatedProducts = DB::table('tbl_products as P')
                 ->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
                 ->where('P.ActiveStatus', 'Active')
                 ->where('P.DFlag', 0)
-                    ->whereIn('P.ProductID', $relatedProductIds)
-                    ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
-                        DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
-                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                ->whereIn('P.ProductID', $relatedProductIds)
+                ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
+                    DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
+                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
                             THEN (SELECT PRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
                             ELSE P.PRate END) as PRate'),
-                        DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
+                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
                             THEN (SELECT SRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
                             ELSE P.SRate END) as SRate')
-                    )->get();
+                )->get();
 
             $result = (object)[
                 'ProductName' => $product->ProductName,
@@ -313,8 +317,8 @@ class MasterController extends Controller
                 'SRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
                     $product->SRate,
-                    'reviews' => $reviews,
-                    'RelatedProducts' => $relatedProducts,
+                'reviews' => $reviews,
+                'RelatedProducts' => $relatedProducts,
                 'ratings' => round($ratings)
             ];
 
@@ -555,6 +559,7 @@ class MasterController extends Controller
                 ->orderBy('CreatedOn', 'desc')
                 ->get()
                 ->map(function ($review) use ($CustomerID, $product) {
+                    $review->CreatedOn = date('M d, Y', strtotime($review->CreatedOn));
                     $review->isHelpful = DB::table('tbl_review_likes')
                         ->where('ProductID', $product->ProductID)
                         ->where('CustomerID', $CustomerID)
