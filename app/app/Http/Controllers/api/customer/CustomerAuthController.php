@@ -796,6 +796,129 @@ class CustomerAuthController extends Controller{
             return $this->errorResponse($e, "Cart Order Creation Failed!", 422);
         }
     }
+
+    public function buyNowOrderPreview(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $customer = $request->auth_customer;
+            $coupon_code = $request->coupon_code;
+            $CustomerID = $customer->CustomerID;
+            $DiscountPer = Helper::formatAmount(0);
+            $coupon_value = 0;
+            $subTotalAmount = 0;
+            $grandTotalAmount = 0;
+
+            $validatedData = Validator::make($request->all(), [
+                'ProductID' => 'required|string|exists:tbl_products,ProductID',
+                'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
+            ]);
+
+            if ($validatedData->fails()) {
+                return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+            }
+
+            $ProductID = $request->ProductID;
+            $ProductVariationID = $request->ProductVariationID;
+            $deleteCart = DB::table('tbl_temp_customer_cart')->where('CustomerID', $CustomerID)->delete();
+            $tempCart = DB::table('tbl_temp_customer_cart')->insert(['CustomerID' => $CustomerID, 'ProductID' => $ProductID,
+                'ProductVariationID' => $ProductVariationID]);
+
+            $Cart = DB::table('tbl_temp_customer_cart as C')
+                ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
+            ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
+            ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
+            ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
+            ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
+            ->join('tbl_uom as U', 'U.UID', '=', 'P.UID')
+            ->where('C.CustomerID', $customer->CustomerID)
+            ->where('P.ActiveStatus', 'Active')
+            ->where('P.DFlag', 0)
+            ->where('PC.ActiveStatus', 'Active')
+            ->where('PC.DFlag', 0)
+            ->where('PSC.ActiveStatus', 'Active')
+            ->where('PSC.DFlag', 0)
+            ->select(
+                'P.ProductName as product_name',
+                'P.ProductID',
+                'P.PRate as PRate',
+                'P.SRate as SRate',
+                'PV.VariationID as product_variation_id',
+                'C.Qty',
+                'PCT.PCTName',
+                'PCT.PCTID',
+                'PC.PCName',
+                'PC.PCID',
+                'PSC.PSCName',
+                'U.UName',
+                'U.UCode',
+                'U.UID',
+                'PSC.PSCID',
+                'PV.Title as variation_title',
+                'PV.PRate as variation_PRate',
+                'PV.SRate as variation_SRate',
+                'PV.VImage as variation_image',
+                DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage')
+            )
+            ->get();
+
+        foreach ($Cart as $item) {
+            if ($item->product_variation_id) {
+                $item->product_name = $item->variation_title;
+                $item->PRate = $item->variation_PRate;
+                $item->SRate = $item->variation_SRate;
+                $item->ProductImage = $item->variation_image ? url($item->variation_image) : url("assets/images/no-image-b.png");
+            }
+            $product_rate = $item->SRate * $item->Qty;
+            $item->PTotalRate = Helper::formatAmount($product_rate);
+            $item->PRate = Helper::formatAmount($item->PRate);
+            $item->SRate = Helper::formatAmount($item->SRate);
+            $subTotalAmount += $product_rate;
+            unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
+        }
+
+        if($coupon_code) {
+            $coupon = Coupon::where('coupon_code', $coupon_code)
+                ->where('DFlag', 0)
+                ->where('ActiveStatus', 'Active')
+                ->first(['COID', 'type', 'value']);
+            if ($coupon->type === 'Percentage') {
+                $coupon_value = ($subTotalAmount / 100) * $coupon->value;
+            } else {
+                $coupon_value = $coupon->value;
+            }
+        }
+
+        $shipping_charge = ($subTotalAmount > 0) ? 120 : 0;
+        if($coupon_value > $subTotalAmount){
+            $coupon_value = $subTotalAmount;
+        }
+        $grandTotalAmount = ($subTotalAmount + $shipping_charge) - $coupon_value;
+
+        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$customer->CustomerID)
+            ->where('CA.DFlag',0)->where('CA.isDefault',1)
+            ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+            ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+            ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+            ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
+            ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
+            ->orderBy('CA.CreatedOn','desc')
+            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+            ->first();
+
+        
+            DB::commit();
+            return response()->json(['status' => true, 'sub_total_amount' => Helper::formatAmount($subTotalAmount),
+            'coupon_value' => Helper::formatAmount($coupon_value), 'shipping_charge' => Helper::formatAmount($shipping_charge),
+            'grand_total_amount' => Helper::formatAmount($grandTotalAmount),'total_product_count' => $Cart->count(),
+            'shipping_address'=> $SAddress, 'data' => $Cart]);    
+    } catch(Exception $e) {
+        logger($e);
+        DB::rollback();
+        return $this->errorResponse($e, "Buy Now Order Preview Creation Failed!", 422);
+    }
+}
+
     public function buyNowOrder(Request $request)
     {
         DB::beginTransaction();

@@ -61,7 +61,7 @@ class SupportController extends Controller{
 			$FormData['PageTitle']=$this->PageTitle;
             $FormData['PageName']="Account Settings Support Details";
             $FormData['crud']=$this->CRUD;
-            $FormData['users']=DB::table("users")->where("DFlag",0)->where("ActiveStatus",1)->get();
+            $FormData['users']=DB::table("tbl_customer")->where("DFlag",0)->where("ActiveStatus",1)->get();
             return view('app.support.support',$FormData);
         }else{
             return view('errors.403');
@@ -400,35 +400,21 @@ class SupportController extends Controller{
 			$ServerSideProcess=new ServerSideProcess();
 			$columns = array(
 				array( 'db' => 'S.SupportID', 'dt' => '0' ),
-				array( 'db' => 'S.UserID', 'dt' => '1'),
+				array( 'db' => 'U.nick_name', 'dt' => '1'),
 				array( 'db' => 'S.Subject', 'dt' => '2' ),
 				array( 'db' => 'ST.SupportType', 'dt' => '3' ),
-				array( 'db' => 'S.Status', 'dt' => '4' ,),
-				array( 'db' => 'S.CreatedOn', 'dt' => '5'),
-				array( 'db' => 'S.SupportID', 'dt' => '6')
+				array( 'db' => 'S.Priority', 'dt' => '4' ),
+				array( 'db' => 'S.Status', 'dt' => '5' ,),
+				array( 'db' => 'S.CreatedOn', 'dt' => '6'),
+				array( 'db' => 'S.SupportID', 'dt' => '7')
 			);
 			$columns1 = array(
 				array( 'db' => 'SupportID', 'dt' => '0' ),
-				array( 'db' => 'UserID', 'dt' => '1','formatter' =>function($d,$row){
-                    $html='';
-                    return $html;
-
-                } ),
+                array( 'db' => 'nick_name', 'dt' => '1'),
 				array( 'db' => 'Subject', 'dt' => '2' ),
-				array( 'db' => 'SupportType', 'dt' => '3' ),/*
-				array( 'db' => 'Priority', 'dt' => '4', 'formatter' =>function($d,$row){
-                    $d=strtolower($d);
-                    $return='';
-                    if($d=="low"){
-                        $return="<span class='badge block badge-info mr-2'> Low </span>";
-                    }elseif($d=="medium"){
-                        $return="<span class='badge block badge-warning mr-2'> Medium </span>";
-                    }elseif($d=="high"){
-                        $return="<span class='badge block badge-danger mr-2'> High </span>";
-                    }
-                    return $return;
-                } ),*/
-				array( 'db' => 'Status', 'dt' => '4' ,'formatter' => function( $d, $row ) {
+				array( 'db' => 'SupportType', 'dt' => '3' ),
+				array( 'db' => 'Priority', 'dt' => '4' ),
+				array( 'db' => 'Status', 'dt' => '5' ,'formatter' => function( $d, $row ) {
                     $Status="<span class='badge block  badge-secondary mr-2 '> Pending </span>";
                     $result=DB::Table($this->supportDB."tbl_support")->Where("SupportID",$row['SupportID'])->get();
                     if(count($result)>0){
@@ -446,12 +432,12 @@ class SupportController extends Controller{
                     }
 					return $Status;
 				}),
-				array( 'db' => 'CreatedOn', 'dt' => '5','formatter' => function( $d, $row ) {
+				array( 'db' => 'CreatedOn', 'dt' => '6','formatter' => function( $d, $row ) {
                     return date("d - M - Y",strtotime($d));
                 } ),
 				array(
 					'db' => 'SupportID',
-					'dt' => '6',
+					'dt' => '7',
 					'formatter' => function( $d, $row ) {
                         $html='';
                         $html.='<div class="dropdown-hover" style="float:right;padding:10px">';
@@ -484,6 +470,9 @@ class SupportController extends Controller{
             if($request->User!=""){
                 $Where.=" and UserID='".$request->User."'";
             }
+            if($request->Priority){
+                $Where.=" and S.Priority='".$request->Priority."'";
+            }
             if($request->Status=="open"){
                 $Where.=" and S.Status='1' and S.DFlag='0'";
             }elseif($request->Status=="closed"){
@@ -495,7 +484,7 @@ class SupportController extends Controller{
             }
 			$data=array();
 			$data['POSTDATA']=$request;
-			$data['TABLE']=$this->supportDB."tbl_support as S LEFT JOIN tbl_support_type as ST ON ST.SLNO=S.SupportType";
+			$data['TABLE']=$this->supportDB."tbl_support as S LEFT JOIN tbl_support_type as ST ON ST.SLNO=S.SupportType LEFT JOIN tbl_customer as U ON U.CustomerID=S.UserID";
 			$data['PRIMARYKEY']='S.SupportID';
 			$data['COLUMNS']=$columns;
 			$data['COLUMNS1']=$columns1;

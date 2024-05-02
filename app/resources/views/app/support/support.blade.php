@@ -12,8 +12,11 @@
         font-weight: 400 !important;
         line-height: 1.2 !important;
     }
+    tbody td {
+        text-align: center !important;
+    }
 </style>
-<div class="container-fluid mt-100 pt-40">
+<div class="card container-fluid mt-100 pt-40">
     @if($crud['add']==1)
         <div class="row" style="margin-bottom:80px;">
             <div class="col-sm-12 text-right">
@@ -21,7 +24,7 @@
             </div>
         </div>
     @endif
-    <div class="row  d-flex justify-content-center">
+    <div class="row  d-flex justify-content-center mb-20">
         <div class="col-sm-1 text-center fw-700 fs-16 pt-30">
             Filter
         </div>
@@ -43,11 +46,22 @@
                 <select class="form-control select2" id="lstUser">
                     <option value="">All Users</option>
                     @foreach($users as $user)
-                        <option value="{{$user->UserID}}">{{$user->Name}}</option>
+                        <option value="{{ $user->CustomerID }}">{{ $user->CustomerName ?? $user->nick_name }} - {{ $user->MobileNo1 }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
+        <div class="col-sm-2">
+                            <div class="form-group text-center mh-60">
+                                <label style="margin-bottom:0px;">Priority</label>
+                                <select class="form-control" id="lstFPriority">
+                                    <option value="">All</option>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                        </div>
         <div class="col-sm-2">
             <div class="form-group text-center mh-60">
                 <label style="margin-bottom:0px;">Status</label>
@@ -97,6 +111,7 @@
                 let data={
                     FromDate:$('#dtpFromDate').val(),
                     ToDate:$('#dtpToDate').val(),
+                    Priority:$('#lstFPriority').val(),
                     User:$('#lstUser').val(),
                     Status:$('#lstStatus').val()
                 }
@@ -126,6 +141,9 @@
                 $('#tblrequests').DataTable().ajax.reload();
             });
             $('#lstStatus').change(function(){
+                init_DataTable();
+            });
+            $('#lstFPriority').change(function(){
                 init_DataTable();
             });
             $('#lstUser').change(function(){
