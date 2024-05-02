@@ -371,4 +371,91 @@ class CustomerAPIController extends Controller{
                 return response()->json(['status' => false, 'message' => "search text is empty"]);
             }
     }
+
+    public function guestHomeScreen()
+    {
+        try {
+            $response = $this->getHomeScreenBannerAndCategories();
+            $response->products = DB::table('tbl_products as P')
+                ->leftjoin('tbl_product_category_type as PCT', 'PCT.PCTID', 'P.CTID')
+                ->leftjoin('tbl_product_category as PC', 'PC.PCID', 'P.CID')
+                ->leftjoin('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')
+                ->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
+                ->where('P.ActiveStatus', 'Active')->where('P.DFlag', 0)->where('PC.ActiveStatus', 'Active')
+                ->where('PC.DFlag', 0)->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)
+                ->select('P.ProductName', 'P.ProductID', 'PCT.PCTName', 'PCT.PCTID', 'PC.PCName', 'PC.PCID', 'PSC.PSCName', 'PSC.PSCID', 'U.UName', 'U.UCode', 'U.UID',
+                    DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage'),
+                    DB::raw('(SELECT CASE
+                       WHEN EXISTS (SELECT 1 FROM tbl_products_variation WHERE ProductID = P.ProductID)
+                       THEN (SELECT PRate FROM tbl_products_variation WHERE ProductID = P.ProductID ORDER BY SRate ASC LIMIT 1)
+                       ELSE P.PRate
+                     END) AS PRate'),
+                    DB::raw('(SELECT CASE
+                       WHEN EXISTS (SELECT 1 FROM tbl_products_variation WHERE ProductID = P.ProductID) THEN MIN(PV.SRate)
+                       ELSE P.SRate
+                     END
+                     FROM tbl_products_variation AS PV
+                     WHERE PV.ProductID = P.ProductID) AS SRate'),
+                    DB::raw('false AS IsInWishlist'))
+                ->distinct()->take(9)->get();;
+            return $this->successResponse($response, "Guest Home screen data fetched Successfully");
+        } catch (Exception $e) {
+            logger($e);
+            return $this->errorResponse($e, "Guest Home screen data fetch failed", 422);
+        }
+    }
+    public function customerHomeScreen(Request $request)
+    {
+        try {
+            $CustomerID = $request->auth_customer->CustomerID;
+            $response = $this->getHomeScreenBannerAndCategories();
+            $response->products = DB::table('tbl_products as P')
+                ->leftjoin('tbl_product_category_type as PCT', 'PCT.PCTID', 'P.CTID')
+                ->leftjoin('tbl_product_category as PC', 'PC.PCID', 'P.CID')
+                ->leftjoin('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')
+                ->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
+                ->leftJoin('tbl_wishlists as W', function ($join) use ($CustomerID) {
+                    $join->on('W.product_id', '=', 'P.ProductID')
+                        ->where('W.customer_id', '=', $CustomerID);
+                })
+                ->where('P.ActiveStatus', 'Active')->where('P.DFlag', 0)->where('PC.ActiveStatus', 'Active')
+                ->where('PC.DFlag', 0)->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)
+                ->select('P.ProductName', 'P.ProductID', 'PCT.PCTName', 'PCT.PCTID', 'PC.PCName', 'PC.PCID', 'PSC.PSCName', 'PSC.PSCID', 'U.UName', 'U.UCode', 'U.UID',
+                    DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage'),
+                    DB::raw('(SELECT CASE
+                       WHEN EXISTS (SELECT 1 FROM tbl_products_variation WHERE ProductID = P.ProductID)
+                       THEN (SELECT PRate FROM tbl_products_variation WHERE ProductID = P.ProductID ORDER BY SRate ASC LIMIT 1)
+                       ELSE P.PRate
+                     END) AS PRate'),
+                    DB::raw('(SELECT CASE
+                       WHEN EXISTS (SELECT 1 FROM tbl_products_variation WHERE ProductID = P.ProductID) THEN MIN(PV.SRate)
+                       ELSE P.SRate
+                     END
+                     FROM tbl_products_variation AS PV
+                     WHERE PV.ProductID = P.ProductID) AS SRate'),
+                    DB::raw('IF(W.product_id IS NOT NULL, true, false) AS IsInWishlist'))
+                ->distinct()->take(9)->get();;
+            return $this->successResponse($response, "Customer Home screen data fetched Successfully");
+        } catch (Exception $e) {
+            logger($e);
+            return $this->errorResponse($e, "Customer Home screen data fetch failed", 422);
+        }
+    }
+
+    /**
+     * @return \stdClass
+     */
+    public function getHomeScreenBannerAndCategories(): \stdClass
+    {
+        $response = new \stdClass();
+        $response->banners = DB::Table('tbl_banner_images')->where('BannerType', 'Mobile')->where('DFlag', 0)
+            ->select(DB::raw('CONCAT("' . url('/') . '/", BannerImage) AS BannerImage'))
+            ->get();;
+        $response->categories = DB::table('tbl_product_category as PC')
+            ->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)
+            ->select('PC.PCName', 'PC.PCID', 'PC.PCTID',
+                DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PC.PCImage, ""), "assets/images/no-image-b.png")) AS CategoryImage'))
+            ->take(9)->get();;
+        return $response;
+    }
 }
