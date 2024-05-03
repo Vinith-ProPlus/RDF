@@ -38,7 +38,6 @@ class LanguageAPIController extends Controller
             'page' => 'required|string',
         ]);
 
-        // Check if validation fails
         if ($validator->fails()) {
             return response()->json([
                 'error' => $validator->errors()->first()
@@ -50,14 +49,12 @@ class LanguageAPIController extends Controller
 
         $filePath = resource_path('lang/'.$lang.'/'.$page.'.php');
 
-        // Check if the language file exists
         if (!file_exists($filePath)) {
             return response()->json([
                 'error' => 'Language file not found'
             ], 404);
         }
 
-        // Return the translations as a JSON response
         return response()->json([
             'translations' => include $filePath
         ]);

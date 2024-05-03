@@ -415,12 +415,7 @@ class CustomerAuthController extends Controller{
 
             DB::beginTransaction();
                 $AID=DocNum::getDocNum(docTypes::CustomerAddress->value,"",Helper::getCurrentFY());
-            $city = DB::table($this->generalDB.'tbl_cities')->where('CityID', $req->CityID)->value('CityName');
-            $district = DB::table($this->generalDB.'tbl_districts')->where('DistrictID', $req->DistrictID)->value('DistrictName');
-            $state = DB::table($this->generalDB.'tbl_states')->where('StateID', $req->StateID)->value('StateName');
-            $postalCode = DB::table($this->generalDB.'tbl_postalcodes')->where('PID', $req->PostalCodeID)->value('PostalCode');
-
-            $completeAddress = $req->Address . ', ' . $city . ', ' . $district . ', ' . $state . ', ' . $postalCode;
+            $completeAddress = $this->getCompleteAddress($req);
 
             $data=array(
                     "AID"=>$AID,
@@ -467,16 +462,39 @@ class CustomerAuthController extends Controller{
         $OldData = DB::table('tbl_customer_address')->where('CustomerID', $CustomerID)->get();
         $status = false;
         try {
+
+            $ValidDB = [];
+            $ValidDB['City']['TABLE'] = $this->generalDB . "tbl_cities";
+            $ValidDB['City']['ErrMsg'] = "City name does  not exist";
+            $ValidDB['City']['WHERE'][] = array("COLUMN" => "CityID", "CONDITION" => "=", "VALUE" => $req->CityID);
+            $ValidDB['City']['WHERE'][] = array("COLUMN" => "StateID", "CONDITION" => "=", "VALUE" => $req->StateID);
+
+            //States
+            $ValidDB['State']['TABLE'] = $this->generalDB . "tbl_states";
+            $ValidDB['State']['ErrMsg'] = "State name does  not exist";
+            $ValidDB['State']['WHERE'][] = array("COLUMN" => "StateID", "CONDITION" => "=", "VALUE" => $req->StateID);
+
+            //District
+            $ValidDB['District']['TABLE'] = $this->generalDB . "tbl_districts";
+            $ValidDB['District']['ErrMsg'] = "District name does  not exist";
+            $ValidDB['District']['WHERE'][] = array("COLUMN" => "DistrictID", "CONDITION" => "=", "VALUE" => $req->DistrictID);
+
+            //Postal Code
+            $ValidDB['PostalCode']['TABLE'] = $this->generalDB . "tbl_postalcodes";
+            $ValidDB['PostalCode']['ErrMsg'] = "Postal Code  does not exist";
+            $ValidDB['PostalCode']['WHERE'][] = array("COLUMN" => "PID", "CONDITION" => "=", "VALUE" => $req->PostalCodeID);
+            $ValidDB['PostalCode']['WHERE'][] = array("COLUMN" => "StateID", "CONDITION" => "=", "VALUE" => $req->StateID);
+
             $validatedData = Validator::make($req->all(), [
                 'AID' => 'required|exists:tbl_customer_address,AID',
                 'ReceiverName' => 'required|string',
                 'ReceiverEmail' => 'required|email',
                 'ReceiverMobile' => 'required|string',
                 'AddressType' => 'required|string',
-                'PostalCodeID' => 'required|exists:' . $this->generalDB . 'tbl_postalcodes,PID',
-                'CityID' => 'required|exists:' . $this->generalDB . 'tbl_cities,CityID',
-                'DistrictID' => 'required|exists:' . $this->generalDB . 'tbl_districts,DistrictID',
-                'StateID' => 'required|exists:' . $this->generalDB . 'tbl_states,StateID',
+                'PostalCodeID' => ['required',new ValidDB($ValidDB['PostalCode'])],
+                'CityID' => ['required',new ValidDB($ValidDB['City'])],
+                'DistrictID' => ['required',new ValidDB($ValidDB['District'])],
+                'StateID' => ['required',new ValidDB($ValidDB['State'])]
             ]);
 
             if ($validatedData->fails()) {
@@ -484,12 +502,7 @@ class CustomerAuthController extends Controller{
             }
 
             DB::beginTransaction();
-            $city = DB::table($this->generalDB . 'tbl_cities')->where('CityID', $req->CityID)->value('CityName');
-            $district = DB::table($this->generalDB . 'tbl_districts')->where('DistrictID', $req->DistrictID)->value('DistrictName');
-            $state = DB::table($this->generalDB . 'tbl_states')->where('StateID', $req->StateID)->value('StateName');
-            $postalCode = DB::table($this->generalDB . 'tbl_postalcodes')->where('PID', $req->PostalCodeID)->value('PostalCode');
-
-            $completeAddress = $req->Address . ', ' . $city . ', ' . $district . ', ' . $state . ', ' . $postalCode;
+            $completeAddress = $this->getCompleteAddress($req);
 
             $data = array(
                 "CustomerID" => $CustomerID,
@@ -506,22 +519,15 @@ class CustomerAuthController extends Controller{
                 "isDefault" => 1,
                 "CreatedOn" => date("Y-m-d H:i:s")
             );
-            $status = DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->where('AID', $req->AID)->update($data);
-
-            if ($status == true) {
-                DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->whereNot('AID', $req->AID)->update(['isDefault' => 0]);
-            }
-        } catch (Exception $e) {
-            logger($e);
-            $status = false;
-        }
-        if ($status == true) {
+            DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->where('AID', $req->AID)->update($data);
+            DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->whereNot('AID', $req->AID)->update(['isDefault' => 0]);
             DB::commit();
             $NewData = DB::table('tbl_customer_address')->where('CustomerID', $CustomerID)->get();
             $logData = array("Description" => "Shipping Address updated", "ModuleName" => "Customer", "Action" => "Update", "ReferID" => $req->AID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $CustomerID, "IP" => $req->ip());
             logs::Store($logData);
             return response()->json(['status' => true, 'message' => "Shipping Address Updated Successfully"]);
-        } else {
+        } catch (Exception $e) {
+            logger($e);
             DB::rollback();
             return response()->json(['status' => false, 'message' => "Shipping Address Updation Failed"]);
         }
@@ -1322,5 +1328,20 @@ class CustomerAuthController extends Controller{
             DB::rollBack();
             return $this->errorResponse($e, "Failed to like the review", 500);
         }
+    }
+
+    /**
+     * @param Request $req
+     * @return string
+     */
+    public function getCompleteAddress(Request $req): string
+    {
+        $city = DB::table($this->generalDB . 'tbl_cities')->where('CityID', $req->CityID)->value('CityName');
+        $district = DB::table($this->generalDB . 'tbl_districts')->where('DistrictID', $req->DistrictID)->value('DistrictName');
+        $state = DB::table($this->generalDB . 'tbl_states')->where('StateID', $req->StateID)->value('StateName');
+        $postalCode = DB::table($this->generalDB . 'tbl_postalcodes')->where('PID', $req->PostalCodeID)->value('PostalCode');
+
+        $completeAddress = $req->Address . ', ' . $city . ', ' . $district . ', ' . $state . ', ' . $postalCode;
+        return $completeAddress;
     }
 }

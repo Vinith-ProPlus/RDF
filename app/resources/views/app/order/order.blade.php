@@ -16,7 +16,7 @@
         text-align: center !important;
     }
 </style>
-<div class="container-fluid mt-100 pt-40">
+<div class="card container-fluid mt-100 pt-40">
     @if($crud['add']==1)
         <div class="row" style="margin-bottom:80px;">
             <div class="col-sm-12 text-right">
