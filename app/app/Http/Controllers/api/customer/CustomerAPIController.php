@@ -305,6 +305,24 @@ class CustomerAPIController extends Controller{
             return $this->errorResponse($e, "Customer profile update Failed", 500);
         }
     }
+
+    #
+    # Customer profile details
+    #
+    public function profileDetails(Request $request): JsonResponse
+    {
+
+        DB::beginTransaction();
+        try {
+            $customer = $request->auth_customer;
+            DB::commit();
+            return $this->successResponse($customer, "Customer profile details.");
+        } catch (\Exception $e) {
+            logger($e);
+            return $this->errorResponse($e, "Customer profile details fetch Failed", 500);
+        }
+    }
+
     #
     # Customer Delete Account
     #

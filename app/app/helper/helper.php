@@ -834,5 +834,15 @@ class helper{
             return $response;
         }
     }
+    public static function shortenValue($value) {
+        $abbreviations = ["", "K", "M", "B", "T"]; // Add more if needed
 
+        $abbrevIndex = 0;
+        while ($value >= 1000 && $abbrevIndex < count($abbreviations) - 1) {
+            $value /= 1000;
+            $abbrevIndex++;
+        }
+
+        return round($value, 1) . $abbreviations[$abbrevIndex];
+    }
 }

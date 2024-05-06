@@ -1195,7 +1195,7 @@ class CustomerAuthController extends Controller{
             $orderDetails = Order::where('CreatedBy', $CustomerID)
                 ->where('OrderID', $OrderID)->first();
             if ($orderDetails->PaymentID === null) {
-                $orderDetails->update(['PaymentID' => $request->PaymentID, 'TrackStatus' => 'Order Confirmed']);
+                $orderDetails->update(['PaymentID' => $request->PaymentID, 'TrackStatus' => 'Order Confirmed', 'OrderDate' => Carbon::now(), 'ExpectedDelivery' => Carbon::now()->addDays(5)]);
 
                 $orderTracks = [
                     [

@@ -136,10 +136,17 @@ Route::group(['prefix'=>'admin'],function (){
         Route::post('/auth/login', 'login');
     });
     Route::middleware('auth')->group(function () {
-        Route::controller(dashboardController::class)->group(function () {
-            Route::get('/','dashboard');
-            Route::get('/dashboard','dashboard');
-        });
+        Route::get('/', [dashboardController::class, 'dashboard']);
+        Route::get('/dashboard', [dashboardController::class, 'dashboard']);
+        Route::post('/dashboard/get/dashboard-stats', [dashboardController::class, 'getDashboardStats'])->name('admin.dashboard.get.dashboard-stats');
+        Route::post('/dashboard/get/recent/quote-enquiry', [dashboardController::class, 'getRecentQuoteEnquiry'])->name('admin.dashboard.get.recent.quote-enquiry');
+        Route::post('/dashboard/get/recent/orders', [dashboardController::class, 'getRecentOrders'])->name('admin.dashboard.get.recent.orders');
+        Route::post('/dashboard/get/orders/stats', [dashboardController::class, 'getOrderStats'])->name('admin.dashboard.get.orders.stats');
+        Route::post('/dashboard/get/payments/stats', [dashboardController::class, 'getPaymentStats'])->name('admin.dashboard.get.payments.stats');
+        Route::get('/dashboard/get/upcoming/payments', [dashboardController::class, 'getUpcomingPayments'])->name('admin.dashboard.get.upcoming.payments');
+        Route::POST('/dashboard/get/circle/stats/customer', [dashboardController::class, 'getCustomerCircleStats'])->name('admin.dashboard.get.circle.stats.customer');
+        Route::POST('/dashboard/get/circle/stats/orders', [dashboardController::class, 'getOrdersCircleStats'])->name('admin.dashboard.get.circle.stats.orders');
+        Route::POST('/dashboard/get/circle/stats/delivery', [dashboardController::class, 'getDeliveryCircleStats'])->name('admin.dashboard.get.circle.stats.delivery');
         Route::group(['prefix'=>'settings'],function (){
             require __DIR__.'/web/settings.php';
         });
@@ -158,13 +165,11 @@ Route::group(['prefix'=>'admin'],function (){
             });
         });
         Route::group(['prefix'=>'orders'],function (){
-            Route::controller(OrderController::class)->group(function () {
-                Route::get('/', 'OrderView');
-                Route::post('/data', 'TableView');
-                Route::get('/edit/{ID}', 'Edit');
-                Route::POST('/edit/{ID}', 'Update');
-                Route::post('/get/order', 'getDetails');
-            });
+                Route::get('/', [OrderController::class, 'OrderView'])->name('admin.order.index');
+                Route::post('/data', [OrderController::class, 'TableView']);
+                Route::get('/edit/{ID}', [OrderController::class, 'Edit'])->name('admin.order.edit');
+                Route::POST('/edit/{ID}', [OrderController::class, 'Update']);
+                Route::post('/get/order', [OrderController::class, 'getDetails']);
         });
         Route::group(['prefix'=>'master'],function (){
             require __DIR__.'/web/masters/master.php';

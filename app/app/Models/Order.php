@@ -36,6 +36,7 @@ class Order extends Model
         "Status",
         "TrackStatus",
         "OrderDate",
+        "ExpectedDelivery",
         "SubTotal",
         "DiscountType",
         "DiscountPer",

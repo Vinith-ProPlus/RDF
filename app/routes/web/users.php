@@ -56,21 +56,19 @@ Route::controller(PasswordChangeController::class)->group(function () {
     Route::post('/change-password', 'PasswordUpdate');
 });
 
-Route::group(['prefix'=>'manage-customers'],function (){
-    Route::controller(CustomerController::class)->group(function () {
-        Route::get('/', 'view');
-        Route::post('/data', 'TableView');
+Route::group(['prefix' => 'manage-customers'], function () {
+    Route::get('/', [CustomerController::class, 'view'])->name('manage_customers.index');
+    Route::post('/data', [CustomerController::class, 'TableView']);
 
-        Route::get('/create', 'create');
-        Route::get('/edit/{CID}', 'edit');
-        Route::post('/create', 'save');
-        Route::post('/edit/{CID}', 'update');
-        Route::post('/delete/{CID}', 'delete');
-        Route::get('/trash-view/', 'TrashView');
-        Route::post('/trash-data', 'TrashTableView');
-        Route::post('/restore/{CID}', 'Restore');
+    Route::get('/create', [CustomerController::class, 'create']);
+    Route::get('/edit/{CID}', [CustomerController::class, 'edit']);
+    Route::post('/create', [CustomerController::class, 'save']);
+    Route::post('/edit/{CID}', [CustomerController::class, 'update']);
+    Route::post('/delete/{CID}', [CustomerController::class, 'delete']);
+    Route::get('/trash-view/', [CustomerController::class, 'TrashView']);
+    Route::post('/trash-data', [CustomerController::class, 'TrashTableView']);
+    Route::post('/restore/{CID}', [CustomerController::class, 'Restore']);
 
-        Route::post('/address-view','addressView');
-        Route::post('/get/customer-type','getCustomerType');
-    });
+    Route::post('/address-view', [CustomerController::class, 'addressView']);
+    Route::post('/get/customer-type', [CustomerController::class, 'getCustomerType']);
 });
