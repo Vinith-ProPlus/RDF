@@ -73,14 +73,13 @@ class MasterController extends Controller
         }
         return $return;
     }
-    public function getPriceRanges(request $req){
-        $return = [
+    public function getPriceRanges(){
+        return [
             'status' => true,
-            'data' => ["0,200" => "₹ 0 - 200", "200,400" => "₹ 200 - 400", "400,600" => "₹ 400 - 600",
-                "600,1000" => "₹ 600 - 1000", "1000,2000" => "₹ 1000 - 2000", "2000,4000" => "₹ 2000 - 4000",
-                "4000,6000" => "₹ 4000 - 6000", "6000,8000" => "₹ 6000 - 8000", "8000,1000000" => "₹ 8000 & more"],
+            'data' => collect([["key" => "0,200", "value" => "₹ 0 - 200"], ["key" => "200,400", "value" => "₹ 200 - 400"], ["key" => "400,600", "value" => "₹ 400 - 600"],
+                ["key" => "600,1000", "value" => "₹ 600 - 1000"], ["key" => "1000,2000", "value" => "₹ 1000 - 2000"], ["key" => "2000,4000", "value" => "₹ 2000 - 4000"],
+                ["key" => "4000,6000", "value" => "₹ 4000 - 6000"], ["key" => "6000,8000", "value" => "₹ 6000 - 8000"], ["key" => "8000,1000000", "value" => "₹ 8000 & more"]])
         ];
-        return $return;
     }
 
 //    Product Data

@@ -1142,6 +1142,9 @@ class CustomerAuthController extends Controller{
             $perPage = 15;
             $orderDetails = Order::with('orderDetails', 'orderTrackDetails')
                 ->where('CreatedBy', $CustomerID)
+                ->when($request->has('StatusType') && in_array($request->StatusType, ['In progress', 'Delivered']), function ($query) use ($request) {
+                    return $query->where('Status', $request->StatusType);
+                })
                 ->OrderBy('CreatedOn', 'desc')
                 ->paginate($perPage, ['*'], 'page', $pageNo);
 
