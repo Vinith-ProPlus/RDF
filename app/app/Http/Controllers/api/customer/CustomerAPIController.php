@@ -238,15 +238,7 @@ class CustomerAPIController extends Controller{
     {
         $customer = $request->auth_customer;
         $validatedData = Validator::make($request->all(), [
-            'nick_name' => 'required|string|min:5|max:25',
-            "full_name" => 'required|string|min:5|max:255',
-            "Email" => 'required|email|min:5|max:40',
-            "mobile_number" => 'required|numeric',
-            "Address" => 'required|string|min:5|max:255',
-            "PostalCodeID" => 'required|string|min:5|max:25',
-            "CityID" => 'required|string|min:5|max:25',
-            "DistrictID" => 'required|string|min:5|max:25',
-            "StateID" => 'required|string|min:5|max:25',
+            'nick_name' => 'required|string|min:5|max:25'
         ]);
 
         if ($validatedData->fails()) {
@@ -256,33 +248,33 @@ class CustomerAPIController extends Controller{
         DB::beginTransaction();
         try {
             $oldCustomer = $customer->replicate();
-            $CustomerImage="";
-            $dir="uploads/user-and-permissions/customers/".$customer->CustomerID."/";
-            if (!file_exists( $dir)) {mkdir( $dir, 0777, true);}
+            $CustomerImage = "";
+            $dir = "uploads/user-and-permissions/customers/" . $customer->CustomerID . "/";
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
 
-            if($request->CustomerImage && Helper::isJSON($request->CustomerImage)==true){
-                $Img=json_decode($request->CustomerImage);
+            if ($request->CustomerImage && (Helper::isJSON($request->CustomerImage) === true)) {
+                $Img = json_decode($request->CustomerImage);
                 if (isset($Img->uploadPath) && file_exists($Img->uploadPath)) {
-                    $fileName1=$Img->fileName!=""?$Img->fileName:Helper::RandomString(10)."png";
-                    copy($Img->uploadPath,$dir.$fileName1);
-                    $CustomerImage=$dir.$fileName1;
+                    $fileName1 = $Img->fileName != "" ? $Img->fileName : Helper::RandomString(10) . "png";
+                    copy($Img->uploadPath, $dir . $fileName1);
+                    $CustomerImage = $dir . $fileName1;
                     // unlink($Img->uploadPath);
                 }
             }
-            $data=[
+            $data = [
                 "nick_name" => $request->nick_name,
-                "CustomerName" => $request->full_name,
-                "Email" => $request->Email,
-                "MobileNo1" => $request->mobile_number,
-                "Address" => $request->address,
-                "PostalCodeID" => $request->PostalCodeID,
-                "CityID" => $request->CityID,
-                "DistrictID" => $request->DistrictID,
-                "StateID" => $request->StateID,
-                "UpdatedOn"=>date("Y-m-d H:i:s")
+                "UpdatedOn" => date("Y-m-d H:i:s")
             ];
-            if($CustomerImage){
-                $data['CustomerImage']=$CustomerImage;
+            if ($CustomerImage) {
+                $data['CustomerImage'] = $CustomerImage;
+            }
+            if ($request->full_name && ($request->full_name !== "")) {
+                $data['CustomerName'] = $request->full_name;
+            }
+            if ($request->Email && ($request->Email !== "")) {
+                $data['Email'] = $request->Email;
             }
             $customer->update($data);
 
