@@ -24,7 +24,7 @@
             </div>
         </div>
     @endif
-    <div class="row  d-flex justify-content-center">
+    <div class="row d-flex justify-content-center mb-10">
         <div class="col-sm-1 text-center fw-700 fs-16 pt-30">
             Filter
         </div>
@@ -74,7 +74,7 @@
                         <th class="text-center">Amount</th>
                         <th class="text-center">Status</th>
                         <th class="text-center">Ordered Date</th>
-                        <th class="text-center">Action</th>
+                        <th class="text-center noExport">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -120,7 +120,14 @@
                         t2.innerHTML="#"+t[1].replace(/^0+/, '');*/
                     },
                     "ajax": {"url":"{{url('/')}}/admin/orders/data?_token="+$('meta[name=_token]').attr('content'),"headers":{ 'X-CSRF-Token' : "{{ csrf_token() }}" },data:data ,"type": "POST"},
-                    buttons: [],
+                    buttons: [
+                        'pageLength'
+                        @if($crud['excel']==1) ,{extend: 'excel',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
+                        @if($crud['copy']==1) ,{extend: 'copy',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
+                        @if($crud['csv']==1) ,{extend: 'csv',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
+                        @if($crud['print']==1) ,{extend: 'print',className:"{{$Theme['button-size']}}",footer: true,title:  "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
+                        @if($crud['pdf']==1) ,{extend: 'pdf',className:"{{$Theme['button-size']}}",footer: true,title:  "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
+                    ],
                 });
             }
             $('#btnReload').click(function(){
