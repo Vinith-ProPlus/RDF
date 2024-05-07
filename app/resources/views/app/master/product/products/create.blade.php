@@ -480,7 +480,7 @@
                                         @if($OtherCruds['uom']['add']==1)  <button class="btn btn-outline-dark {{$Theme['button-size']}}" id="btnAddUOM" title="add new UoM" ><i class="fa fa-plus"></i></button> @endif
                                     </div>
                                 </div>
-                                <div class="row mt-20">
+                                <div class="row mt-20 d-none">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >Tax  <span class="required"> * </span></div></div>
                                     <div class="col-6 col-lg-8">
                                         <div class="input-group">
@@ -499,7 +499,7 @@
                                         @if($OtherCruds['Tax']['add']==1)  <button class="btn btn-outline-dark {{$Theme['button-size']}}" id="btnAddTax" title="add new tax" ><i class="fa fa-plus"></i></button> @endif
                                     </div>
                                 </div>
-                                <div class="row mt-20">
+                                <div class="row mt-20 d-none">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >Stages <span class="required"> * </span></div></div>
                                     <div class="col-6 col-lg-8">
                                         <select class="form-control {{$Theme['input-size']}} select2" size=1 id="lstStages" data-selected="@if($isEdit){{json_encode(unserialize($data->Stages))}}@endif" multiple>
@@ -537,7 +537,7 @@
                                     </div>
                                     <div class="col-1 col-lg-2 d-flex align-items-center"></div>
                                 </div>
-                                <div class="row mt-20">
+                                <div class="row mt-20 d-none">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >Decimal </div></div>
                                     <div class="col-6 col-lg-8">
                                         <select class="form-control" id="lstDecimal">
@@ -563,7 +563,7 @@
                                     <div class="col-1 col-lg-2 d-flex align-items-center">
                                     </div>
                                 </div>
-                                <div class="row mt-20">
+                                <div class="row mt-20 d-none">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >Product Video URL</div></div>
                                     <div class="col-6 col-lg-8">
                                         <input type="text" id="txtVideoURL" class="form-control" placeholder="Video URL" value="<?php if($isEdit){ echo $data->VideoURL;} ?>">
@@ -676,7 +676,7 @@
                     </div>
                 </div>
             </div>
-            <div class="row">
+            <div class="row d-none">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header"> <h3>Product Brochure</h3> <span class="options"><span class="trash ProductBrochureTrash"><i class="fa fa-trash"></i></span></span></div>
@@ -914,9 +914,9 @@
             CKEDITOR.replace( 'DescriptionEditor' );
             showTabs();
             getCategoryType();
-            getTax();
+            // getTax();
             getUOM();
-            getStages();
+            // getStages();
             @if($isEdit)
                 getProductDetails();
             @endif
@@ -1652,55 +1652,55 @@
             });
             $('#lstSubCategory').select2();
         };
-        const getTax=async()=>{
-            $('#lstTax').select2('destroy');
-            $('#lstTax option').remove();
-            $('#lstTax').append('<option value="" selected>Select a Tax</option>');
-            $.ajax({
-                type:"post",
-                url:"{{url('/')}}/admin/master/product/products/get/tax",
-                headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
-                dataType:"json",
-                async:true,
-                error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},
-                complete: function(e, x, settings, exception){},
-                success:function(response){
-                    for(let Item of response){
-                        let selected="";
-                        if(Item.TaxID==$('#lstTax').attr('data-selected')){selected="selected";}
-                        $('#lstTax').append('<option '+selected+' data-value="'+Item.TaxPercentage+'" value="'+Item.TaxID+'">'+Item.TaxName+' ( '+NumberFormat(Item.TaxPercentage,"percentage")+'% ) </option>');
-                    }
-                    if($('#lstTax').val()!=""){
-                        $('#lstTax').trigger('click');
-                    }
-                }
-            });
-            $('#lstTax').select2();
-        };
-        const getStages=async()=>{
-            $('#lstStages').select2('destroy');
-            $('#lstStages option').remove();
-            $.ajax({
-                type:"post",
-                url:"{{url('/')}}/admin/master/general/stages/get/stage",
-                headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
-                dataType:"json",
-                async:true,
-                error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},
-                complete: function(e, x, settings, exception){},
-                success:function(response){
-                    let selectedValues = $("#lstStages").attr("data-selected");
-                    for(let Item of response){
-                        let selected = selectedValues.includes(Item.StageID) ? "selected" : "";
-                        $('#lstStages').append('<option '+selected+' value="'+Item.StageID+'">'+Item.StageName+'</option>');
-                    }
-                    if($('#lstStages').val()!=""){
-                        $('#lstStages').trigger('click');
-                    }
-                }
-            });
-            $('#lstStages').select2();
-        };
+        {{--const getTax=async()=>{--}}
+        {{--    $('#lstTax').select2('destroy');--}}
+        {{--    $('#lstTax option').remove();--}}
+        {{--    $('#lstTax').append('<option value="" selected>Select a Tax</option>');--}}
+        {{--    $.ajax({--}}
+        {{--        type:"post",--}}
+        {{--        url:"{{url('/')}}/admin/master/product/products/get/tax",--}}
+        {{--        headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },--}}
+        {{--        dataType:"json",--}}
+        {{--        async:true,--}}
+        {{--        error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},--}}
+        {{--        complete: function(e, x, settings, exception){},--}}
+        {{--        success:function(response){--}}
+        {{--            for(let Item of response){--}}
+        {{--                let selected="";--}}
+        {{--                if(Item.TaxID==$('#lstTax').attr('data-selected')){selected="selected";}--}}
+        {{--                $('#lstTax').append('<option '+selected+' data-value="'+Item.TaxPercentage+'" value="'+Item.TaxID+'">'+Item.TaxName+' ( '+NumberFormat(Item.TaxPercentage,"percentage")+'% ) </option>');--}}
+        {{--            }--}}
+        {{--            if($('#lstTax').val()!=""){--}}
+        {{--                $('#lstTax').trigger('click');--}}
+        {{--            }--}}
+        {{--        }--}}
+        {{--    });--}}
+        {{--    $('#lstTax').select2();--}}
+        {{--};--}}
+        {{--const getStages=async()=>{--}}
+        {{--    $('#lstStages').select2('destroy');--}}
+        {{--    $('#lstStages option').remove();--}}
+        {{--    $.ajax({--}}
+        {{--        type:"post",--}}
+        {{--        url:"{{url('/')}}/admin/master/general/stages/get/stage",--}}
+        {{--        headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },--}}
+        {{--        dataType:"json",--}}
+        {{--        async:true,--}}
+        {{--        error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},--}}
+        {{--        complete: function(e, x, settings, exception){},--}}
+        {{--        success:function(response){--}}
+        {{--            let selectedValues = $("#lstStages").attr("data-selected");--}}
+        {{--            for(let Item of response){--}}
+        {{--                let selected = selectedValues.includes(Item.StageID) ? "selected" : "";--}}
+        {{--                $('#lstStages').append('<option '+selected+' value="'+Item.StageID+'">'+Item.StageName+'</option>');--}}
+        {{--            }--}}
+        {{--            if($('#lstStages').val()!=""){--}}
+        {{--                $('#lstStages').trigger('click');--}}
+        {{--            }--}}
+        {{--        }--}}
+        {{--    });--}}
+        {{--    $('#lstStages').select2();--}}
+        {{--};--}}
         const getUOM=async()=>{
             $('#lstUOM').select2('destroy');
             $('#lstUOM option').remove();
@@ -1746,18 +1746,18 @@
             formData.ProductName=$('#txtProductName').val();
             formData.ProductType=$('#lstProductType').val();
             formData.ProductCode=$('#txtProductCode').val();
-            formData.Stages=$('#lstStages').val();
+            // formData.Stages=$('#lstStages').val();
             formData.RelatedProducts=$('#lstRProducts').val();
             formData.VideoURL=$('#txtVideoURL').val();
             formData.HSNSAC=$('#txtHSNSAC').val();
             formData.CategoryType=$('#lstCategoryType').val();
             formData.Category=$('#lstCategory').val();
             formData.SubCategory=$('#lstSubCategory').val();
-            formData.TaxType=$('#lstTaxType').val();
-            formData.TaxID=$('#lstTax').val();
+            // formData.TaxType=$('#lstTaxType').val();
+            // formData.TaxID=$('#lstTax').val();
             formData.UID=$('#lstUOM').val();
-            formData.Decimals=$('#lstDecimal').val();
-            formData.TaxPercentage=$('#lstTax option:selected').attr('data-value');
+            // formData.Decimals=$('#lstDecimal').val();
+            // formData.TaxPercentage=$('#lstTax option:selected').attr('data-value');
             formData.RegularPrice=$('#txtRegularPrice').val();
             formData.SalesPrice=$('#txtSalesPrice').val();
             formData.ActiveStatus=$('#lstActiveStatus').val();
@@ -1799,21 +1799,21 @@
             if(data.Brand==""){
                 $('#lstBrand-err').html('Brand is required');status=false;isGeneral=true;
             }
-            if(data.TaxType==""){
-                $('#lstTaxType-err').html('Tax Type is required');status=false;isGeneral=true;
-            }
-            if(data.TaxID==""){
-                $('#lstTax-err').html('Tax is required');status=false;isGeneral=true;
-            }
+            // if(data.TaxType==""){
+            //     $('#lstTaxType-err').html('Tax Type is required');status=false;isGeneral=true;
+            // }
+            // if(data.TaxID==""){
+            //     $('#lstTax-err').html('Tax is required');status=false;isGeneral=true;
+            // }
             if(data.UID==""){
                 $('#lstUOM-err').html('Unit of measurement is required');status=false;isGeneral=true;
             }
-            if(data.Decimals==""){
-                $('#lstDecimal-err').html('Decimal is required');status=false;isGeneral=true;
-            }
-            if(data.Stages.length == 0){
-                $('#lstStages-err').html('Stages are required');status=false;isGeneral=true;
-            }
+            // if(data.Decimals==""){
+            //     $('#lstDecimal-err').html('Decimal is required');status=false;isGeneral=true;
+            // }
+            // if(data.Stages.length == 0){
+            //     $('#lstStages-err').html('Stages are required');status=false;isGeneral=true;
+            // }
             if(data.RelatedProducts.length > 10){
                 $('#lstRProducts-err').html('Related Products must be less than or equal to 10');status=false;isGeneral=true;
             }
@@ -2024,10 +2024,10 @@
                                     if(key=="CategoryType"){$('#txtCategoryType-err').html(KeyValue);}
                                     if(key=="Category"){$('#txtCategory-err').html(KeyValue);}
                                     if(key=="SubCategory"){$('#lstSubCategory-err').html(KeyValue);}
-                                    if(key=="TaxType"){$('#lstTaxType-err').html(KeyValue);}
-                                    if(key=="TaxID"){$('#lstTax-err').html(KeyValue);}
+                                    // if(key=="TaxType"){$('#lstTaxType-err').html(KeyValue);}
+                                    // if(key=="TaxID"){$('#lstTax-err').html(KeyValue);}
                                     if(key=="UID"){$('#lstUOM-err').html(KeyValue);}
-                                    if(key=="Decimals"){$('#lstDecimal-err').html(KeyValue);}
+                                    // if(key=="Decimals"){$('#lstDecimal-err').html(KeyValue);}
                                     if(key=="RegularPrice"){$('#txtRegularPrice-err').html(KeyValue);}
                                     if(key=="SalesPrice"){$('#txtSalesPrice-err').html(KeyValue);}
                                 });

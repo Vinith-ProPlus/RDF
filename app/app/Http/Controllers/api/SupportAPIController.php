@@ -171,8 +171,8 @@ class SupportAPIController extends Controller{
                 $SupportTickets->where('S.Status', $req->Status);
             }
             if ($req->has('FromDate') && !empty($req->FromDate) && $req->has('ToDate') && !empty($req->ToDate)) {
-                $fromDate = $req->FromDate . ' 00:00:00';
-                $toDate = $req->ToDate . ' 23:59:59';
+                $fromDate = Carbon::parse($req->FromDate)->startOfDay();
+                $toDate = Carbon::parse($req->ToDate)->endOfDay();
                 $SupportTickets->whereBetween('S.CreatedOn', [$fromDate, $toDate]);
             }
             $result = $SupportTickets

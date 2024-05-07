@@ -1,10 +1,10 @@
 <?php
-namespace helper;
+namespace App\helper;
 
 use App\enums\activeMenuNames;
-use App\helper\Exception;
 use App\enums\cruds;
 use App\helper\helper;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use App\Models\DocNum;
 use App\enums\docTypes;
@@ -194,19 +194,19 @@ class ProductHelper {
                         "ProductName"=>$result[0]->ProductName,
                         "ProductType"=>$result[0]->ProductType,
                         "ProductCode"=>$result[0]->ProductCode,
-                        "Stages"=>$result[0]->Stages,
+//                        "Stages"=>$result[0]->Stages,
                         "RelatedProducts"=>$result[0]->RelatedProducts,
-                        "VideoURL"=>$result[0]->VideoURL,
+                        "VideoURL"=>$result[0]->VideoURL ?? '',
                         "HSNSAC"=>$result[0]->HSNSAC,
                         "CTID"=>$result[0]->CTID,
                         "CID"=>$result[0]->CID,
                         "SCID"=>$result[0]->SCID,
                         "UID"=>$result[0]->UID,
-                        "TaxType"=>$result[0]->TaxType,
-                        "TaxID"=>$result[0]->TaxID,
+//                        "TaxType"=>$result[0]->TaxType,
+//                        "TaxID"=>$result[0]->TaxID,
                         "PRate"=>$result[0]->PRate,
                         "SRate"=>$result[0]->SRate,
-                        "Decimals"=>$result[0]->Decimals,
+//                        "Decimals"=>$result[0]->Decimals,
                         "Attributes"=>$result[0]->Attributes,
                         "Description"=>$result[0]->Description,
                         "ShortDescription"=>$result[0]->ShortDescription,
@@ -234,19 +234,19 @@ class ProductHelper {
                         "ProductName"=>$result[0]->ProductName,
                         "ProductType"=>$result[0]->ProductType,
                         "ProductCode"=>$result[0]->ProductCode,
-                        "Stages"=>$result[0]->Stages,
+//                        "Stages"=>$result[0]->Stages,
                         "RelatedProducts"=>$result[0]->RelatedProducts,
-                        "VideoURL"=>$result[0]->VideoURL,
+                        "VideoURL"=>$result[0]->VideoURL ?? '',
                         "HSNSAC"=>$result[0]->HSNSAC,
                         "CTID"=>$result[0]->CTID,
                         "CID"=>$result[0]->CID,
                         "SCID"=>$result[0]->SCID,
                         "UID"=>$result[0]->UID,
-                        "TaxType"=>$result[0]->TaxType,
-                        "TaxID"=>$result[0]->TaxID,
+//                        "TaxType"=>$result[0]->TaxType,
+//                        "TaxID"=>$result[0]->TaxID,
                         "PRate"=>$result[0]->PRate,
                         "SRate"=>$result[0]->SRate,
-                        "Decimals"=>$result[0]->Decimals,
+//                        "Decimals"=>$result[0]->Decimals,
                         "Attributes"=>$result[0]->Attributes,
                         'ProductImage'=>$ProductImage,
                         'ProductBrochure'=>$ProductBrochure,
@@ -565,6 +565,7 @@ class ProductHelper {
                 $status=false;
             }
         }catch(Exception $e) {
+            logger($e);
 			$status=false;
 		}
         DB::connection('mysql2')->Table($tmpDBName."tbl_product_save_status")->where('UserID',$UserID)->delete();
@@ -613,22 +614,22 @@ class ProductHelper {
 		$ValidDB['UOM']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
 		$ValidDB['UOM']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
 		//Tax
-		$ValidDB['Tax']['TABLE']="tbl_tax";
-		$ValidDB['Tax']['ErrMsg']="Tax does not exist";
-		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"TaxID","CONDITION"=>"=","VALUE"=>$req->TaxID);
-		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
+//		$ValidDB['Tax']['TABLE']="tbl_tax";
+//		$ValidDB['Tax']['ErrMsg']="Tax does not exist";
+//		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"TaxID","CONDITION"=>"=","VALUE"=>$req->TaxID);
+//		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
+//		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
 		$rules=array(
 			'ProductName' =>['required','min:2','max:150',new ValidUnique(array("TABLE"=>"tbl_products","WHERE"=>" ProductName='".$req->ProductName."'  and ProductID<>'".$req->ProductID."' "),"This Product Name is already taken.")],
 			'CategoryType'=>['required',new ValidDB($ValidDB['CategoryType'])],
 			'Category'=>['required',new ValidDB($ValidDB['Category'])],
 			'SubCategory'=>['required',new ValidDB($ValidDB['SubCategory'])],
 			'UID'=>['required',new ValidDB($ValidDB['UOM'])],
-			'TaxID'=>['required',new ValidDB($ValidDB['Tax'])],
-			'TaxType'=>'required|in:Include,Exclude',
+//			'TaxID'=>['required',new ValidDB($ValidDB['Tax'])],
+//			'TaxType'=>'required|in:Include,Exclude',
 			'RegularPrice'=>'required|numeric|min:0',
 			'SalesPrice'=>'required|numeric|min:0',
-			'Decimals'=>'required|in:auto, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9',
+//			'Decimals'=>'required|in:auto, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9',
 		);
 		$message=array(
 			'UOM.required'=>"Unit of measurement is required",
@@ -648,7 +649,7 @@ class ProductHelper {
 		try {
 			$ProductID=$req->ProductID!=""?$req->ProductID:date("YmdHis")."-".Helper::RandomString(20);
 			$tmpImage=json_decode($req->ProductImage,true);
-			$tmpDoc=json_decode($req->ProductBrochure,true);
+//			$tmpDoc=json_decode($req->ProductBrochure,true);
 			$gallery=json_decode($req->gallery);
 
 
@@ -659,13 +660,13 @@ class ProductHelper {
                     }
                 }
             }
-            if ($tmpDoc !== null) {
-                if (isset($tmpDoc->data) && !empty((array)$tmpDoc->data)) {
-                    if($tmpDoc->data->referData->isBrochure =="1" && file_exists($tmpDoc->data->uploadPath) ){
-                        $ProductBrochure=$tmpDoc->data->uploadPath;
-                    }
-                }
-            }
+//            if ($tmpDoc !== null) {
+//                if (isset($tmpDoc->data) && !empty((array)$tmpDoc->data)) {
+//                    if($tmpDoc->data->referData->isBrochure =="1" && file_exists($tmpDoc->data->uploadPath) ){
+//                        $ProductBrochure=$tmpDoc->data->uploadPath;
+//                    }
+//                }
+//            }
 			foreach($gallery as $ImgID=>$gData){
 				if($gData->referData->isTemp =="1" && file_exists($gData->uploadPath) ){
 					$fileName1=$gData->fileName!=""?$gData->fileName:Helper::RandomString(10)."png";
@@ -674,13 +675,13 @@ class ProductHelper {
 					$galleryImages[]=$t;
 				}
 			}
-			$data=array(
+			$data=[
 				"ProductID"=>$ProductID,
 				"Slug"=>Helper::generateSlug($req->ProductName),
 				"ProductName"=>$req->ProductName,
 				"ProductType"=>$req->ProductType,
                 "ProductCode"=>$req->ProductCode,
-                'Stages'=>serialize($req->Stages),
+                'Stages'=>serialize([]),
                 'RelatedProducts'=>serialize($req->RelatedProducts),
                 "VideoURL"=>$req->VideoURL ?? '',
 				"HSNSAC"=>$req->HSNSAC,
@@ -688,11 +689,11 @@ class ProductHelper {
 				"CID"=>$req->Category,
 				"SCID"=>$req->SubCategory,
 				"UID"=>$req->UID,
-				"TaxType"=>$req->TaxType,
-				"TaxID"=>$req->TaxID,
+//				"TaxType"=>$req->TaxType,
+//				"TaxID"=>$req->TaxID,
 				"PRate"=>$req->RegularPrice,
 				"SRate"=>$req->SalesPrice,
-				"Decimals"=>$req->Decimals,
+//				"Decimals"=>$req->Decimals,
 				"Description"=>$req->Description,
 				"ShortDescription"=>$req->ShortDescription,
                 "Attributes"=>serialize(json_decode($req->Attributes,true)),
@@ -702,26 +703,21 @@ class ProductHelper {
 				"ActiveStatus"=>$req->ActiveStatus,
 				"CreatedBy"=>$UserID,
 				"CreatedOn"=>date("Y-m-d H:i:s")
-			);
-			$status=DB::Table($tmpDBName.'tbl_products')->insert($data);
-
+			];
+			DB::Table($tmpDBName.'tbl_products')->insert($data);
+            DB::commit();
+            return array('status'=>true,"ProductID"=>$ProductID);
 		}catch(Exception $e) {
-			$status=false;
-		}
-
-		if($status==true){
-			DB::commit();
-			return array('status'=>true,"ProductID"=>$ProductID);
-		}else{
-			DB::rollback();
-			foreach($images as $KeyName=>$Img){
-				Helper::removeFile($Img['url']);
-			}
-			return array('status'=>false,'message'=>"Product Create Failed");
+            logger($e);
+            DB::rollback();
+            foreach($images as $KeyName=>$Img){
+                Helper::removeFile($Img['url']);
+            }
+            return array('status'=>false,'message'=>"Product Create Failed");
 		}
 	}
 	private static function variationSave($req,$UserID){
-		$tmpDBName=Helper::getTmpDB();
+        $tmpDBName=Helper::getTmpDB();
         DB::beginTransaction();
 		$status=false;
 		$images=array();
@@ -749,21 +745,17 @@ class ProductHelper {
 				"CreatedBy"=>$UserID,
 				"CreatedOn"=>date("Y-m-d H:i:s")
 			);
-			$status=DB::Table($tmpDBName.'tbl_products_variation')->insert($data);
+			DB::Table($tmpDBName.'tbl_products_variation')->insert($data);
+            DB::commit();
+            return array('status'=>true,'message'=>"variation Saved Successfully");
 		}catch(Exception $e) {
-			$status=false;
-		}
-
-		if($status==true){
-			DB::commit();
-			return array('status'=>true,'message'=>"variation Saved Successfully");
-		}else{
-			DB::rollback();
-			//Helper::removeFile($BrandLogo);
-			foreach($images as $KeyName=>$Img){
-				Helper::removeFile($Img['url']);
-			}
-			return array('status'=>false,'message'=>"Product Create Failed");
+            logger($e);
+            DB::rollback();
+            //Helper::removeFile($BrandLogo);
+            foreach($images as $KeyName=>$Img){
+                Helper::removeFile($Img['url']);
+            }
+            return array('status'=>false,'message'=>"Product Create Failed");
 		}
 	}
 	private static function checkTmpProductTables(){
@@ -779,7 +771,6 @@ class ProductHelper {
 		if(!Helper::checkTableExists($tmpDBName, "tbl_product_save_status")){
             $sql=" CREATE TABLE ".$tmpDBName."tbl_product_save_status (UserID varchar(50) Primary Key,Percentage Double Default 0)";
 			DB::Statement($sql);
-
 		}
 	}
 	/* private static function simpleProductSave($req,$UserID){

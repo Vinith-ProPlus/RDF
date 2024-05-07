@@ -9,7 +9,8 @@ use App\Models\ProductCategoryType;
 use App\Models\ProductSubCategory;
 use App\Models\Tax;
 use App\Models\Uom;
-use helper\ProductHelper;
+use App\helper\ProductHelper;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -31,6 +32,7 @@ use Illuminate\Support\Facades\Session;
 
 class ProductsController extends Controller
 {
+    use ApiResponse;
     private $general;
     private $DocNum;
     private $UserID;
@@ -230,25 +232,41 @@ class ProductsController extends Controller
 
     public function save(Request $req)
     {
-        header('Content-Type: application/json');
-        header('Cache-Control: no-cache');
-        if ($this->general->isCrudAllow($this->CRUD, "add")) {
-            $result = ProductHelper::save($req, $this->UserID);
-            return response()->json($result);
-        } else {
-            return response()->json(['status' => false, 'message' => 'Access denied']);
+        DB::beginTransaction();
+        try {
+            header('Content-Type: application/json');
+            header('Cache-Control: no-cache');
+            if ($this->general->isCrudAllow($this->CRUD, "add")) {
+                $result = ProductHelper::save($req, $this->UserID);
+                DB::commit();
+                return response()->json($result);
+            } else {
+                return response()->json(['status' => false, 'message' => 'Access denied']);
+            }
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            logger($exception);
+            return $this->errorResponse($exception, "Product save failed!..", 500);
         }
     }
 
     public function update(Request $req, $ProductID)
     {
-        header('Content-Type: application/json');
-        header('Cache-Control: no-cache');
-        if ($this->general->isCrudAllow($this->CRUD, "add")) {
-            $result = ProductHelper::save($req, $this->UserID);
-            return response()->json($result);
-        } else {
-            return response()->json(['status' => false, 'message' => 'Access denied']);
+        DB::beginTransaction();
+        try {
+            header('Content-Type: application/json');
+            header('Cache-Control: no-cache');
+            if ($this->general->isCrudAllow($this->CRUD, "add")) {
+                $result = ProductHelper::save($req, $this->UserID);
+                DB::commit();
+                return response()->json($result);
+            } else {
+                return response()->json(['status' => false, 'message' => 'Access denied']);
+            }
+        } catch (\Exception $exception){
+            DB::rollBack();
+            logger($exception);
+            return $this->errorResponse($exception, "Product update failed!.", 500);
         }
     }
 
