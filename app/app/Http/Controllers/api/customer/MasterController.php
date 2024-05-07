@@ -225,6 +225,8 @@ class MasterController extends Controller
 
             $result->getCollection()->map(function ($item) {
                 $item->wishlist = false;
+                $item->PRate = Helper::formatAmount($item->PRate);
+                $item->SRate = Helper::formatAmount($item->SRate);
                 return $item;
             });
 
@@ -297,6 +299,12 @@ class MasterController extends Controller
                             ELSE P.SRate END) as SRate')
                 )->get();
 
+            $relatedProducts->transform(function ($item) {
+                $item->PRate = Helper::formatAmount($item->PRate);
+                $item->SRate = Helper::formatAmount($item->SRate);
+                return $item;
+            });
+
             $result = (object)[
                 'ProductName' => $product->ProductName,
                 'ProductID' => $product->ProductID,
@@ -310,12 +318,12 @@ class MasterController extends Controller
                 'UCode' => $product->UCode,
                 'UID' => $product->UID,
                 'ProductImage' => config('app.url') . '/' . (!empty($product->ProductImage) ? $product->ProductImage : 'assets/images/no-image-b.png'),
-                'PRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
+                'PRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->orderBy('SRate')->value('PRate') :
-                    $product->PRate,
-                'SRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
+                    $product->PRate),
+                'SRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
-                    $product->SRate,
+                    $product->SRate),
                 'reviews' => $reviews,
                 'RelatedProducts' => $relatedProducts,
                 'ratings' => round($ratings)
@@ -358,6 +366,8 @@ class MasterController extends Controller
                 $variation->AttributeDetails = DB::select($sql);
 
                 $tmpVAttributes = unserialize($variation->Attributes);
+                $variation->PRate = Helper::formatAmount($variation->PRate);
+                $variation->SRate = Helper::formatAmount($variation->SRate);
                 $variation->Attributes = $tmpVAttributes;
                 $variation->gallery = $tmp1;
                 $variation->VImage = Helper::apiCheckImageExistsUrl($variation->VImage);
@@ -445,6 +455,12 @@ class MasterController extends Controller
                 ->distinct()
                 ->paginate($perPage, ['*'], 'page', $pageNo);
 
+            $result->getCollection()->map(function ($item) {
+                $item->PRate = Helper::formatAmount($item->PRate);
+                $item->SRate = Helper::formatAmount($item->SRate);
+                return $item;
+            });
+
             return response()->json([
                 'status' => true,
                 'data' => $result->items(),
@@ -512,6 +528,12 @@ class MasterController extends Controller
                     DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
                 )->get();
 
+            $relatedProducts->transform(function ($item) {
+                $item->PRate = Helper::formatAmount($item->PRate);
+                $item->SRate = Helper::formatAmount($item->SRate);
+                return $item;
+            });
+
             $pGallery = DB::table('tbl_products_gallery')
                 ->select('gImage', 'ImgID')
                 ->where('ProductID', $product->ProductID)
@@ -546,6 +568,8 @@ class MasterController extends Controller
                 $sql .= " Where D.ProductID='" . $product->ProductID . "' and D.VariationID='" . $variation->VariationID . "'";
                 $variation->AttributeDetails = DB::select($sql);
 
+                $variation->PRate = Helper::formatAmount($variation->PRate);
+                $variation->SRate = Helper::formatAmount($variation->SRate);
                 $tmpVAttributes = unserialize($variation->Attributes);
                 $variation->Attributes = $tmpVAttributes;
                 $variation->gallery = $tmp1;
@@ -582,12 +606,12 @@ class MasterController extends Controller
                 'UCode' => $product->UCode,
                 'UID' => $product->UID,
                 'ProductImage' => config('app.url') . '/' . (!empty($product->ProductImage) ? $product->ProductImage : 'assets/images/no-image-b.png'),
-                'PRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
+                'PRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->orderBy('SRate')->value('PRate') :
-                    $product->PRate,
-                'SRate' => DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
+                    $product->PRate),
+                'SRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
-                    $product->SRate,
+                    $product->SRate),
                 'IsInWishlist' => DB::table('tbl_wishlists')->where('customer_id', $CustomerID)->where('product_id', $product->ProductID)->exists(),
                 'RelatedProducts' => $relatedProducts,
                 'gallery' => $pGallery,
