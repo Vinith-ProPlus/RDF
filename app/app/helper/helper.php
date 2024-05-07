@@ -24,7 +24,7 @@ class helper{
 		return config('app.db_log').".";
 	}
 	public static function getStockDB(){
-		return "rpc_stock_fy_2324.";
+		return "rdf_stock_fy_2324.";
 	}
 	public static function getTmpDB(){
 		return config('app.db_tmp').".";
