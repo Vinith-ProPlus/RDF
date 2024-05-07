@@ -60,7 +60,7 @@ class CustomerAPIController extends Controller{
             if ($customer){
                 $oldCustomer = $customer->replicate();
                 $otp = Random::generate(4, '0-9');
-                $this->sendOtpSms($otp, $request);
+//                $this->sendOtpSms($otp, $request);
                 $customer->update(["otp" => $otp, "otp_verified"=> false]);
 
                 $logData = array(
@@ -81,7 +81,7 @@ class CustomerAPIController extends Controller{
                     "otp" => $otp,
                     "CreatedOn" => now()
                 ];
-                $this->sendOtpSms($otp, $request);
+//                $this->sendOtpSms($otp, $request);
                 $customer = Customer::create($data);
                 $logData = array(
                     "Description" => "New Customer Created",
