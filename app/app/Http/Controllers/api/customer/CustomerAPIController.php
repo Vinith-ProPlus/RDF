@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
 use App\Http\Requests\MobileNoRegistrationRequest;
 use App\Models\Customer;
+use App\Models\TextLocal;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -59,6 +60,7 @@ class CustomerAPIController extends Controller{
             if ($customer){
                 $oldCustomer = $customer->replicate();
                 $otp = Random::generate(4, '0-9');
+                $this->sendOtpSms($otp, $request);
                 $customer->update(["otp" => $otp, "otp_verified"=> false]);
 
                 $logData = array(
@@ -79,6 +81,7 @@ class CustomerAPIController extends Controller{
                     "otp" => $otp,
                     "CreatedOn" => now()
                 ];
+                $this->sendOtpSms($otp, $request);
                 $customer = Customer::create($data);
                 $logData = array(
                     "Description" => "New Customer Created",
@@ -467,5 +470,29 @@ class CustomerAPIController extends Controller{
                 DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PC.PCImage, ""), "assets/images/no-image-b.png")) AS CategoryImage'))
             ->take(9)->get();;
         return $response;
+    }
+
+    /**
+     * @param string $otp
+     * @param Request $request
+     * @return void
+     * @throws Exception
+     */
+    public function sendOtpSms(string $otp, Request $request): void
+    {
+        $TextLocal = new TextLocal();
+        $message = urlencode("Thank you for registering with us.. Your OTP is $otp. Happy Shopping! www.royaldryfruits.com");
+
+        $textMsgResponse = $TextLocal->sendOTP($request->mobile_no, $message);
+        if ($textMsgResponse['error']) {
+            $response['error'] = 1;
+            $response['message'] = $textMsgResponse['message'];
+
+            info($response['message']);
+            info('ERROR FOUND');
+            throw new Exception($response['message']);
+        } else {
+            info('NO ERROR FOUND');
+        }
     }
 }

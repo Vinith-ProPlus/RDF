@@ -49,6 +49,10 @@ return [
     'FIREBASE_APP_ID' => env('FIREBASE_APP_ID', ''),
     'FIREBASE_MEASUREMENT_ID' => env('FIREBASE_MEASUREMENT_ID', ''),
 
+//    TEXT LOCAL
+    'TEXT_LOCAL_API_KEY' => env('TEXT_LOCAL_API_KEY', ''),
+    'TEXT_LOCAL_SENDER_NAME' => env('TEXT_LOCAL_SENDER_NAME', ''),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
