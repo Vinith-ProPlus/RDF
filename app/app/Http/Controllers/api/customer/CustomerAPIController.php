@@ -306,11 +306,8 @@ class CustomerAPIController extends Controller{
     #
     public function profileDetails(Request $request): JsonResponse
     {
-
-        DB::beginTransaction();
         try {
             $customer = $request->auth_customer;
-            DB::commit();
             return $this->successResponse($customer, "Customer profile details.");
         } catch (\Exception $e) {
             logger($e);
