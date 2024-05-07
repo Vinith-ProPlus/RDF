@@ -194,7 +194,7 @@ class ProductsController extends Controller
 					$tmp1[$k]->Images=unserialize($tmp1[$k]->Images);
 					$tmp1[$k]->gImage=Helper::checkProductImageExists($tmp1[$k]->gImage);
 				}
-				$sql="SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=Ad.AttrID ";
+				$sql="SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
 				$sql.=" Where D.ProductID='".$result[$i]->ProductID."' and D.VariationID='".$variaton[$j]->VariationID."'";
 				$variaton[$j]->AttributeDetails=DB::Select($sql);
 

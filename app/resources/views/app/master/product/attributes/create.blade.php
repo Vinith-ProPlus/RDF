@@ -59,7 +59,7 @@
                                                             <div class="accordion-body">
                                                                 <div class="row">
                                                                     <div class="col-sm-12">
-                                                                        <div class="row mb-10 d-flex justify-content-center">
+                                                                        <div class="row mb-10 d-flex justify-content-center d-none">
                                                                             <div class="col-sm-10 col-10 col-lg-4 text-center">
                                                                                 <label class="txtValueLogo{{$AcnIndex}}"> Logo </label>
                                                                                 <input type="file" class="dropify imageScrop" data-aspect-ratio="{{$Settings['profile-image-crop-ratio']['w']/$Settings['profile-image-crop-ratio']['h']}}" data-remove="0" id="txtValueLogo{{$AcnIndex}}" data-default-path="@if($isEdit && $row->ValueLogo){{$row->ValueLogo}}@endif" data-default-file="<?php if($isEdit==true){if($row->ValueLogo!=""){ echo url('/')."/".$row->ValueLogo;}}?>" data-slno="{{$row->Values}}" data-allowed-file-extensions="<?php echo implode(" ",$FileTypes['category']['Images']) ?>" >
@@ -112,7 +112,7 @@
                                                                                         </tr>
                                                                                     @endif
                                                                                 @endforeach
-                                                                            </tbody>                                                                        
+                                                                            </tbody>
                                                                         </table>
                                                                         <div class="errors PCategories err-sm" id="tblCategories{{$AcnIndex}}-err"></div>
                                                                     </div>
@@ -133,7 +133,7 @@
                             @if($crud['view']==true)
                             <a href="{{url('/')}}/admin/master/product/attributes" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
-                            
+
                             @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
                                 <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit==true) Update @else Save @endif</button>
                             @endif
@@ -164,7 +164,7 @@
         $('#ImgCrop').modal('hide');
         $(document).on('change', '.imageScrop', function() {
             let id = $(this).attr('id');
-            $('#'+id).attr('data-remove',0); 
+            $('#'+id).attr('data-remove',0);
             if($('#'+id).attr('data-aspect-ratio')!=undefined){
                 options.aspectRatio=$('#'+id).attr('data-aspect-ratio')
             }
@@ -295,7 +295,7 @@
 <!-- Image Crop Script End -->
 <script>
     $(document).ready(function(){
-        
+
         // Add Attribute Values
 
         let AcnIndex = $('.divAttrValHead .divAttrValHead').length + 1;
@@ -332,7 +332,7 @@
                                         <div class="accordion-body">
                                             <div class="row">
                                                 <div class="col-sm-12">
-                                                    <div class="row mb-10 d-flex justify-content-center">
+                                                    <div class="row mb-10 d-flex justify-content-center d-none">
                                                         <div class="col-sm-10 col-10 col-lg-4 text-center">
                                                             <label class="txtValueLogo${AcnIndex}"> Logo </label>
                                                             <input type="file" class="dropify imageScrop" data-aspect-ratio="{{$Settings['profile-image-crop-ratio']['w']/$Settings['profile-image-crop-ratio']['h']}}" data-remove="0" id="txtValueLogo${AcnIndex}" data-default-path="" data-default-file="" data-slno="${Value}" data-allowed-file-extensions="<?php echo implode(" ",$FileTypes['category']['Images']) ?>" >
@@ -396,7 +396,7 @@
             AcnIndex++;
         };
         $("#btnAddAttrValue").on("click", async function () {
-            
+
             console.log(AcnIndex);
             let AttrName = $('#txtAttrName').val();
             let Value = $('#txtValues').val();
@@ -443,7 +443,7 @@
 
 
         //Add Categories
-        
+
         const getPCategory=async(i)=>{
             $('#lstPCategory'+i).select2('destroy');
             $('#lstPCategory'+i+' option').remove();
@@ -563,7 +563,7 @@
             if(ValuesLength == 0){
                 $("#txtValues-err").html('Add a Value');status=false;
             }
-            
+
             for (let i = 1; i < AcnIndex; i++) {
                 if ($('#divAttrValHead' + i + ':not(".d-none")').length) {
                     if ($('#tblCategories' + i + ' tbody tr:not(".d-none")').length === 0) {
@@ -620,7 +620,7 @@
                             }
                         });
                     }
-                    
+
                     tmp.gallery.forEach(function (item) {
                         if (item.slno === existingValue.ValueName) {
                             existingValue.ValueLogo.uploadPath= item.uploadPath;
@@ -636,7 +636,7 @@
             }
             console.log(Values);
             formData.append('VData', JSON.stringify(Values));
-            
+
             return formData;
         }
         $('#btnSave').click(async function(){
@@ -702,9 +702,9 @@
                                     @else
                                         window.location.reload();
                                     @endif
-                                    
+
                                 });
-                                
+
                             }else{
                                 toastr.error(response.message, "Failed", {
                                     positionClass: "toast-top-right",

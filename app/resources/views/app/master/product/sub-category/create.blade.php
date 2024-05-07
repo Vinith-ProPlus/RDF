@@ -58,7 +58,7 @@
                                 <div class="errors" id="lstPCategory-err"></div>
                             </div>
                         </div>
-                        <div class="col-sm-12 mt-20">
+                        <div class="col-sm-12 mt-20 d-none">
                             <div class="row">
                                 <div class="col-sm-12 text-center">
                                     <button class="btn {{$Theme['button-size']}} btn-outline-info btn-air-info" id="btnAddVideoUrl">Add Video URL</button>

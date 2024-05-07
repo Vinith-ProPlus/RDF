@@ -324,6 +324,23 @@ class MasterController extends Controller
                 'SRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
                     $product->SRate),
+                'unit' => DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $product->ProductID) // Specify the table alias
+                    ->where('tbl_products_variation.SRate', function ($query) use ($product) {
+                        $query->select(DB::raw('min(SRate)'))
+                            ->from('tbl_products_variation')
+                            ->where('ProductID', $product->ProductID);
+                    })
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->pluck('AD.Values')
+                    ->first() ?? ($product->UName ?? '-'),
                 'reviews' => $reviews,
                 'RelatedProducts' => $relatedProducts,
                 'ratings' => round($ratings)
@@ -343,7 +360,7 @@ class MasterController extends Controller
             $result->gallery = $pGallery;
 
             $variations = DB::table('tbl_products_variation')
-                ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate', 'VImage', 'Attributes', 'CombinationID')
+                ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate', 'VImage', 'Attributes')
                 ->where('ProductID', $product->ProductID)
                 ->get();
 
@@ -363,12 +380,11 @@ class MasterController extends Controller
 
                 $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
                 $sql .= " Where D.ProductID='" . $product->ProductID . "' and D.VariationID='" . $variation->VariationID . "'";
-                $variation->AttributeDetails = DB::select($sql);
+                $AttributeDetails = DB::select($sql);
 
-                $tmpVAttributes = unserialize($variation->Attributes);
                 $variation->PRate = Helper::formatAmount($variation->PRate);
                 $variation->SRate = Helper::formatAmount($variation->SRate);
-                $variation->Attributes = $tmpVAttributes;
+                $variation->unit = isset($AttributeDetails[0]) ? ($AttributeDetails[0]->Values) : ($product->UName ?? '-');
                 $variation->gallery = $tmp1;
                 $variation->VImage = Helper::apiCheckImageExistsUrl($variation->VImage);
                 $variation->VImageExt = pathinfo($variation->VImage, PATHINFO_EXTENSION);
