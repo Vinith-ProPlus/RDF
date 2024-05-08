@@ -1407,7 +1407,7 @@
                         html+='<div id="'+uuid+'" class="accordion-collapse collapse" aria-labelledby="'+uuid+'-heading" data-bs-parent="#variationAccordion">';
                             html+='<div class="accordion-body">';
                                 html+='<div class="row mt-10">';
-                                    html+='<div class="col-12  col-md-6">';
+                                    html+='<div class="col-12  col-md-6 d-none">';
                                         html+='<div class="row">';
                                             html+='<div class="col-12 text-center">';
                                                 html+='<div class="form-group ">';
@@ -1417,7 +1417,7 @@
                                             html+='</div>';
                                         html+='</div>';
                                     html+='</div>';
-                                    html+='<div class="col-12 col-md-6">';
+                                    html+='<div class="col-12 col-md-12">';
                                         html+='<div class="row">';
                                             html+='<div class="col-12">';
                                                 html+='<div class="form-group">';
@@ -1443,7 +1443,7 @@
                                         html+='</div>';
                                     html+='</div>';
                                 html+='</div>';
-                                html+='<div class="row mt-10">';
+                                html+='<div class="row mt-10 d-none">';
                                     html+='<div class="col-12 text-center fw-600"> Gallery Images</div>';
                                     html+='<div class="col-12 mt-10">';
                                         html+='<div class="product_images_container">';
