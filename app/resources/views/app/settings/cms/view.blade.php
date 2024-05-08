@@ -64,16 +64,15 @@
 				"iDisplayLength": 10,
 				"lengthMenu": [[10, 25, 50,100,250,500, -1], [10, 25, 50,100,250,500, "All"]],
 				buttons: [
-					'pageLength' 
-					@if($crud['excel']==1) ,{extend: 'excel',footer: true,title: 'CMS',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif 
+					'pageLength'
+					@if($crud['excel']==1) ,{extend: 'excel',footer: true,title: 'CMS',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['copy']==1) ,{extend: 'copy',footer: true,title: 'CMS',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['csv']==1) ,{extend: 'csv',footer: true,title: 'CMS',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['print']==1) ,{extend: 'print',footer: true,title: 'CMS',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['pdf']==1) ,{extend: 'pdf',footer: true,title: 'CMS',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 				],
 				columnDefs: [
-					{"className": "dt-center", "targets":2},
-					{"className": "dt-center", "targets":3}
+					{"className": "dt-center", "targets": "_all"}
 				]
 			});
 			@endif

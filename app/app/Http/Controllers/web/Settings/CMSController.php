@@ -145,9 +145,9 @@ class CMSController extends Controller
                         if ($this->general->isCrudAllow($this->CRUD, "edit") == true) {
                             $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-success m-5 btnEdit" data-original-title="Edit"><i class="fa fa-pencil"></i></button>';
                         }
-                        if ($this->general->isCrudAllow($this->CRUD, "delete") == true) {
-                            $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-danger m-5 btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
-                        }
+//                        if ($this->general->isCrudAllow($this->CRUD, "delete") == true) {
+//                            $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-danger m-5 btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
+//                        }
                         return $html;
                     }
                 )
