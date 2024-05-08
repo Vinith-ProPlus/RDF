@@ -96,14 +96,14 @@
                                     <span class="errors MAddress" id="lstCountry-err"></span>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtGSTNumber">GST Number <span class="required"> * </span></label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtGSTNumber" value="{{$EditData[7]->KeyValue}}">
                                     <div class="errors" id="txtGSTNumber-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtPanNumber">PAN Number <span class="required"> * </span></label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtPanNumber" value="{{$EditData[11]->KeyValue}}">
@@ -131,7 +131,7 @@
                                     <div class="errors" id="txtAMobileNumber-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="lstBankType">Bank Type <span class="required"> * </span><span  class="addOption btnReloadBankType" id="btnReloadBankType" title="Reload Bank Type" ><i class="fa fa-refresh"></i></span> <span class="addOption btnAddBankType" id="btnAddBankType" title="Add New Bank Type" ><i class="fa fa-plus"></i></span> </label>
                                     <select class="form-control  {{$Theme['input-size']}} select2" id="lstBankType" data-selected="{{$EditData[24]->KeyValue}}">
@@ -140,7 +140,7 @@
                                     <div class="errors" id="lstBankType-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="lstBank">Bank <span class="required"> * </span><span  class="addOption btnReloadBank" id="btnReloadBank" title="Reload Bank" ><i class="fa fa-refresh"></i></span> <span class="addOption btnAddBank" id="btnAddBank" title="Add New Bank" ><i class="fa fa-plus"></i></span> </label>
                                     <select class="form-control  {{$Theme['input-size']}} select2" id="lstBank" data-bank-type-id="lstBankType" data-selected="{{$EditData[12]->KeyValue}}">
@@ -149,7 +149,7 @@
                                     <div class="errors" id="lstBank-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="lstBankBranch">Bank Branch <span class="required"> * </span><span  class="addOption btnReloadBankBranch" id="btnReloadBankBranch" title="Reload Bank Branch" ><i class="fa fa-refresh"></i></span> <span class="addOption btnAddBankBranch" id="btnAddBankBranch" title="Add New Bank Branch" ><i class="fa fa-plus"></i></span> </label>
                                     <select class="form-control  {{$Theme['input-size']}} select2" id="lstBankBranch" data-bank-type-id="lstBankType" data-bank-id="lstBank" data-selected="{{$EditData[13]->KeyValue}}">
@@ -158,7 +158,7 @@
                                     <div class="errors" id="lstBankBranch-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="lstBankAccType">Bank Account Type <span class="required"> * </span><span  class="addOption btnReloadBankAccType" id="btnReloadBankAccType" title="Reload Bank Account Type" ><i class="fa fa-refresh"></i></span> <span class="addOption btnAddBankAccType" id="btnAddBankAccType" title="Add New Bank Account Type" ><i class="fa fa-plus"></i></span> </label>
                                     <select class="form-control  {{$Theme['input-size']}} select2" id="lstBankAccType" data-selected="{{$EditData[15]->KeyValue}}">
@@ -167,49 +167,49 @@
                                     <div class="errors" id="lstBankAccType-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtBankAccNo">Account Number<span class="required"> * </span></label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtBankAccNo" value="{{$EditData[14]->KeyValue}}">
                                     <div class="errors" id="txtBankAccNo-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtFacebook">Facebook</label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtFacebook" value="{{$EditData[16]->KeyValue}}">
                                     <div class="errors" id="txtFacebook-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtTwitter">Twitter</label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtTwitter" value="{{$EditData[17]->KeyValue}}">
                                     <div class="errors" id="txtTwitter-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtInstagram">Instagram</label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtInstagram" value="{{$EditData[18]->KeyValue}}">
                                     <div class="errors" id="txtInstagram-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtYouTube">YouTube</label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtYouTube" value="{{$EditData[19]->KeyValue}}">
                                     <div class="errors" id="txtYouTube-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtLinkedIn">LinkedIn</label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtLinkedIn" value="{{$EditData[20]->KeyValue}}">
                                     <div class="errors" id="txtLinkedIn-err"></div>
                                 </div>
                             </div>
-                            <div class="col-sm-4 my-2">
+                            <div class="col-sm-4 my-2 d-none">
                                 <div class="form-group">
                                     <label for="txtPinterest">Pinterest</label>
                                     <input type="text" class="form-control {{$Theme['input-size']}}" id="txtPinterest" value="{{$EditData[21]->KeyValue}}">
@@ -426,8 +426,8 @@
             let status=true;
             let CompanyName=$('#txtCompanyName').val();
             let Address=$('#txtAddress').val();
-            let GSTNumber=$('#txtGSTNumber').val();
-            let PanNumber=$('#txtPanNumber').val();
+            // let GSTNumber=$('#txtGSTNumber').val();
+            // let PanNumber=$('#txtPanNumber').val();
             let Email=$('#txtEmail').val();
             let MobileNumber=$('#txtMobileNumber').val();
             let AMobileNumber=$('#txtAMobileNumber').val();
@@ -437,11 +437,11 @@
             let District = $('#lstDistrict').val();
             let State = $('#lstState').val();
             let Country = $('#lstCountry').val();
-            let BankType=$('#lstBankType').val();
-            let Bank=$('#lstBank').val();
-            let BankBranch=$('#lstBankBranch').val();
-            let BankAccType=$('#lstBankAccType').val();
-            let BankAccNo=$('#txtBankAccNo').val();
+            // let BankType=$('#lstBankType').val();
+            // let Bank=$('#lstBank').val();
+            // let BankBranch=$('#lstBankBranch').val();
+            // let BankAccType=$('#lstBankAccType').val();
+            // let BankAccNo=$('#txtBankAccNo').val();
 
             if(CompanyName==""){
                 $('#txtCompanyName-err').html('The Company name is required.');status=false;
@@ -453,12 +453,12 @@
             if(Address==""){
                 $('#txtAddress-err').html('The Address is required.');status=false;
             }
-            if(GSTNumber==""){
-                $('#txtGSTNumber-err').html('The GST Number is required.');status=false;
-            }
-            if(PanNumber === "") {
-                $('#txtPanNumber-err').html('The PAN Number is required.');status = false;
-            }
+            // if(GSTNumber==""){
+            //     $('#txtGSTNumber-err').html('The GST Number is required.');status=false;
+            // }
+            // if(PanNumber === "") {
+            //     $('#txtPanNumber-err').html('The PAN Number is required.');status = false;
+            // }
             if(Email === "") {
                 $('#txtEmail-err').html('The Email is required.');status = false;
             }
@@ -486,21 +486,21 @@
             if(Country === "") {
                 $('#lstCountry-err').html('Country is required.');status = false;
             }
-            if(BankType === "") {
-                $('#lstBankType-err').html('The Bank Type is required.');status = false;
-            }
-            if(Bank === "") {
-                $('#lstBank-err').html('The Bank is required.');status = false;
-            }
-            if(BankBranch === "") {
-                $('#lstBankBranch-err').html('The Bank Branch is required.');status = false;
-            }
-            if(BankAccType === "") {
-                $('#lstBankAccType-err').html('The Bank Account Type is required.');status = false;
-            }
-            if(BankAccNo === "") {
-                $('#txtBankAccNo-err').html('The Bank Account Number is required.');status = false;
-            }
+            // if(BankType === "") {
+            //     $('#lstBankType-err').html('The Bank Type is required.');status = false;
+            // }
+            // if(Bank === "") {
+            //     $('#lstBank-err').html('The Bank is required.');status = false;
+            // }
+            // if(BankBranch === "") {
+            //     $('#lstBankBranch-err').html('The Bank Branch is required.');status = false;
+            // }
+            // if(BankAccType === "") {
+            //     $('#lstBankAccType-err').html('The Bank Account Type is required.');status = false;
+            // }
+            // if(BankAccNo === "") {
+            //     $('#txtBankAccNo-err').html('The Bank Account Number is required.');status = false;
+            // }
 
             if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
@@ -511,8 +511,8 @@
 
             formData.append('CompanyName', $('#txtCompanyName').val());
             formData.append('Address', $('#txtAddress').val());
-            formData.append('GSTNumber', $('#txtGSTNumber').val());
-            formData.append('PanNumber', $('#txtPanNumber').val());
+            // formData.append('GSTNumber', $('#txtGSTNumber').val());
+            // formData.append('PanNumber', $('#txtPanNumber').val());
             formData.append('Email', $('#txtEmail').val());
             formData.append('MobileNumber', $('#txtMobileNumber').val());
             formData.append('AMobileNumber', $('#txtAMobileNumber').val());
@@ -522,17 +522,17 @@
             formData.append('District', $('#lstDistrict').val());
             formData.append('State', $('#lstState').val());
             formData.append('Country', $('#lstCountry').val());
-            formData.append('BankType', $('#lstBankType').val());
-            formData.append('Bank', $('#lstBank').val());
-            formData.append('BankBranch', $('#lstBankBranch').val());
-            formData.append('BankAccType', $('#lstBankAccType').val());
-            formData.append('BankAccNo', $('#txtBankAccNo').val());
-            formData.append('Facebook', $('#txtFacebook').val());
-            formData.append('Twitter', $('#txtTwitter').val());
-            formData.append('Instagram', $('#txtInstagram').val());
-            formData.append('YouTube', $('#txtYouTube').val());
-            formData.append('LinkedIn', $('#txtLinkedIn').val());
-            formData.append('Pinterest', $('#txtPinterest').val());
+            // formData.append('BankType', $('#lstBankType').val());
+            // formData.append('Bank', $('#lstBank').val());
+            // formData.append('BankBranch', $('#lstBankBranch').val());
+            // formData.append('BankAccType', $('#lstBankAccType').val());
+            // formData.append('BankAccNo', $('#txtBankAccNo').val());
+            // formData.append('Facebook', $('#txtFacebook').val());
+            // formData.append('Twitter', $('#txtTwitter').val());
+            // formData.append('Instagram', $('#txtInstagram').val());
+            // formData.append('YouTube', $('#txtYouTube').val());
+            // formData.append('LinkedIn', $('#txtLinkedIn').val());
+            // formData.append('Pinterest', $('#txtPinterest').val());
             formData.append('removeCompanyLogo', $('#txtCompanyLogo').attr('data-remove'));
 
             if (tmp.coverImage.uploadPath !== "") {

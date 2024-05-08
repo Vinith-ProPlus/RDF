@@ -3,14 +3,15 @@ namespace App\Http\Controllers\web\Settings;
 
 use App\enums\activeMenuNames;
 use App\Http\Controllers\Controller;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
 use DocNum;
 use general;
 use SSP;
-use DB;
 use Auth;
 use ValidUnique;
 use logs;
@@ -159,106 +160,104 @@ class CompanyController extends Controller{
 			return array('status'=>false,'message'=>'Access denined');
 		}
 	}
-	public function Update(Request $req){
-		$OldData=$NewData=array();
-		if($this->general->isCrudAllow($this->CRUD,"edit")==true){
-			$rules=array();
-			$message=array(
-				'CompanyLogo.mimes'=>"The Company Logo field must be a file of type: ".implode(", ",$this->FileTypes['category']['Images'])."."
-			);
-			if($req->hasFile('CompanyLogo')){
-				$rules['CompanyLogo']='mimes:'.implode(",",$this->FileTypes['category']['Images']);
-			}
-			$validator = Validator::make($req->all(), $rules,$message);
-			if ($validator->fails()) {
-				return array('status'=>false,'message'=>"Brand Update Failed",'errors'=>$validator->errors());
-			}
-			DB::beginTransaction();
-			$status=false;
-			try{
-				$OldData=DB::table('tbl_company_settings')->get();
-				$Settings = DB::table('tbl_company_settings')->select('KeyName', 'KeyValue')->get();
-				$CompanyLogo="";
-				$dir="assets/images/logo/";
-				if (!file_exists( $dir)) {mkdir( $dir, 0777, true);}
-				if($req->hasFile('CompanyLogo')){
-					$file = $req->file('CompanyLogo');
-					$fileName=md5($file->getClientOriginalName() . time());
-					$fileName1 =  $fileName. "." . $file->getClientOriginalExtension();
-					$file->move($dir, $fileName1);
-					$CompanyLogo=$dir.$fileName1;
-				}else if(Helper::isJSON($req->CompanyLogo)==true){
-					$Img=json_decode($req->CompanyLogo);
-					if(file_exists($Img->uploadPath)){
-						$fileName1="logo.png";
-						copy($Img->uploadPath,$dir.$fileName1);
-						$CompanyLogo=$dir.$fileName1;
-						unlink($Img->uploadPath);
-					}
-				}
-				if(file_exists($CompanyLogo)){
-					$images=helper::ImageResize($CompanyLogo,$dir);
-				}
-				if(intval($req->removeCompanyLogo)==1){
-					$CompanyLogo="";
-				}
-				$data = [
-					'CompanyName' => $req->CompanyName,
-					'Address' => $req->Address,
-					'CountryID' => $req->Country,
-					'StateID' => $req->State,
-					'CityID' => $req->City,
-					'PostalCodeID' => $req->PostalCode,
-					'GSTNo' => $req->GSTNumber,
-					'Phone-Number' => $req->MobileNumber,
-					'Mobile-Number' => $req->AMobileNumber,
-					'E-Mail' => $req->Email,
-					'PANNo' => $req->PanNumber,
-					'BankName' => $req->Bank,
-					'BankBranchName' => $req->BankBranch,
-					'BankAccountNo' => $req->BankAccNo,
-					'BankAccountType' => $req->BankAccType,
-					'facebook' => $req->Facebook,
-					'twitter' => $req->Twitter,
-					'instagram' => $req->Instagram,
-					'youTube' => $req->YouTube,
-					'linkedIn' => $req->LinkedIn,
-					'pinterest' => $req->Pinterest,
-					'TalukID' => $req->Taluk,
-					'DistrictID' => $req->District,
-					'BankType' => $req->BankType,
-				];
-				if($CompanyLogo!=""){
-					$data['Logo']=$CompanyLogo;
-					$data['Images']=serialize($images);
-				}else if(intval($req->removeCompanyLogo)==1){
-					$data['Logo']="";
-					$data['Images']=serialize(array());
-				}
-				$status = true;
-				foreach ($data as $key => $value) {
-					$setting = $Settings->where('KeyName', $key)->first();
 
-					if ($setting && $setting->KeyValue !== $value) {
-						$status = DB::table('tbl_company_settings')->where('KeyName', $key)->update(['KeyValue' => $value]);
-					}
-				}
-			}catch(Exception $e) {
+    public function Update(Request $req)
+    {
+        $OldData = $NewData = array();
+        if ($this->general->isCrudAllow($this->CRUD, "edit") == true) {
+            $rules = array();
+            $message = array(
+                'CompanyLogo.mimes' => "The Company Logo field must be a file of type: " . implode(", ", $this->FileTypes['category']['Images']) . "."
+            );
+            if ($req->hasFile('CompanyLogo')) {
+                $rules['CompanyLogo'] = 'mimes:' . implode(",", $this->FileTypes['category']['Images']);
+            }
+            $validator = Validator::make($req->all(), $rules, $message);
+            if ($validator->fails()) {
+                return array('status' => false, 'message' => "Brand Update Failed", 'errors' => $validator->errors());
+            }
+            DB::beginTransaction();
+            try {
+                $OldData = DB::table('tbl_company_settings')->get();
+                $Settings = DB::table('tbl_company_settings')->select('KeyName', 'KeyValue')->get();
+                $CompanyLogo = "";
+                $dir = "assets/images/logo/";
+                if (!file_exists($dir)) {
+                    mkdir($dir, 0777, true);
+                }
+                if ($req->hasFile('CompanyLogo')) {
+                    $file = $req->file('CompanyLogo');
+                    $fileName = md5($file->getClientOriginalName() . time());
+                    $fileName1 = $fileName . "." . $file->getClientOriginalExtension();
+                    $file->move($dir, $fileName1);
+                    $CompanyLogo = $dir . $fileName1;
+                } else if (Helper::isJSON($req->CompanyLogo) == true) {
+                    $Img = json_decode($req->CompanyLogo);
+                    if (file_exists($Img->uploadPath)) {
+                        $fileName1 = "logo.png";
+                        copy($Img->uploadPath, $dir . $fileName1);
+                        $CompanyLogo = $dir . $fileName1;
+                        unlink($Img->uploadPath);
+                    }
+                }
+                if (file_exists($CompanyLogo)) {
+                    $images = helper::ImageResize($CompanyLogo, $dir);
+                }
+                if (intval($req->removeCompanyLogo) == 1) {
+                    $CompanyLogo = "";
+                }
+                $data = [
+                    'CompanyName' => $req->CompanyName,
+                    'Address' => $req->Address,
+                    'CountryID' => $req->Country,
+                    'StateID' => $req->State,
+                    'CityID' => $req->City,
+                    'PostalCodeID' => $req->PostalCode,
+//					'GSTNo' => $req->GSTNumber,
+                    'Phone-Number' => $req->MobileNumber,
+                    'Mobile-Number' => $req->AMobileNumber,
+                    'E-Mail' => $req->Email,
+//					'PANNo' => $req->PanNumber,
+//					'BankName' => $req->Bank,
+//					'BankBranchName' => $req->BankBranch,
+//					'BankAccountNo' => $req->BankAccNo,
+//					'BankAccountType' => $req->BankAccType,
+//					'facebook' => $req->Facebook,
+//					'twitter' => $req->Twitter,
+//					'instagram' => $req->Instagram,
+//					'youTube' => $req->YouTube,
+//					'linkedIn' => $req->LinkedIn,
+//					'pinterest' => $req->Pinterest,
+                    'TalukID' => $req->Taluk,
+                    'DistrictID' => $req->District,
+//					'BankType' => $req->BankType,
+                ];
+                if ($CompanyLogo != "") {
+                    $data['Logo'] = $CompanyLogo;
+                    $data['Images'] = serialize($images);
+                } else if (intval($req->removeCompanyLogo) == 1) {
+                    $data['Logo'] = "";
+                    $data['Images'] = serialize(array());
+                }
+                foreach ($data as $key => $value) {
+                    $setting = $Settings->where('KeyName', $key)->first();
 
-			}
-			if($status==true){
-				DB::commit();
-				$NewData=DB::table('tbl_company_settings')->get();
-				$logData=array("Description"=>"Company Settings Updated ","ModuleName"=>"Settings","Action"=>"Update","ReferID"=>"Settings","OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
-				logs::Store($logData);
-				return array('status'=>true,'message'=>"Company Settings Updated Successfully");
-			}else{
-				DB::rollback();
-				return array('status'=>false,'message'=>"Company Settings Update Failed");
-			}
-		}else{
-			return response(array('status'=>false,'message'=>"Access Denied"), 403);
-		}
-	}
-
+                    if ($setting && $setting->KeyValue !== $value) {
+                        DB::table('tbl_company_settings')->where('KeyName', $key)->update(['KeyValue' => $value]);
+                    }
+                }
+                DB::commit();
+                $NewData = DB::table('tbl_company_settings')->get();
+                $logData = array("Description" => "Company Settings Updated ", "ModuleName" => "Settings", "Action" => "Update", "ReferID" => "Settings", "OldData" => $OldData, "NewData" => $NewData, "UserID" => $this->UserID, "IP" => $req->ip());
+                logs::Store($logData);
+                return array('status' => true, 'message' => "Company Settings Updated Successfully");
+            } catch (Exception $e) {
+                logger($e);
+                DB::rollback();
+                return array('status' => false, 'message' => "Company Settings Update Failed");
+            }
+        } else {
+            return response(array('status' => false, 'message' => "Access Denied"), 403);
+        }
+    }
 }
