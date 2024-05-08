@@ -195,6 +195,10 @@ class CompanyController extends Controller{
                     $Img = json_decode($req->CompanyLogo);
                     if (file_exists($Img->uploadPath)) {
                         $fileName1 = "logo.png";
+                        $destinationPath = $dir . $fileName1;
+                        if (file_exists($destinationPath)) {
+                            unlink($destinationPath);
+                        }
                         copy($Img->uploadPath, $dir . $fileName1);
                         $CompanyLogo = $dir . $fileName1;
                         unlink($Img->uploadPath);

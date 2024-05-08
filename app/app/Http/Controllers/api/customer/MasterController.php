@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\MobileUpdate;
 use App\Models\ProductReview;
 use App\Traits\ApiResponse;
 use Exception;
@@ -18,6 +19,12 @@ class MasterController extends Controller
     use ApiResponse;
 
 //    General Data
+    public function latestMobileVersion(){
+        return [
+            'status' => true,
+            'data' => MobileUpdate::first(),
+        ];
+    }
     public function getGender(request $req){
         $return = [
             'status' => true,

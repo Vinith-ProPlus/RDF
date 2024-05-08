@@ -85,6 +85,7 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
 });
 
 // Master
+Route::get('/get/latest/mobile_version', [MasterController::class, 'latestMobileVersion']);
 Route::get('/get/gender', [MasterController::class, 'getGender']);
 Route::get('/get/country', [MasterController::class, 'getCountry']);
 Route::get('/get/price-ranges', [MasterController::class, 'getPriceRanges']);

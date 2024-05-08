@@ -4,6 +4,7 @@ use App\Http\Controllers\web\Settings\BannersController;
 use App\Http\Controllers\web\Settings\CMSController;
 use App\Http\Controllers\web\Settings\CompanyController;
 use App\Http\Controllers\web\Settings\GeneralSettingsController;
+use App\Http\Controllers\web\Settings\MobileVersionController;
 
 Route::group(['prefix'=>'company'],function (){
     Route::controller(CompanyController::class)->group(function () {
@@ -27,6 +28,12 @@ Route::group(['prefix'=>'general'],function (){
     Route::controller(GeneralSettingsController::class)->group(function () {
         Route::get('/', 'index');
         Route::Post('/', 'Update');
+    });
+});
+Route::group(['prefix'=>'mobile_version'],function (){
+    Route::controller(MobileVersionController::class)->group(function () {
+        Route::get('/', 'Edit');
+        Route::POST('/update', 'Update');
     });
 });
 
