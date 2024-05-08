@@ -387,7 +387,6 @@ class ProductsController extends Controller
                 array('db' => 'P.ProductName', 'dt' => '0'),
                 array('db' => 'C.PCName', 'dt' => '1'),
                 array('db' => 'SC.PSCName', 'dt' => '2'),
-                //array( 'db' => 'P.ProductType', 'dt' => '3' ),
                 array('db' => 'P.PRate', 'dt' => '3'),
                 array('db' => 'P.SRate', 'dt' => '4'),
                 array('db' => 'P.ActiveStatus', 'dt' => '5',),
@@ -397,7 +396,6 @@ class ProductsController extends Controller
                 array('db' => 'ProductName', 'dt' => '0'),
                 array('db' => 'PCName', 'dt' => '1'),
                 array('db' => 'PSCName', 'dt' => '2'),
-                //array( 'db' => 'ProductType', 'dt' => '3' ),
                 array('db' => 'PRate', 'dt' => '3', 'formatter' => function ($d, $row) {
                     return Helper::NumberFormat($d, $this->Settings['PRICE-DECIMALS']);
                 }),
