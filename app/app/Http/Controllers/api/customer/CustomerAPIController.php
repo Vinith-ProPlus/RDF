@@ -130,7 +130,7 @@ class CustomerAPIController extends Controller{
 
             $oldCustomer = $customer->replicate();
             if ($customer->otp == $request->otp) {
-                $token = $customer->api_token ?? Str::random(60);
+                $token = ($customer->api_token && $customer->api_token != "") ? $customer->api_token : Str::random(60);
                 $customer->update(["api_token" => $token, "fcmToken" => $request->fcmToken, "otp" => "", "otp_verified" => true]);
             } else {
                 return $this->errorResponse([], "Customer OTP is wrong", 422);
