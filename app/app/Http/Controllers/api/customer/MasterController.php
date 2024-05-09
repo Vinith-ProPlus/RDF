@@ -234,6 +234,23 @@ class MasterController extends Controller
                 $item->wishlist = false;
                 $item->PRate = Helper::formatAmount($item->PRate);
                 $item->SRate = Helper::formatAmount($item->SRate);
+                $item->unit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $item->ProductID)
+                    ->where('tbl_products_variation.SRate', function ($query) use ($item) {
+                        $query->select(DB::raw('min(SRate)'))
+                            ->from('tbl_products_variation')
+                            ->where('ProductID', $item->ProductID);
+                    })
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->pluck('AD.Values')
+                    ->first() ?? ($item->UName ? "In $item->UName" : '-');
                 return $item;
             });
 
@@ -279,6 +296,7 @@ class MasterController extends Controller
                 ->get()
                 ->map(function ($review) {
                     $review->CreatedOn = date('M d, Y', strtotime($review->CreatedOn));
+                    $review->isHelpful = false;
                     return $review;
                 });
 
@@ -292,25 +310,43 @@ class MasterController extends Controller
             }
 
             $relatedProducts = DB::table('tbl_products as P')
-                ->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
+                ->leftJoin('tbl_uom as U', 'U.UID', 'P.UID')
+                ->leftJoin('tbl_products_variation', 'tbl_products_variation.ProductID', '=', 'P.ProductID')
+                ->whereIn('P.ProductID', $relatedProductIds)
                 ->where('P.ActiveStatus', 'Active')
                 ->where('P.DFlag', 0)
-                ->whereIn('P.ProductID', $relatedProductIds)
+                ->distinct()
                 ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
                     DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
-                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
-                            THEN (SELECT PRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                            ELSE P.PRate END) as PRate'),
-                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
-                            THEN (SELECT SRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                            ELSE P.SRate END) as SRate')
-                )->get();
+                    DB::raw('COALESCE((SELECT PRate FROM tbl_products_variation WHERE tbl_products_variation.ProductID = P.ProductID ORDER BY SRate LIMIT 1), P.PRate) as PRate'),
+                    DB::raw('COALESCE((SELECT SRate FROM tbl_products_variation WHERE tbl_products_variation.ProductID = P.ProductID ORDER BY SRate LIMIT 1), P.SRate) as SRate'),
+                    DB::raw('false AS IsInWishlist')
+                )
+                ->get();
 
             $relatedProducts->transform(function ($item) {
                 $item->PRate = Helper::formatAmount($item->PRate);
                 $item->SRate = Helper::formatAmount($item->SRate);
+                $item->unit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $item->ProductID)
+                    ->where('tbl_products_variation.SRate', function ($query) use ($item) {
+                        $query->select(DB::raw('min(SRate)'))
+                            ->from('tbl_products_variation')
+                            ->where('ProductID', $item->ProductID);
+                    })
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->pluck('AD.Values')
+                    ->first() ?? ($item->UName ? "In $item->UName" : '-');
                 return $item;
             });
+
 
             $result = (object)[
                 'ProductName' => $product->ProductName,
@@ -332,7 +368,7 @@ class MasterController extends Controller
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
                     $product->SRate),
                 'unit' => DB::table('tbl_products_variation')
-                    ->where('tbl_products_variation.ProductID', $product->ProductID) // Specify the table alias
+                    ->where('tbl_products_variation.ProductID', $product->ProductID)
                     ->where('tbl_products_variation.SRate', function ($query) use ($product) {
                         $query->select(DB::raw('min(SRate)'))
                             ->from('tbl_products_variation')
@@ -347,55 +383,37 @@ class MasterController extends Controller
                     })
                     ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
                     ->pluck('AD.Values')
-                    ->first() ?? ($product->UName ?? '-'),
+                    ->first() ?? ($product->UName ? "In $product->UName" : '-'),
                 'reviews' => $reviews,
                 'RelatedProducts' => $relatedProducts,
-                'ratings' => round($ratings)
+                'ratings' => round($ratings),
+                'IsInWishlist' => 0
             ];
 
             $pGallery = DB::table('tbl_products_gallery')
-                ->select('gImage', 'ImgID')
+                ->select('gImage')
                 ->where('ProductID', $product->ProductID)
                 ->get();
 
             foreach ($pGallery as $galleryItem) {
-                $galleryItem->fileName = basename($galleryItem->gImage);
-                $galleryItem->ext = pathinfo($galleryItem->gImage, PATHINFO_EXTENSION);
                 $galleryItem->gImage = Helper::apiCheckImageExistsUrl($galleryItem->gImage);
             }
 
             $result->gallery = $pGallery;
 
             $variations = DB::table('tbl_products_variation')
-                ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate', 'VImage', 'Attributes')
+                ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate')
                 ->where('ProductID', $product->ProductID)
                 ->get();
 
             foreach ($variations as $variation) {
-                $tmp1 = DB::table('tbl_products_variation_gallery as g1')
-                    ->select('g1.ImgID', 'g1.gImage')
-                    ->where('g1.ProductID', $product->ProductID)
-                    ->where('g1.VariationID', $variation->VariationID)
-                    ->whereRaw('g1.CreatedOn = (select max(CreatedOn) from tbl_products_variation_gallery as g2 where g2.ImgID = g1.ImgID)')
-                    ->get();
-
-                foreach ($tmp1 as $galleryItem) {
-                    $galleryItem->fileName = basename($galleryItem->gImage);
-                    $galleryItem->ext = pathinfo($galleryItem->gImage, PATHINFO_EXTENSION);
-                    $galleryItem->gImage = Helper::apiCheckImageExistsUrl($galleryItem->gImage);
-                }
-
                 $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
                 $sql .= " Where D.ProductID='" . $product->ProductID . "' and D.VariationID='" . $variation->VariationID . "'";
                 $AttributeDetails = DB::select($sql);
 
                 $variation->PRate = Helper::formatAmount($variation->PRate);
                 $variation->SRate = Helper::formatAmount($variation->SRate);
-                $variation->unit = isset($AttributeDetails[0]) ? ($AttributeDetails[0]->Values) : ($product->UName ?? '-');
-                $variation->gallery = $tmp1;
-                $variation->VImage = Helper::apiCheckImageExistsUrl($variation->VImage);
-                $variation->VImageExt = pathinfo($variation->VImage, PATHINFO_EXTENSION);
-                $variation->VImageFileName = basename($variation->VImage);
+                $variation->unit = isset($AttributeDetails[0]) ? ($AttributeDetails[0]->Values) : (($product->UName ? "In $product->UName" : '-') ?? '-');
             }
 
             $result->variation = $variations;
@@ -481,6 +499,23 @@ class MasterController extends Controller
             $result->getCollection()->map(function ($item) {
                 $item->PRate = Helper::formatAmount($item->PRate);
                 $item->SRate = Helper::formatAmount($item->SRate);
+                $item->unit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $item->ProductID)
+                    ->where('tbl_products_variation.SRate', function ($query) use ($item) {
+                        $query->select(DB::raw('min(SRate)'))
+                            ->from('tbl_products_variation')
+                            ->where('ProductID', $item->ProductID);
+                    })
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->pluck('AD.Values')
+                    ->first() ?? ($item->UName ? "In $item->UName" : '-');
                 return $item;
             });
 
@@ -536,69 +571,65 @@ class MasterController extends Controller
                 ->leftJoin('tbl_wishlists', function ($join) use ($CustomerID) {
                     $join->on('P.ProductID', '=', 'tbl_wishlists.product_id')
                         ->where('tbl_wishlists.customer_id', '=', $CustomerID);
-                })->leftjoin('tbl_uom as U', 'U.UID', 'P.UID')
+                })
+                ->leftJoin('tbl_uom as U', 'U.UID', 'P.UID')
+                ->leftJoin('tbl_products_variation', 'tbl_products_variation.ProductID', '=', 'P.ProductID')
+                ->whereIn('P.ProductID', $relatedProductIds)
                 ->where('P.ActiveStatus', 'Active')
                 ->where('P.DFlag', 0)
-                ->whereIn('P.ProductID', $relatedProductIds)
+                ->distinct()
                 ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
                     DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
-                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
-                            THEN (SELECT PRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                            ELSE P.PRate END) as PRate'),
-                    DB::raw('(CASE WHEN EXISTS (SELECT * FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '")
-                            THEN (SELECT SRate FROM tbl_products_variation WHERE P.ProductID = "' . $product->ProductID . '" ORDER BY SRate LIMIT 1)
-                            ELSE P.SRate END) as SRate'),
+                    DB::raw('COALESCE((SELECT PRate FROM tbl_products_variation WHERE tbl_products_variation.ProductID = P.ProductID ORDER BY SRate LIMIT 1), P.PRate) as PRate'),
+                    DB::raw('COALESCE((SELECT SRate FROM tbl_products_variation WHERE tbl_products_variation.ProductID = P.ProductID ORDER BY SRate LIMIT 1), P.SRate) as SRate'),
                     DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
                 )->get();
 
             $relatedProducts->transform(function ($item) {
                 $item->PRate = Helper::formatAmount($item->PRate);
                 $item->SRate = Helper::formatAmount($item->SRate);
+                $item->unit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $item->ProductID)
+                    ->where('tbl_products_variation.SRate', function ($query) use ($item) {
+                        $query->select(DB::raw('min(SRate)'))
+                            ->from('tbl_products_variation')
+                            ->where('ProductID', $item->ProductID);
+                    })
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->pluck('AD.Values')
+                    ->first() ?? ($item->UName ? "In $item->UName" : '-');
                 return $item;
             });
 
             $pGallery = DB::table('tbl_products_gallery')
-                ->select('gImage', 'ImgID')
+                ->select('gImage')
                 ->where('ProductID', $product->ProductID)
                 ->get();
 
             foreach ($pGallery as $galleryItem) {
-                $galleryItem->fileName = basename($galleryItem->gImage);
-                $galleryItem->ext = pathinfo($galleryItem->gImage, PATHINFO_EXTENSION);
                 $galleryItem->gImage = Helper::apiCheckImageExistsUrl($galleryItem->gImage);
             }
 
             $variations = DB::table('tbl_products_variation')
-                ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate', 'VImage', 'Attributes', 'CombinationID')
+                ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate')
                 ->where('ProductID', $product->ProductID)
                 ->get();
 
             foreach ($variations as $variation) {
-                $tmp1 = DB::table('tbl_products_variation_gallery as g1')
-                    ->select('g1.ImgID', 'g1.gImage')
-                    ->where('g1.ProductID', $product->ProductID)
-                    ->where('g1.VariationID', $variation->VariationID)
-                    ->whereRaw('g1.CreatedOn = (select max(CreatedOn) from tbl_products_variation_gallery as g2 where g2.ImgID = g1.ImgID)')
-                    ->get();
-
-                foreach ($tmp1 as $galleryItem) {
-                    $galleryItem->fileName = basename($galleryItem->gImage);
-                    $galleryItem->ext = pathinfo($galleryItem->gImage, PATHINFO_EXTENSION);
-                    $galleryItem->gImage = Helper::apiCheckImageExistsUrl($galleryItem->gImage);
-                }
-
                 $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
                 $sql .= " Where D.ProductID='" . $product->ProductID . "' and D.VariationID='" . $variation->VariationID . "'";
-                $variation->AttributeDetails = DB::select($sql);
+                $AttributeDetails = DB::select($sql);
 
                 $variation->PRate = Helper::formatAmount($variation->PRate);
                 $variation->SRate = Helper::formatAmount($variation->SRate);
-                $tmpVAttributes = unserialize($variation->Attributes);
-                $variation->Attributes = $tmpVAttributes;
-                $variation->gallery = $tmp1;
-                $variation->VImage = Helper::apiCheckImageExistsUrl($variation->VImage);
-                $variation->VImageExt = pathinfo($variation->VImage, PATHINFO_EXTENSION);
-                $variation->VImageFileName = basename($variation->VImage);
+                $variation->unit = isset($AttributeDetails[0]) ? ($AttributeDetails[0]->Values) : (($product->UName ? "In $product->UName" : '-') ?? '-');
             }
 
             $reviews = ProductReview::with('customerDetails')->where('ProductID', $product->ProductID)
@@ -635,6 +666,23 @@ class MasterController extends Controller
                 'SRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->min('SRate') :
                     $product->SRate),
+                'unit' => DB::table('tbl_products_variation')
+                        ->where('tbl_products_variation.ProductID', $product->ProductID)
+                        ->where('tbl_products_variation.SRate', function ($query) use ($product) {
+                            $query->select(DB::raw('min(SRate)'))
+                                ->from('tbl_products_variation')
+                                ->where('ProductID', $product->ProductID);
+                        })
+                        ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                            $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                        })
+                        ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                            $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                                ->on('AD.AttrID', '=', 'D.AttributeID');
+                        })
+                        ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                        ->pluck('AD.Values')
+                        ->first() ?? ($product->UName ? "In $product->UName" : '-'),
                 'IsInWishlist' => DB::table('tbl_wishlists')->where('customer_id', $CustomerID)->where('product_id', $product->ProductID)->exists(),
                 'RelatedProducts' => $relatedProducts,
                 'gallery' => $pGallery,
