@@ -102,6 +102,17 @@
 											</div>
 										</div>
 									</div>
+									<div class="form-row mt-20">
+										<div class="col-sm-6"><b>Delivery Charge :</b></div>
+										<div class="col-sm-6">
+											<div class="form-group">
+												<div class="form-group">
+													<input type="number" step=1 class="form-control" min=1 id="txtDeliveryCharge" value="{{ $Settings['delivery_charge'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
+												</div>
+												<div class="errors" id="txtDeliveryCharge-err"></div>
+											</div>
+										</div>
+									</div>
 									{{-- <div class="form-row">
 										<div class="col-sm-6"><b>Front End Loading Text :</b></div>
 										<div class="col-sm-6">
@@ -212,6 +223,7 @@
 				formData.append('PRICE-DECIMALS',$('#lstPrice').val());
 				formData.append('PERCENTAGE-DECIMALS',$('#lstPercentage').val());
 				formData.append('upload-limit',$('#txtImgUploadSize').val()+$('#lstImgUploadSizeType').val());
+				formData.append('delivery_charge',$('#txtDeliveryCharge').val());
 				// formData.append('home-page-loading-text',$('#txtLoadingText').val());
 				// formData.append('home-page-loading-text-font-size',$('#lstLoadingTextSize').val());
             }

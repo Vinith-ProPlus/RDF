@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\web\Settings;
 
 use App\Http\Controllers\Controller;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -35,7 +36,7 @@ class GeneralSettingsController extends Controller{
         $this->middleware('auth');
 		$this->DocNum=new DocNum();
 		$this->support=new support();
-    
+
 		$this->middleware(function ($request, $next) {
 			$this->UserID=auth()->user()->UserID;
 			$this->LoginType=auth()->user()->LoginType;
@@ -60,10 +61,9 @@ class GeneralSettingsController extends Controller{
 			return view('errors.403');
 		}
 	}
-	
+
 	public function Update(Request $req){
 		$sType=$req->sType;
-		
 		$data=(array)$req->all();
 		unset($data['sType']);
 		unset($data['PostalCode']);
@@ -75,10 +75,7 @@ class GeneralSettingsController extends Controller{
 					$Rnd=$this->support->OTPGenerator(1);
 					$Rnd1=$this->support->OTPGenerator(2);
 					$UKey=$this->support->RandomString($Rnd1);
-					if($sType=="social-media-links"){
-						$sql="Update tbl_company_settings Set KeyValue='".$KeyValue."',UKey='".$UKey."',UpdatedBy='".$this->UserID."',UpdatedOn='".date('Y-m-d H:i:s',strtotime($Rnd." min "))."' Where KeyName='".$KeyName."'";
-						$status=DB::Update($sql);
-					}elseif($sType=="map"){
+					if($sType=="social-media-links" || $sType=="map"){
 						$sql="Update tbl_company_settings Set KeyValue='".$KeyValue."',UKey='".$UKey."',UpdatedBy='".$this->UserID."',UpdatedOn='".date('Y-m-d H:i:s',strtotime($Rnd." min "))."' Where KeyName='".$KeyName."'";
 						$status=DB::Update($sql);
 					}else{
@@ -88,6 +85,7 @@ class GeneralSettingsController extends Controller{
 				}
 			}
 		}catch(Exception $e) {
+            logger($e);
 			$status=false;
 		}
 		if($status==true){

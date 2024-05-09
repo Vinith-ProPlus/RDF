@@ -653,6 +653,8 @@ class CustomerAuthController extends Controller{
             $coupon_value = 0;
             $subTotalAmount = 0;
             $grandTotalAmount = 0;
+            $deliveryCharge = DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0;
+
             $Cart = DB::table('tbl_customer_cart as C')
                 ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
                 ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
@@ -722,7 +724,7 @@ class CustomerAuthController extends Controller{
                 }
             }
 
-            $shipping_charge = round((($subTotalAmount > 0) ? 120 : 0),2);
+            $shipping_charge = round((($subTotalAmount > 0) ? $deliveryCharge : 0),2);
             $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
 
             $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $CustomerID)
@@ -811,6 +813,7 @@ class CustomerAuthController extends Controller{
             $coupon_value = 0;
             $subTotalAmount = 0;
             $grandTotalAmount = 0;
+            $deliveryCharge = DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0;
 
             $validatedData = Validator::make($request->all(), [
                 'ProductID' => 'required|string|exists:tbl_products,ProductID',
@@ -894,7 +897,7 @@ class CustomerAuthController extends Controller{
             }
         }
 
-        $shipping_charge = ($subTotalAmount > 0) ? 120 : 0;
+        $shipping_charge = ($subTotalAmount > 0) ? ($deliveryCharge) : 0;
         if($coupon_value > $subTotalAmount){
             $coupon_value = $subTotalAmount;
         }
@@ -935,6 +938,7 @@ class CustomerAuthController extends Controller{
             $coupon_value = 0;
             $subTotalAmount = 0;
             $grandTotalAmount = 0;
+            $deliveryCharge = DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0;
 
             $validatedData = Validator::make($request->all(), [
                 'ProductID' => 'required|string|exists:tbl_products,ProductID',
@@ -1019,7 +1023,7 @@ class CustomerAuthController extends Controller{
                 }
             }
 
-            $shipping_charge = round((($subTotalAmount > 0) ? 120 : 0),2);
+            $shipping_charge = round((($subTotalAmount > 0) ? $deliveryCharge : 0),2);
             $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
 
             $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $CustomerID)
