@@ -103,7 +103,7 @@ class VendorTypeController extends Controller{
 				return view('errors.403');
 			}
         }elseif($this->general->isCrudAllow($this->CRUD,"view")==true){
-            return Redirect::to('/vendor-master/category');	
+            return Redirect::to('/vendor-master/category');
         }else{
             return view('errors.403');
         }
@@ -124,9 +124,9 @@ class VendorTypeController extends Controller{
 				$rules['STImage']='mimes:'.implode(",",$this->FileTypes['category']['Images']);
 			}
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
-				return array('status'=>false,'message'=>"Vendor Type Create Failed",'errors'=>$validator->errors());			
+				return array('status'=>false,'message'=>"Vendor Type Create Failed",'errors'=>$validator->errors());
 			}
 			DB::beginTransaction();
 			$status=false;
@@ -140,7 +140,7 @@ class VendorTypeController extends Controller{
 					$file = $req->file('STImage');
 					$fileName=md5($file->getClientOriginalName() . time());
 					$fileName1 =  $fileName. "." . $file->getClientOriginalExtension();
-					$file->move($dir, $fileName1);  
+					$file->move($dir, $fileName1);
 					$STImage=$dir.$fileName1;
 				}else if(Helper::isJSON($req->STImage)==true){
 					$Img=json_decode($req->STImage);
@@ -166,10 +166,6 @@ class VendorTypeController extends Controller{
 				$status=DB::Table('tbl_vendor_type')->insert($data);
 				if($status){
 					DB::commit();
-					$status=dynamicField::add(docTypes::VendorType->value,$req,"tbl_vendor_type","VendorTypeID",$VendorTypeID,$this->UserID);
-					if(DB::transactionLevel()==0){
-						DB::beginTransaction();
-					}
 				}
 			}catch(Exception $e) {
 				$status=false;
@@ -210,9 +206,9 @@ class VendorTypeController extends Controller{
 				$rules['STImage']='mimes:'.implode(",",$this->FileTypes['category']['Images']);
 			}
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
-				return array('status'=>false,'message'=>"Vendor Type Update Failed",'errors'=>$validator->errors());			
+				return array('status'=>false,'message'=>"Vendor Type Update Failed",'errors'=>$validator->errors());
 			}
 			DB::beginTransaction();
 			$status=false;
@@ -227,7 +223,7 @@ class VendorTypeController extends Controller{
 					$file = $req->file('STImage');
 					$fileName=md5($file->getClientOriginalName() . time());
 					$fileName1 =  $fileName. "." . $file->getClientOriginalExtension();
-					$file->move($dir, $fileName1);  
+					$file->move($dir, $fileName1);
 					$STImage=$dir.$fileName1;
 				}else if(Helper::isJSON($req->STImage)==true){
 					$Img=json_decode($req->STImage);
@@ -241,7 +237,7 @@ class VendorTypeController extends Controller{
 				if(file_exists($STImage)){
 					$images=helper::ImageResize($STImage,$dir);
 				}
-				if(($STImage!="" || intval($req->removeSTImage)==1) && Count($OldData)>0){ 
+				if(($STImage!="" || intval($req->removeSTImage)==1) && Count($OldData)>0){
 					$currSTImage=$OldData[0]->Images!=""?unserialize($OldData[0]->Images):array();
 				}
 				$data=array(
@@ -260,10 +256,6 @@ class VendorTypeController extends Controller{
 				$status=DB::Table('tbl_vendor_type')->where('VendorTypeID',$VendorTypeID)->update($data);
 				if($status){
 					DB::commit();
-					$status=dynamicField::add(docTypes::VendorType->value,$req,"tbl_vendor_type","VendorTypeID",$VendorTypeID,$this->UserID);
-					if(DB::transactionLevel()==0){
-						DB::beginTransaction();
-					}
 				}
 			}catch(Exception $e) {
 				$status=false;
@@ -275,7 +267,7 @@ class VendorTypeController extends Controller{
 				$logData=array("Description"=>"Vendor Type Updated ","ModuleName"=>$this->ActiveMenuName,"Action"=>cruds::UPDATE->value,"ReferID"=>$VendorTypeID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
 				logs::Store($logData);
 				//Helper::removeFile($currSTImage);
-				
+
 				foreach($currSTImage as $KeyName=>$Img){
 					Helper::removeFile($Img['url']);
 				}
@@ -300,7 +292,7 @@ class VendorTypeController extends Controller{
 				$OldData=DB::table('tbl_vendor_type')->where('VendorTypeID',$VendorTypeID)->get();
 				$status=DB::table('tbl_vendor_type')->where('VendorTypeID',$VendorTypeID)->update(array("DFlag"=>1,"DeletedBy"=>$this->UserID,"DeletedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -324,7 +316,7 @@ class VendorTypeController extends Controller{
 				$OldData=DB::table('tbl_vendor_type')->where('VendorTypeID',$VendorTypeID)->get();
 				$status=DB::table('tbl_vendor_type')->where('VendorTypeID',$VendorTypeID)->update(array("DFlag"=>0,"UpdatedBy"=>$this->UserID,"UpdatedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -352,7 +344,7 @@ class VendorTypeController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
 				array( 'db' => 'VendorTypeID', 'dt' => '3',
 					'formatter' => function( $d, $row ) {
@@ -364,7 +356,7 @@ class VendorTypeController extends Controller{
 							$html.='<button type="button" data-id="'.$d.'" class="btn  btn-outline-danger '.$this->general->UserInfo['Theme']['button-size'].' btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
 						}
 						return $html;
-					} 
+					}
 				)
 			);
 			$data=array();
@@ -393,15 +385,15 @@ class VendorTypeController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
-				array( 
-					'db' => 'VendorTypeID', 
+				array(
+					'db' => 'VendorTypeID',
 					'dt' => '3',
 					'formatter' => function( $d, $row ) {
 						$html='<button type="button" data-id="'.$d.'" class="btn btn-outline-success '.$this->general->UserInfo['Theme']['button-size'].'  m-2 btnRestore"> <i class="fa fa-repeat" aria-hidden="true"></i> </button>';
 						return $html;
-					} 
+					}
 				)
 			);
 			$data=array();

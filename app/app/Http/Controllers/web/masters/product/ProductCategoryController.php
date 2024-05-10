@@ -204,10 +204,6 @@ class ProductCategoryController extends Controller
                 $status = DB::Table('tbl_product_category')->insert($data);
                 if ($status) {
                     DB::commit();
-                    $status = dynamicField::add(docTypes::ProductCategory->value, $req, "tbl_product_category", "PCID", $PCID, $this->UserID);
-                    if (DB::transactionLevel() == 0) {
-                        DB::beginTransaction();
-                    }
                 }
             } catch (Exception $e) {
                 $status = false;
@@ -311,10 +307,6 @@ class ProductCategoryController extends Controller
                 $status = DB::Table('tbl_product_category')->where('PCID', $PCID)->update($data);
                 if ($status) {
                     DB::commit();
-                    $status = dynamicField::add(docTypes::ProductCategory->value, $req, "tbl_product_category", "PCID", $PCID, $this->UserID);
-                    if (DB::transactionLevel() == 0) {
-                        DB::beginTransaction();
-                    }
                 }
             } catch (Exception $e) {
                 $status = false;

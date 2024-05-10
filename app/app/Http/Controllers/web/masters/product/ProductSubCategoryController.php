@@ -223,10 +223,6 @@ class ProductSubCategoryController extends Controller
                 $status = DB::Table('tbl_product_subcategory')->insert($data);
                 if ($status) {
                     DB::commit();
-                    $status = dynamicField::add(docTypes::ProductSubCategory->value, $req, "tbl_product_subcategory", "PSCID", $PSCID, $this->UserID);
-                    if (DB::transactionLevel() == 0) {
-                        DB::beginTransaction();
-                    }
                 }
             } catch (Exception $e) {
                 return $e;
@@ -338,10 +334,6 @@ class ProductSubCategoryController extends Controller
                 $status = DB::Table('tbl_product_subcategory')->where('PSCID', $PSCID)->update($data);
                 if ($status) {
                     DB::commit();
-                    $status = dynamicField::add(docTypes::ProductSubCategory->value, $req, "tbl_product_subcategory", "PSCID", $PSCID, $this->UserID);
-                    if (DB::transactionLevel() == 0) {
-                        DB::beginTransaction();
-                    }
                 }
             } catch (Exception $e) {
                 $status = false;

@@ -269,10 +269,6 @@ class ProductCategoryTypeController extends Controller
                 $status = DB::Table('tbl_product_category_type')->where('PCTID', $PCTID)->update($data);
                 if ($status) {
                     DB::commit();
-                    $status = dynamicField::add(docTypes::ProductCategoryType->value, $req, "tbl_product_category_type", "PCTID", $PCTID, $this->UserID);
-                    if (DB::transactionLevel() == 0) {
-                        DB::beginTransaction();
-                    }
                 }
             } catch (Exception $e) {
                 $status = false;
