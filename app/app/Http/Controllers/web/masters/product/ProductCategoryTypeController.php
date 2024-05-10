@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
 use App\Models\DocNum;
 use App\Models\general;
+use App\Models\Language;
 use App\Models\ServerSideProcess;
 use App\Rules\ValidUnique;
 use Exception;
@@ -92,6 +93,7 @@ class ProductCategoryTypeController extends Controller
             $FormData['PageTitle'] = $this->PageTitle;
             $FormData['isEdit'] = false;
             $FormData['FileTypes'] = $this->FileTypes;
+            $FormData['languages'] = Language::active()->get();
             return view('app.master.product.category-type.create', $FormData);
         } elseif ($this->general->isCrudAllow($this->CRUD, "view")) {
             return Redirect::to('/admin/master/product/category-type/');
@@ -110,8 +112,10 @@ class ProductCategoryTypeController extends Controller
             $FormData['PageTitle'] = $this->PageTitle;
             $FormData['isEdit'] = true;
             $FormData['FileTypes'] = $this->FileTypes;
+            $FormData['languages'] = Language::active()->get();
             $FormData['EditData'] = DB::Table('tbl_product_category_type')->where('DFlag', 0)->Where('PCTID', $PCTID)->get();
             if (count($FormData['EditData']) > 0) {
+                $FormData['EditData'][0]->PCTNameInTranslation = json_decode($FormData['EditData'][0]->PCTNameInTranslation);
                 return view('app.master.product.category-type.create', $FormData);
             } else {
                 return view('errors.403');
@@ -130,11 +134,13 @@ class ProductCategoryTypeController extends Controller
             $PCTID = "";
             $rules = array(
                 'PCTName' => ['required', 'max:50', new ValidUnique(array("TABLE" => "tbl_product_category_type", "WHERE" => " PCTName='" . $req->PCTName . "'  "), "This Product Category Type Name is already taken.")],
+                'PCTNameInTranslation' => 'required',
             );
             $message = array(
                 'PCTName.required' => "Product Category Type Name is required",
                 'PCTName.min' => "Product Category Type Name must be greater than 2 characters",
                 'PCTName.max' => "Product Category Type Name may not be greater than 100 characters",
+                'PCTNameInTranslation.required' => "Product Category Type Name in Translation is required",
                 'PCTImage.mimes' => "The Product Category Type image field must be a file of type: " . implode(", ", $this->FileTypes['category']['Images']) . "."
             );
             if ($req->hasFile('PCTImage')) {
@@ -175,6 +181,7 @@ class ProductCategoryTypeController extends Controller
                 $data = array(
                     "PCTID" => $PCTID,
                     "PCTName" => $req->PCTName,
+                    "PCTNameInTranslation" => $req->PCTNameInTranslation,
                     'PCTImage' => $PCTImage,
                     "Images" => serialize($images),
                     "ActiveStatus" => $req->ActiveStatus,
@@ -204,14 +211,15 @@ class ProductCategoryTypeController extends Controller
     public function update(Request $req, $PCTID)
     {
         if ($this->general->isCrudAllow($this->CRUD, "edit")) {
-            $OldData = array();
             $rules = array(
-                'PCTName' => ['required', 'max:50', new ValidUnique(array("TABLE" => "tbl_product_category_type", "WHERE" => " PCTName='" . $req->PCTName . "' and PCTID<>'" . $PCTID . "'  "), "This Product Category Type Name is already taken.")]
+                'PCTName' => ['required', 'max:50', new ValidUnique(array("TABLE" => "tbl_product_category_type", "WHERE" => " PCTName='" . $req->PCTName . "' and PCTID<>'" . $PCTID . "'  "), "This Product Category Type Name is already taken.")],
+                'PCTNameInTranslation' => 'required',
             );
             $message = array(
                 'PCTName.required' => "Product Category Type Name is required",
                 'PCTName.min' => "Product Category Type Name must be greater than 2 characters",
                 'PCTName.max' => "Product Category Type Name may not be greater than 100 characters",
+                'PCTNameInTranslation.required' => "Product Category Type Name in Translation is required",
                 'PCTImage.mimes' => "The Product Category Type image field must be a file of type: " . implode(", ", $this->FileTypes['category']['Images']) . "."
             );
             if ($req->hasFile('PCTImage')) {
@@ -226,7 +234,7 @@ class ProductCategoryTypeController extends Controller
             $currCImage = array();
             $images = array();
             try {
-                $OldData = DB::table('tbl_product_category_type')->where('PCTID', $PCTID)->get();
+                $OldData = DB::table('tbl_product_category_type')->where('PCTID', $PCTID)->first();
                 $PCTImage = "";
                 $dir = "uploads/master/product/category-type/" . $PCTID . "/";
                 if (!file_exists($dir)) {
@@ -250,15 +258,24 @@ class ProductCategoryTypeController extends Controller
                 if (file_exists($PCTImage)) {
                     $images = helper::ImageResize($PCTImage, $dir);
                 }
-                if (($PCTImage != "" || intval($req->removePCTImage) == 1) && Count($OldData) > 0) {
-                    $currCImage = $OldData[0]->Images != "" ? unserialize($OldData[0]->Images) : array();
+                if (($PCTImage != "" || intval($req->removePCTImage) == 1) && $OldData) {
+                    $currCImage = $OldData->Images != "" ? unserialize($OldData->Images) : array();
                 }
+
                 $data = array(
                     "PCTName" => $req->PCTName,
                     "ActiveStatus" => $req->ActiveStatus,
                     "UpdatedBy" => $this->UserID,
                     "UpdatedOn" => date("Y-m-d H:i:s")
                 );
+
+                $newTranslations = json_decode($req->PCTNameInTranslation);
+                $existingTranslations = json_decode($OldData->PCTNameInTranslation);
+                foreach ($newTranslations as $lang => $value) {
+                    $existingTranslations->$lang = $value;
+                }
+                $data['PCTNameInTranslation'] = json_encode($existingTranslations);
+
                 if ($PCTImage != "") {
                     $data['PCTImage'] = $PCTImage;
                     $data['Images'] = serialize($images);
@@ -266,33 +283,25 @@ class ProductCategoryTypeController extends Controller
                     $data['PCTImage'] = "";
                     $data['Images'] = serialize(array());
                 }
-                $status = DB::Table('tbl_product_category_type')->where('PCTID', $PCTID)->update($data);
-                if ($status) {
-                    DB::commit();
-                }
-            } catch (Exception $e) {
-                $status = false;
-            }
-
-            if ($status) {
+                DB::Table('tbl_product_category_type')->where('PCTID', $PCTID)->update($data);
                 DB::commit();
                 $NewData = DB::table('tbl_product_category_type')->where('PCTID', $PCTID)->get();
                 $logData = array("Description" => "Product Category Type Updated ", "ModuleName" => $this->ActiveMenuName, "Action" => cruds::UPDATE->value, "ReferID" => $PCTID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $this->UserID, "IP" => $req->ip());
                 logController::Store($logData);
-
-                foreach ($currCImage as $KeyName => $Img) {
+                foreach ($currCImage as $Img) {
                     Helper::removeFile($Img['url']);
                 }
                 return array('status' => true, 'message' => "Product Category Type Updated Successfully");
-            } else {
+            } catch (Exception $e) {
+                logger($e);
                 DB::rollback();
-                foreach ($images as $KeyName => $Img) {
+                foreach ($images as $Img) {
                     Helper::removeFile($Img['url']);
                 }
                 return array('status' => false, 'message' => "Product Category Type Update Failed");
             }
         } else {
-            return array('status' => false, 'message' => 'Access denined');
+            return array('status' => false, 'message' => 'Access denied');
         }
     }
 

@@ -19,7 +19,7 @@
 		<div class="col-12 col-sm-12 col-lg-6">
 			<div class="card">
 				<div class="card-header text-center"><h5 class="mt-10">{{$PageTitle}}</h5></div>
-				<div class="card-body " >
+				<div class="card-body">
                     <div class="row mb-30  d-flex justify-content-center">
                         <div class="col-sm-6">
                             <input type="file" class="dropify imageScrop" data-aspect-ratio="{{$Settings['image-crop-ratio']['w']/$Settings['image-crop-ratio']['h']}}" data-remove="0" data-is-cover-image="1" id="txtPCTImage" data-default-file="<?php if($isEdit==true){if(optional($EditData[0])->PCTImage!=""){ echo url('/')."/".$EditData[0]->PCTImage;}}?>"  data-allowed-file-extensions="<?php echo implode(" ",$FileTypes['category']['Images']) ?>" >
@@ -33,6 +33,16 @@
                                 <input type="text" class="form-control {{$Theme['input-size']}}" id="txtPCTName" value="{{ $isEdit==true ? ($EditData[0]->PCTName ?? '') : '' }}" autocomplete="off">
                                 <div class="errors" id="txtPCTName-err"></div>
                             </div>
+                        </div>
+                        <div class="col-sm-12 text-center mt-20">
+                            <label class="align-middle fw-bold">Product Category Type Translations</label>
+                            @foreach($languages as $index=>$language)
+                                <div class="form-group text-left mt-20">
+                                    <label class="txtPCTNameIn_{{ $language->code }}">Product Category Type Name In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                    <input type="text" class="form-control LanguageFieldsCheck {{$Theme['input-size']}}" id="txtPCTNameIn_{{ $language->code }}" data-language-code="{{ $language->code }}" data-language="{{ $language->name_in_english }}" value="{{ $isEdit ? ($EditData[0]->PCTNameInTranslation->{$language->code} ?? '') : '' }}" autocomplete="off">
+                                    <div class="errors" id="txtPCTNameIn_{{ $language->code }}-err"></div>
+                                </div>
+                            @endforeach
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
@@ -245,6 +255,19 @@
             }else if(PCTName.length>100){
                 $('#txtPCTName-err').html('Product Category Type Name may not be greater than 100 characters');status=false;
             }
+
+            $('.LanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtPCTNameIn_' + languageCode + '-err').html('Product Category Type Name in ' + language + ' is required.');
+                    status = false;
+                }
+            });
+
             if(status===false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
         }
@@ -252,8 +275,17 @@
             let tmp=await UploadImages();
             let formData=await df.getFormData();
             let AData=await df.getData();
-            formData.append('AData',JSON.stringify(AData));
-            formData.append('PCTName',$('#txtPCTName').val());
+            let PCTNameInTranslation = {};
+
+            $('.LanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                PCTNameInTranslation[language_code] = input.val();
+            });
+
+            formData.append('AData', JSON.stringify(AData));
+            formData.append('PCTName', $('#txtPCTName').val());
+            formData.append('PCTNameInTranslation', JSON.stringify(PCTNameInTranslation));
             formData.append('ActiveStatus',$('#lstActiveStatus').val());
             formData.append('removePCTImage', $('#txtPCTImage').attr('data-remove'));
             if(tmp.coverImage.uploadPath!==""){

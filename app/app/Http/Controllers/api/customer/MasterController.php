@@ -91,6 +91,7 @@ class MasterController extends Controller
 
 //    Product Data
     public function GetCategoryType(Request $req){
+        $lang = optional($req->auth_customer)->language ?? 'en';
         $pageNo = $req->PageNo ?? 1;
         $perPage = 15;
 
@@ -100,8 +101,15 @@ class MasterController extends Controller
                 return $query->where('PCTName', 'like', '%' . $req->SearchText . '%');
             });
 
-        $result = $Category->select('PCTName', 'PCTID', DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PCTImage, ""), "assets/images/no-image-b.png")) AS CategoryTypeImage'))
+        $result = $Category->select('PCTName', 'PCTNameInTranslation', 'PCTID', DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PCTImage, ""), "assets/images/no-image-b.png")) AS CategoryTypeImage'))
             ->paginate($perPage, ['*'], 'page', $pageNo);
+
+        $result->transform(function ($result) use ($lang) {
+            $translations = json_decode($result->PCTNameInTranslation);
+            $result->PCTName = $translations->$lang ?? $result->PCTName;
+            unset($result->PCTNameInTranslation);
+            return $result;
+        });
 
         return response()->json([
             'status' => true,
