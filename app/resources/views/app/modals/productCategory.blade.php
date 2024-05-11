@@ -24,6 +24,23 @@
             <div class="errors new-category" id="txtMPCName-err"></div>
         </div>
     </div>
+    @if(count($languages) > 0)
+        <div class="col-sm-12 text-center mt-20">
+            <label class="align-middle fw-bold">Product Category Name Translations</label>
+            @foreach($languages as $index=>$language)
+                <div class="form-group text-left mt-20">
+                    <label class="txtMPCNameIn_{{ $language->code }}">Product Category Name
+                        In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                    <input type="text"
+                           class="form-control PcMLanguageFieldsCheck {{$Theme['input-size']}}"
+                           id="txtMPCNameIn_{{ $language->code }}"
+                           data-language-code="{{ $language->code }}"
+                           data-language="{{ $language->name_in_english }}" value="" autocomplete="off">
+                    <div class="errors" id="txtMPCNameIn_{{ $language->code }}-err"></div>
+                </div>
+            @endforeach
+        </div>
+    @endif
     <div class="col-sm-12 mt-20">
         <div class="form-group">
             <label class="lstMActiveStatus"> Active Status</label>

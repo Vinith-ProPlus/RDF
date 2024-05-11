@@ -6,6 +6,7 @@ use App\enums\docTypes;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Models\DocNum;
+use App\Models\Language;
 use App\Rules\ValidDB;
 use Exception;
 use Illuminate\Http\Request;
@@ -99,6 +100,7 @@ class ProductCategoryController extends Controller
             $FormData['isEdit'] = false;
             $FormData['FileTypes'] = $this->FileTypes;
             $FormData['OtherCruds'] = $OtherCruds;
+            $FormData['languages'] = Language::active()->get();
             return view('app.master.product.category.create', $FormData);
         } elseif ($this->general->isCrudAllow($this->CRUD, "view")) {
             return Redirect::to('/admin/master/product/category/');
@@ -121,8 +123,10 @@ class ProductCategoryController extends Controller
             $FormData['isEdit'] = true;
             $FormData['FileTypes'] = $this->FileTypes;
             $FormData['OtherCruds'] = $OtherCruds;
+            $FormData['languages'] = Language::active()->get();
             $FormData['EditData'] = DB::Table('tbl_product_category')->where('DFlag', 0)->Where('PCID', $PCID)->get();
             if (count($FormData['EditData']) > 0) {
+                $FormData['EditData'][0]->PCNameInTranslation = json_decode($FormData['EditData'][0]->PCNameInTranslation);
                 return view('app.master.product.category.create', $FormData);
             } else {
                 return view('errors.403');
@@ -148,12 +152,14 @@ class ProductCategoryController extends Controller
             $ValidDB['CategoryType']['WHERE'][] = array("COLUMN" => "ActiveStatus", "CONDITION" => "=", "VALUE" => 'Active');
             $rules = array(
                 'PCName' => ['required', 'max:50', new ValidUnique(array("TABLE" => "tbl_product_category", "WHERE" => " PCName='" . $req->PCName . "'  "), "This Product Category Name is already taken.")],
-                'PCTID' => ['required', new ValidDB($ValidDB['CategoryType'])]
+                'PCTID' => ['required', new ValidDB($ValidDB['CategoryType'])],
+                'PCNameInTranslation' => 'required',
             );
             $message = array(
                 'PCName.required' => "Product Category Name is required",
                 'PCName.min' => "Product Category Name must be greater than 2 characters",
                 'PCName.max' => "Product Category Name may not be greater than 100 characters",
+                'PCNameInTranslation.required' => "Product Category Name in Translation is required",
                 'PCImage.mimes' => "The Product Category image field must be a file of type: " . implode(", ", $this->FileTypes['category']['Images']) . "."
             );
             if ($req->hasFile('PCImage')) {
@@ -195,28 +201,22 @@ class ProductCategoryController extends Controller
                     "PCID" => $PCID,
                     "PCTID" => $req->PCTID,
                     "PCName" => $req->PCName,
+                    "PCNameInTranslation" => $req->PCNameInTranslation,
                     'PCImage' => $PCImage,
                     "Images" => serialize($images),
                     "ActiveStatus" => $req->ActiveStatus,
                     "CreatedBy" => $this->UserID,
                     "CreatedOn" => date("Y-m-d H:i:s")
                 );
-                $status = DB::Table('tbl_product_category')->insert($data);
-                if ($status) {
-                    DB::commit();
-                }
-            } catch (Exception $e) {
-                $status = false;
-            }
-
-            if ($status == true) {
+                DB::Table('tbl_product_category')->insert($data);
                 DocNum::updateDocNum(docTypes::ProductCategory->value);
                 DB::commit();
                 $NewData = DB::table('tbl_product_category')->where('PCID', $PCID)->get();
                 $logData = array("Description" => "New Product Category Created ", "ModuleName" => $this->ActiveMenuName, "Action" => cruds::ADD->value, "ReferID" => $PCID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $this->UserID, "IP" => $req->ip());
                 logs::Store($logData);
                 return array('status' => true, 'message' => "Product Category Created Successfully");
-            } else {
+            } catch (Exception $e) {
+                logger($e);
                 DB::rollback();
                 //Helper::removeFile($PCImage);
                 foreach ($images as $KeyName => $Img) {
@@ -243,12 +243,14 @@ class ProductCategoryController extends Controller
 
             $rules = array(
                 'PCName' => ['required', 'max:50', new ValidUnique(array("TABLE" => "tbl_product_category", "WHERE" => " PCName='" . $req->PCName . "' and PCID<>'" . $PCID . "'  "), "This Product Category Name is already taken.")],
-                'PCTID' => ['required', new ValidDB($ValidDB['CategoryType'])]
+                'PCTID' => ['required', new ValidDB($ValidDB['CategoryType'])],
+                'PCNameInTranslation' => 'required',
             );
             $message = array(
                 'PCName.required' => "Product Category Name is required",
                 'PCName.min' => "Product Category Name must be greater than 2 characters",
                 'PCName.max' => "Product Category Name may not be greater than 100 characters",
+                'PCNameInTranslation.required' => "Product Category Name in Translation is required",
                 'PCImage.mimes' => "The Product Category image field must be a file of type: " . implode(", ", $this->FileTypes['category']['Images']) . "."
             );
             if ($req->hasFile('PCImage')) {
@@ -263,7 +265,7 @@ class ProductCategoryController extends Controller
             $currCImage = array();
             $images = array();
             try {
-                $OldData = DB::table('tbl_product_category')->where('PCID', $PCID)->get();
+                $OldData = DB::table('tbl_product_category')->where('PCID', $PCID)->first();
                 $PCImage = "";
                 $dir = "uploads/master/product/category/" . $PCID . "/";
                 if (!file_exists($dir)) {
@@ -287,8 +289,8 @@ class ProductCategoryController extends Controller
                 if (file_exists($PCImage)) {
                     $images = helper::ImageResize($PCImage, $dir);
                 }
-                if (($PCImage != "" || intval($req->removePCImage) == 1) && Count($OldData) > 0) {
-                    $currCImage = $OldData[0]->Images != "" ? unserialize($OldData[0]->Images) : array();
+                if (($PCImage != "" || intval($req->removePCImage) == 1) && $OldData) {
+                    $currCImage = $OldData->Images != "" ? unserialize($OldData->Images) : array();
                 }
                 $data = array(
                     "PCName" => $req->PCName,
@@ -297,6 +299,14 @@ class ProductCategoryController extends Controller
                     "UpdatedBy" => $this->UserID,
                     "UpdatedOn" => date("Y-m-d H:i:s")
                 );
+
+                $newTranslations = json_decode($req->PCNameInTranslation);
+                $existingTranslations = json_decode($OldData->PCNameInTranslation);
+                foreach ($newTranslations as $lang => $value) {
+                    $existingTranslations->$lang = $value;
+                }
+                $data['PCNameInTranslation'] = json_encode($existingTranslations);
+
                 if ($PCImage != "") {
                     $data['PCImage'] = $PCImage;
                     $data['Images'] = serialize($images);
@@ -304,26 +314,18 @@ class ProductCategoryController extends Controller
                     $data['PCImage'] = "";
                     $data['Images'] = serialize(array());
                 }
-                $status = DB::Table('tbl_product_category')->where('PCID', $PCID)->update($data);
-                if ($status) {
-                    DB::commit();
-                }
-            } catch (Exception $e) {
-                $status = false;
-            }
-
-            if ($status == true) {
+                DB::Table('tbl_product_category')->where('PCID', $PCID)->update($data);
                 DB::commit();
                 $NewData = DB::table('tbl_product_category')->where('PCID', $PCID)->get();
                 $logData = array("Description" => "Product Category Updated ", "ModuleName" => $this->ActiveMenuName, "Action" => cruds::UPDATE->value, "ReferID" => $PCID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $this->UserID, "IP" => $req->ip());
                 logs::Store($logData);
                 //Helper::removeFile($currCImage);
-
                 foreach ($currCImage as $KeyName => $Img) {
                     Helper::removeFile($Img['url']);
                 }
                 return array('status' => true, 'message' => "Product Category Updated Successfully");
-            } else {
+            } catch (Exception $e) {
+                logger($e);
                 DB::rollback();
                 foreach ($images as $KeyName => $Img) {
                     Helper::removeFile($Img['url']);
@@ -508,7 +510,8 @@ class ProductCategoryController extends Controller
             "PCategoryType" => $this->general->getCrudOperations(activeMenuNames::ProductCategoryType->value),
         );
         $Theme = $this->getThemesOption();
-        return view("app.modals.productCategory", array("Theme" => $Theme, "FileTypes" => $this->FileTypes, "OtherCruds" => $OtherCruds));
+        $languages = Language::active()->get();
+        return view("app.modals.productCategory", array("Theme" => $Theme, "FileTypes" => $this->FileTypes, "OtherCruds" => $OtherCruds, "languages" => $languages));
     }
 
     public static function GetProductCategory(Request $req)

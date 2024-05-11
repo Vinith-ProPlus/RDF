@@ -34,6 +34,25 @@
                                 <div class="errors" id="txtPCName-err"></div>
                             </div>
                         </div>
+                        @if(count($languages) > 0)
+                            <div class="col-sm-12 text-center mt-20">
+                                <label class="align-middle fw-bold">Product Category Name Translations</label>
+                                @foreach($languages as $index=>$language)
+                                    <div class="form-group text-left mt-20">
+                                        <label class="txtPCNameIn_{{ $language->code }}">Product Category Name
+                                            In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                        <input type="text"
+                                               class="form-control PcLanguageFieldsCheck {{$Theme['input-size']}}"
+                                               id="txtPCNameIn_{{ $language->code }}"
+                                               data-language-code="{{ $language->code }}"
+                                               data-language="{{ $language->name_in_english }}"
+                                               value="{{ $isEdit ? ($EditData[0]->PCNameInTranslation->{$language->code} ?? '') : '' }}"
+                                               autocomplete="off">
+                                        <div class="errors" id="txtPCNameIn_{{ $language->code }}-err"></div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstPCategoryType"> Product Category Type <span class="required"> * </span>
@@ -279,7 +298,7 @@
             let status = await df.Validate();
             let PCName = $('#txtPCName').val();
             let PCTID = $('#lstPCategoryType').val();
-            if (PCName === "") {
+            if (PCName == "") {
                 $('#txtPCName-err').html('The Product Category name is required.');
                 status = false;
             } else if (PCName.length < 2) {
@@ -293,6 +312,19 @@
                 $('#lstPCategoryType-err').html('The Product Category Type Name is required.');
                 status = false;
             }
+
+            $('.PcLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtPCNameIn_' + languageCode + '-err').html('Product Category Name in ' + language + ' is required.');
+                    status = false;
+                }
+            });
+
             if (status === false) {
                 $("html, body").animate({scrollTop: 0}, "slow");
             }
@@ -302,8 +334,16 @@
             let tmp=await UploadImages();
             let formData=await df.getFormData();
             let AData=await df.getData();
+            let PCNameInTranslation = {};
+
+            $('.PcLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                PCNameInTranslation[language_code] = input.val();
+            });
             formData.append('AData',JSON.stringify(AData));
             formData.append('PCName',$('#txtPCName').val());
+            formData.append('PCNameInTranslation', JSON.stringify(PCNameInTranslation));
             formData.append('PCTID',$('#lstPCategoryType').val());
             formData.append('ActiveStatus',$('#lstActiveStatus').val());
             formData.append('removePCImage', $('#txtPCImage').attr('data-remove'));

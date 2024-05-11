@@ -444,7 +444,7 @@
                                 <div class="row mt-20">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >Category <span class="required"> * </span></div></div>
                                     <div class="col-6 col-lg-8">
-                                        <select class="form-control {{$Theme['input-size']}} select2" id="lstCategory" data-selected="<?php if($isEdit){ echo $data->CID;} ?>">
+                                        <select class="form-control {{$Theme['input-size']}} select2" id="lstCategory" data-selected="<?php if($isEdit){ echo $data->CID;} ?>" data-category-type-id="lstCategoryType">
                                             <option value="">Select a Category</option>
                                         </select>
                                         <div class="errors err-sm" id="lstCategory-err"></div>

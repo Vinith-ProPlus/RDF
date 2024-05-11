@@ -1752,7 +1752,7 @@ $(document).ready(function(){
             status = false;
         }
 
-        if (PCName == "") {
+        if (PCName === "") {
             $('#txtMPCName-err').html('The Product Category Name is required.');
             status = false;
         } else if (PCName.length < 2) {
@@ -1762,24 +1762,43 @@ $(document).ready(function(){
             $('#txtMPCName-err').html('Product Category Name may not be greater than 100 characters');
             status = false;
         }
-        if (status == false) {
+
+        $('.PcMLanguageFieldsCheck').each(function() {
+            let input = $(this);
+            let value = input.val();
+            let languageCode = input.data('language-code');
+            let language = input.data('language');
+
+            if (value === "") {
+                $('#txtMPCNameIn_' + languageCode + '-err').html('Product Category Name in ' + language + ' is required.');
+                status = false;
+            }
+        });
+
+        if (status === false) {
             $("html, body").animate({scrollTop: 0}, "slow");
         }
         return status;
     }
     const getPCategory=async(elem)=>{
+        let PCategoryType = $('#'+elem).attr("data-category-type-id");
+        let PCTID=$('#'+PCategoryType).val();
         $('#'+elem).select2('destroy');
         $('#'+elem+' option').remove();
         $('#'+elem).append('<option value="" selected>Select a Product Category</option>');
         $.ajax({
-            type:"post",
-            url:RootUrl+"admin/master/product/category/get/PCategory/",
+            type:"POST",
+            url:RootUrl+"admin/master/product/category/get/PCategory",
+            headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
+            data:{PCTID:PCTID},
+            async:true,
+            dataType:"json",
+            cache: false,
+            processData: false,
+            contentType: false,
             beforeSend:async()=>{
                 $('#btnReloadPCategory i').addClass('fa-spin');
             },
-            headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
-            dataType:"json",
-            async:true,
             error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},
             complete:async()=>{
                 setTimeout(() => {
@@ -1830,8 +1849,16 @@ $(document).ready(function(){
         let status=await validatePCategory();
         if(status==true){
             let formData=new FormData();
+            let PCMNameInTranslation = {};
+
+            $('.PcMLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                PCMNameInTranslation[language_code] = input.val();
+            });
             formData.append('PCTID',$('#lstMPCategoryType').val());
             formData.append('PCName',$('#txtMPCName').val());
+            formData.append('PCNameInTranslation', JSON.stringify(PCMNameInTranslation));
             formData.append('ActiveStatus',$('#lstMActiveStatus').val());
             if($('#txtMPCImage').val()!=""){
                 formData.append('PCImage', $('#txtMPCImage')[0].files[0]);
@@ -1894,6 +1921,9 @@ $(document).ready(function(){
                             }
                             if( $('#btnReloadPCategory').length>0){
                                 $('#btnReloadPCategory').trigger('click');
+                            }
+                            if( $('#btnReloadPCategoryInSC').length>0){
+                                $('#btnReloadPCategoryInSC').trigger('click');
                             }
                         }else{
                             toastr.error(response.message, "Failed", {

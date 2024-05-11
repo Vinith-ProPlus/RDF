@@ -14,6 +14,7 @@ class ProductCategory extends Model
     protected $fillable = [
         "PCID",
         "PCName",
+        "PCNameInTranslation",
         "PCImage",
         "Images",
         "ActiveStatus",

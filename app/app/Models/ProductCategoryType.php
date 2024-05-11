@@ -15,6 +15,7 @@ class ProductCategoryType extends Model
     protected $fillable = [
         "PCTID",
         "PCTName",
+        "PCTNameInTranslation",
         "PCTImage",
         "Images",
         "ActiveStatus",
