@@ -34,16 +34,25 @@
                                 <div class="errors" id="txtPCTName-err"></div>
                             </div>
                         </div>
-                        <div class="col-sm-12 text-center mt-20">
-                            <label class="align-middle fw-bold">Product Category Type Translations</label>
-                            @foreach($languages as $index=>$language)
-                                <div class="form-group text-left mt-20">
-                                    <label class="txtPCTNameIn_{{ $language->code }}">Product Category Type Name In {{ $language->name_in_english }}<span class="required"> * </span></label>
-                                    <input type="text" class="form-control LanguageFieldsCheck {{$Theme['input-size']}}" id="txtPCTNameIn_{{ $language->code }}" data-language-code="{{ $language->code }}" data-language="{{ $language->name_in_english }}" value="{{ $isEdit ? ($EditData[0]->PCTNameInTranslation->{$language->code} ?? '') : '' }}" autocomplete="off">
-                                    <div class="errors" id="txtPCTNameIn_{{ $language->code }}-err"></div>
-                                </div>
-                            @endforeach
-                        </div>
+                        @if(count($languages) > 0)
+                            <div class="col-sm-12 text-center mt-20">
+                                <label class="align-middle fw-bold">Product Category Type Name Translations</label>
+                                @foreach($languages as $index=>$language)
+                                    <div class="form-group text-left mt-20">
+                                        <label class="txtPCTNameIn_{{ $language->code }}">Product Category Type Name
+                                            In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                        <input type="text"
+                                               class="form-control LanguageFieldsCheck {{$Theme['input-size']}}"
+                                               id="txtPCTNameIn_{{ $language->code }}"
+                                               data-language-code="{{ $language->code }}"
+                                               data-language="{{ $language->name_in_english }}"
+                                               value="{{ $isEdit ? ($EditData[0]->PCTNameInTranslation->{$language->code} ?? '') : '' }}"
+                                               autocomplete="off">
+                                        <div class="errors" id="txtPCTNameIn_{{ $language->code }}-err"></div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label class="lstActiveStatus"> Active Status</label>

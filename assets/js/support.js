@@ -1555,14 +1555,30 @@ $(document).ready(function(){
         $('.errors.new-category').html('');
         let status=true;
         let PCTName=$('#txtMPCTName').val();
-        if(PCTName==""){
-            $('#txtMPCTName-err').html('The Product Category Type Name is required.');status=false;
-        }else if(PCTName.length<2){
-            $('#txtMPCTName-err').html('Product Category Type Name must be greater than 2 characters');status=false;
-        }else if(PCTName.length>100){
-            $('#txtMPCTName-err').html('Product Category Type Name may not be greater than 100 characters');status=false;
+        if (PCTName === "") {
+            $('#txtMPCTName-err').html('The Product Category Type Name is required.');
+            status = false;
+        } else if (PCTName.length < 2) {
+            $('#txtMPCTName-err').html('Product Category Type Name must be greater than 2 characters');
+            status = false;
+        } else if (PCTName.length > 100) {
+            $('#txtMPCTName-err').html('Product Category Type Name may not be greater than 100 characters');
+            status = false;
         }
-        if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
+
+        $('.CtLanguageFieldsCheck').each(function() {
+            let input = $(this);
+            let value = input.val();
+            let languageCode = input.data('language-code');
+            let language = input.data('language');
+
+            if (value === "") {
+                $('#txtMPCTNameIn_' + languageCode + '-err').html('Product Category Type Name in ' + language + ' is required.');
+                status = false;
+            }
+        });
+
+        if(status === false){$("html, body").animate({ scrollTop: 0 }, "slow");}
         return status;
     }
     const getPCategoryType=async(elem)=>{
@@ -1628,7 +1644,15 @@ $(document).ready(function(){
         let status=await validatePCategoryType();
         if(status===true){
             let formData=new FormData();
+            let PCTNameInTranslation = {};
+
+            $('.CtLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                PCTNameInTranslation[language_code] = input.val();
+            });
             formData.append('PCTName',$('#txtMPCTName').val());
+            formData.append('PCTNameInTranslation', JSON.stringify(PCTNameInTranslation));
             formData.append('ActiveStatus',$('#lstMActiveStatus').val());
             if($('#txtMPCTImage').val()!==""){
                 formData.append('PCTImage', $('#txtMPCTImage')[0].files[0]);

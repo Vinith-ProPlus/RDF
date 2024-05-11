@@ -466,7 +466,8 @@ class ProductCategoryTypeController extends Controller
     public function GetNewProductCategoryType(Request $req)
     {
         $Theme = $this->getThemesOption();
-        return view("app.modals.productCategoryType", array("Theme" => $Theme, "FileTypes" => $this->FileTypes));
+        $languages = Language::active()->get();
+        return view("app.modals.productCategoryType", array("Theme" => $Theme, "FileTypes" => $this->FileTypes, "languages" => $languages));
     }
 
     public static function GetProductCategoryType(request $req)

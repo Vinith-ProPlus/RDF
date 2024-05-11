@@ -435,9 +435,9 @@
                                             <option value="">Select a Category Type</option>
                                         </select>
                                         <div class="errors err-sm" id="lstCategoryType-err"></div>
+                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadPCategoryType" title="Reload Category Type" ><i class="fa fa-plus"></i></button>
                                     </div>
                                     <div class="col-1 col-lg-2 d-flex align-items-center">
-                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadPCategoryType" title="Reload Category Type" ><i class="fa fa-plus"></i></button>
                                         @if($OtherCruds['CategoryType']['add']==1)  <button class="btn btn-outline-dark {{$Theme['button-size']}}" id="btnAddPCategoryType" title="add new category type" ><i class="fa fa-plus"></i></button> @endif
                                     </div>
                                 </div>
@@ -448,9 +448,9 @@
                                             <option value="">Select a Category</option>
                                         </select>
                                         <div class="errors err-sm" id="lstCategory-err"></div>
+                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadPCategory" title="Reload Category" ><i class="fa fa-plus"></i></button>
                                     </div>
                                     <div class="col-1 col-lg-2 d-flex align-items-center">
-                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadPCategory" title="Reload Category" ><i class="fa fa-plus"></i></button>
                                         @if($OtherCruds['Category']['add']==1)  <button class="btn btn-outline-dark {{$Theme['button-size']}}" id="btnAddPCategory" title="add new  category" ><i class="fa fa-plus"></i></button> @endif
                                     </div>
                                 </div>
@@ -461,9 +461,9 @@
                                             <option value="">Select a Sub Category</option>
                                         </select>
                                         <div class="errors err-sm" id="lstSubCategory-err"></div>
+                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadPSubCategory" title="Reload Sub Category" ><i class="fa fa-plus"></i></button>
                                     </div>
                                     <div class="col-1 col-lg-2 d-flex align-items-center">
-                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadPSubCategory" title="Reload Sub Category" ><i class="fa fa-plus"></i></button>
                                         @if($OtherCruds['SubCategory']['add']==1)  <button class="btn btn-outline-dark {{$Theme['button-size']}}" id="btnAddPSubCategory" title="add new  sub category" ><i class="fa fa-plus"></i></button> @endif
                                     </div>
                                 </div>
@@ -474,9 +474,9 @@
                                             <option value="">Select a UOM</option>
                                         </select>
                                         <div class="errors err-sm" id="lstUOM-err"></div>
+                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadUOM" title="reload UoM" ><i class="fa fa-plus"></i></button>
                                     </div>
                                     <div class="col-1 col-lg-2 d-flex align-items-center">
-                                        <button class="btn btn-outline-dark {{$Theme['button-size']}}" style="display:none" id="btnReloadUOM" title="reload UoM" ><i class="fa fa-plus"></i></button>
                                         @if($OtherCruds['uom']['add']==1)  <button class="btn btn-outline-dark {{$Theme['button-size']}}" id="btnAddUOM" title="add new UoM" ><i class="fa fa-plus"></i></button> @endif
                                     </div>
                                 </div>
