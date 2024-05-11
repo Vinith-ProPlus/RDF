@@ -34,6 +34,25 @@
                                 <div class="errors" id="txtPSCName-err"></div>
                             </div>
                         </div>
+                        @if(count($languages) > 0)
+                            <div class="col-sm-12 text-center mt-20">
+                                <label class="align-middle fw-bold">Product Sub Category Name Translations</label>
+                                @foreach($languages as $index=>$language)
+                                    <div class="form-group text-left mt-20">
+                                        <label class="txtPSCNameIn_{{ $language->code }}">Product Sub Category Name
+                                            In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                        <input type="text"
+                                               class="form-control PscLanguageFieldsCheck {{$Theme['input-size']}}"
+                                               id="txtPSCNameIn_{{ $language->code }}"
+                                               data-language-code="{{ $language->code }}"
+                                               data-language="{{ $language->name_in_english }}"
+                                               value="{{ $isEdit ? ($EditData[0]->PSCNameInTranslation->{$language->code} ?? '') : '' }}"
+                                               autocomplete="off">
+                                        <div class="errors" id="txtPSCNameIn_{{ $language->code }}-err"></div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstPCategoryType"> Product Category Type <span class="required"> * </span>
@@ -103,11 +122,11 @@
                 <div class="card-footer">
                     <div class="row">
                         <div class="col-sm-12 text-right">
-                            @if($crud['view']==true)
+                            @if($crud['view'])
                             <a href="{{url('/')}}/admin/master/product/sub-category/" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
 
-                            @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
+                            @if((($crud['add']) && ($isEdit==false))||(($crud['edit']) && ($isEdit)))
                                 <button class="btn {{$Theme['button-size']}} btn-outline-success btn-air-success" id="btnSave">@if($isEdit==true) Update @else Save @endif</button>
                             @endif
                         </div>
@@ -400,13 +419,32 @@
                     }
                 });
             }
-            if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
+
+            $('.PscLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtPSCNameIn_' + languageCode + '-err').html('Product Sub Category Name in ' + language + ' is required.');
+                    status = false;
+                }
+            });
+
+            if(status===false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
         }
         const GetData=async()=>{
             let tmp=await UploadImages();
             let formData=await df.getFormData();
             let AData=await df.getData();
+            let PSCNameInTranslation = {};
+            $('.PscLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                PSCNameInTranslation[language_code] = input.val();
+            });
             let VideoURLs = [];
             $('.txtVideoUrl').each(function(){
                 VideoURLs.push($(this).val());
@@ -414,6 +452,7 @@
             formData.append('AData',JSON.stringify(AData));
             formData.append('VideoURLs',JSON.stringify(VideoURLs));
             formData.append('PSCName',$('#txtPSCName').val());
+            formData.append('PSCNameInTranslation', JSON.stringify(PSCNameInTranslation));
             formData.append('PCTID',$('#lstPCategoryType').val());
             formData.append('PCategory',$('#lstPCategory').val());
             formData.append('ActiveStatus',$('#lstActiveStatus').val());
@@ -437,22 +476,22 @@
             if(status){
                 swal({
                     title: "Are you sure?",
-                    text: "You want @if($isEdit==true)Update @else Save @endif this Product Sub Category!",
+                    text: "You want @if($isEdit)Update @else Save @endif this Product Sub Category!",
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonClass: "btn-outline-success",
-                    confirmButtonText: "Yes, @if($isEdit==true)Update @else Save @endif it!",
+                    confirmButtonText: "Yes, @if($isEdit)Update @else Save @endif it!",
                     closeOnConfirm: false
                 },async function(){
                     swal.close();
                     btnLoading($('#btnSave'));
                     let formData=await GetData();
-                    let postUrl= @if($isEdit==true) "{{url('/')}}/admin/master/product/sub-category/edit/{{$PSCID}}"; @else "{{url('/')}}/admin/master/product/sub-category/create";@endif
+                    let postUrl= @if($isEdit) "{{url('/')}}/admin/master/product/sub-category/edit/{{$PSCID}}"; @else "{{url('/')}}/admin/master/product/sub-category/create";@endif
 
                     $.ajax({
                         type:"post",
                         url:postUrl,
-                        headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
+                        headers: { 'X-CSRF-Token' : "{{ csrf_token() }}" },
                         data:formData,
                         cache: false,
                         processData: false,

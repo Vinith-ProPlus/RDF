@@ -22,6 +22,7 @@ use logs;
 use App\enums\activeMenuNames;
 use App\enums\cruds;
 use helper\dynamicField;
+use stdClass;
 
 class ProductCategoryController extends Controller
 {
@@ -302,6 +303,9 @@ class ProductCategoryController extends Controller
 
                 $newTranslations = json_decode($req->PCNameInTranslation);
                 $existingTranslations = json_decode($OldData->PCNameInTranslation);
+                if (!$existingTranslations) {
+                    $existingTranslations = new stdClass();
+                }
                 foreach ($newTranslations as $lang => $value) {
                     $existingTranslations->$lang = $value;
                 }

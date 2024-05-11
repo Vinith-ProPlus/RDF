@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
+use stdClass;
 
 class ProductCategoryTypeController extends Controller
 {
@@ -271,6 +272,9 @@ class ProductCategoryTypeController extends Controller
 
                 $newTranslations = json_decode($req->PCTNameInTranslation);
                 $existingTranslations = json_decode($OldData->PCTNameInTranslation);
+                if (!$existingTranslations) {
+                    $existingTranslations = new stdClass();
+                }
                 foreach ($newTranslations as $lang => $value) {
                     $existingTranslations->$lang = $value;
                 }

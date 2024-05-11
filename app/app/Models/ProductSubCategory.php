@@ -15,6 +15,7 @@ class ProductSubCategory extends Model
         "PSCID",
         "PCID",
         "PSCName",
+        "PSCNameInTranslation",
         "PSCImage",
         "VideoURLs",
         "Images",

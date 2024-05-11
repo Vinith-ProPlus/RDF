@@ -1973,6 +1973,19 @@ $(document).ready(function(){
             $('#lstMPCategory-err').html('The Product Category is required.');
             status = false;
         }
+        
+        $('.PscMLanguageFieldsCheck').each(function() {
+            let input = $(this);
+            let value = input.val();
+            let languageCode = input.data('language-code');
+            let language = input.data('language');
+
+            if (value === "") {
+                $('#txtMPSCNameIn_' + languageCode + '-err').html('Product Sub Category Name in ' + language + ' is required.');
+                status = false;
+            }
+        });
+
         if (status === false) {
             $("html, body").animate({scrollTop: 0}, "slow");
         }
@@ -2051,9 +2064,16 @@ $(document).ready(function(){
         let status=await validatePSubCategory();
         if(status === true){
             let formData=new FormData();
+            let MPSCNameInTranslation = {};
+            $('.PscMLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                MPSCNameInTranslation[language_code] = input.val();
+            });
             formData.append('PCTID',$('#lstMPCategoryType').val());
             formData.append('PCategory',$('#lstMPCategory').val());
             formData.append('PSCName',$('#txtMPSCName').val());
+            formData.append('PSCNameInTranslation', JSON.stringify(MPSCNameInTranslation));
             formData.append('ActiveStatus',$('#lstMActiveStatus').val());
             if($('#txtMPSCImage').val()!=""){
                 formData.append('PSCImage', $('#txtMPSCImage')[0].files[0]);
