@@ -8,11 +8,15 @@
     <div class="col-sm-12">
         <div class="form-group">
             <label for="lstMPCategoryType"> Product Category Type <span class="required"> * </span>
-                <span class="addOption" id="btnReloadMPCategoryType" title="Reload Product Category Type"><i
-                        class="fa fa-refresh"></i></span></label>
+{{--                <span class="addOption" id="btnReloadMPCategoryType" title="Reload Product Category Type"><i--}}
+{{--                        class="fa fa-refresh"></i></span>--}}
+            </label>
             <select class="form-control {{$Theme['input-size']}} select2 lstMPCategoryType" id="lstMPCategoryType"
-                    data-selected="">
-                <option value="">Select a Product Category Type</option>
+                    data-selected="{{ $PCTID ?? '' }}">
+                <option value="">-- Select Product Category Type --</option>
+                @foreach($PCategoryType as $row)
+                    <option @if($row->PCTID == ($PCTID ?? '')) selected @endif value="{{ $row->PCTID }}">{{ $row->PCTName }}</option>
+                @endforeach
             </select>
             <div class="errors" id="lstMPCategoryType-err"></div>
         </div>
@@ -43,7 +47,7 @@
     @endif
     <div class="col-sm-12 mt-20">
         <div class="form-group">
-            <label class="lstMActiveStatus"> Active Status</label>
+            <label class="lstMActiveStatus">Active Status</label>
             <select class="form-control {{$Theme['input-size']}}" id="lstMActiveStatus">
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
@@ -61,42 +65,46 @@
 <script>
     $(document).ready(function(){
         $('.Mdropify').dropify();
-        const getCategoryType=async()=>{
-            $('#lstMPCategoryType option').remove();
-            $('#lstMPCategoryType').append('<option value="" selected>Select a Product Category Type</option>');
-            $.ajax({
-                type:"post",
-                url:"{{url('/')}}/admin/master/product/category/get/PCategoryType",
-                headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
-                dataType:"json",
-                async:true,
-                beforeSend:async()=>{
-                    $('#btnReloadMPCategoryType i').addClass('fa-spin');
-                },
-                error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},
-                complete: function(e, x, settings, exception){
-                    setTimeout(() => {
-                        $('#btnReloadMPCategoryType i').removeClass('fa-spin');
-                    }, 500);
-                },
-                success: function (response) {
-                    for (let Item of response) {
-                        let selected = "";
-                        if (Item.PCTID === $('#lstMPCategoryType').attr('data-selected')) {
-                            selected = "selected";
-                        }
-                        $('.lstMPCategoryType').append('<option ' + selected + ' value="' + Item.PCTID + '">' + Item.PCTName + ' </option>');
-                    }
-                }
-            });
-            $('.lstMPCategoryType').select2({
-                dropdownParent: $('.dynamicValueModal')
-            });
-        }
-        getCategoryType();
+        {{--const getCategoryType=async()=>{--}}
+        {{--    $('#lstMPCategoryType option').remove();--}}
+        {{--    $('#lstMPCategoryType').append('<option value="" selected>Select a Product Category Type</option>');--}}
+        {{--    $.ajax({--}}
+        {{--        type:"post",--}}
+        {{--        url:"{{url('/')}}/admin/master/product/category/get/PCategoryType",--}}
+        {{--        headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },--}}
+        {{--        dataType:"json",--}}
+        {{--        async:true,--}}
+        {{--        beforeSend:async()=>{--}}
+        {{--            $('#btnReloadMPCategoryType i').addClass('fa-spin');--}}
+        {{--        },--}}
+        {{--        error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},--}}
+        {{--        complete: function(e, x, settings, exception){--}}
+        {{--            setTimeout(() => {--}}
+        {{--                $('#btnReloadMPCategoryType i').removeClass('fa-spin');--}}
+        {{--            }, 500);--}}
+        {{--        },--}}
+        {{--        success: function (response) {--}}
+        {{--            for (let Item of response) {--}}
+        {{--                let selected = "";--}}
+        {{--                if (Item.PCTID === $('#lstMPCategoryType').attr('data-selected')) {--}}
+        {{--                    selected = "selected";--}}
+        {{--                }--}}
+        {{--                $('.lstMPCategoryType').append('<option ' + selected + ' value="' + Item.PCTID + '">' + Item.PCTName + ' </option>');--}}
+        {{--            }--}}
+        {{--        }--}}
+        {{--    });--}}
+        {{--    $('.lstMPCategoryType').select2({--}}
+        {{--        dropdownParent: $('.dynamicValueModal')--}}
+        {{--    });--}}
+        {{--}--}}
+        // getCategoryType();
 
-        $(document).on('click', '#btnReloadMPCategoryType', function() {
-            getCategoryType();
+        $('.lstMPCategoryType').select2({
+            dropdownParent: $('.dynamicValueModal')
         });
+
+        // $(document).on('click', '#btnReloadMPCategoryType', function() {
+        //     getCategoryType();
+        // });
     });
 </script>

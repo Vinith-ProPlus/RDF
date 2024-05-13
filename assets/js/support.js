@@ -1817,11 +1817,15 @@ $(document).ready(function(){
         if($('#'+elem).val()!=""){$('#'+elem).trigger('change');}
     }
     const createPCategory=async(elem)=>{
+        let PCategoryType=$('#'+elem).attr('data-category-type-id');
+        let PCTID=$('#'+PCategoryType).val();
         $.ajax({
             type:"post",
             url:RootUrl+"admin/master/product/category/create-form",
             headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
-            data:{},
+            data: {
+                PCTID: PCTID
+            },
             async:true,
             dataType:"html",
             error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},

@@ -514,8 +514,9 @@ class ProductCategoryController extends Controller
             "PCategoryType" => $this->general->getCrudOperations(activeMenuNames::ProductCategoryType->value),
         );
         $Theme = $this->getThemesOption();
+        $PCategoryType = ProductCategoryTypeController::GetProductCategoryType($req);
         $languages = Language::active()->get();
-        return view("app.modals.productCategory", array("Theme" => $Theme, "FileTypes" => $this->FileTypes, "OtherCruds" => $OtherCruds, "languages" => $languages));
+        return view("app.modals.productCategory", array("Theme" => $Theme, "FileTypes" => $this->FileTypes, "PCategoryType" => $PCategoryType, "PCTID" => $req->PCTID, "OtherCruds" => $OtherCruds, "languages" => $languages));
     }
 
     public static function GetProductCategory(Request $req)

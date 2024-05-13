@@ -61,17 +61,17 @@
                                         <span class="addOption" id="btnAddPCategoryType" title="add new product Category Type"><i
                                                 class="fa fa-plus"></i></span>
                                     @endif</label>
-                                <select class="form-control  {{$Theme['input-size']}} select2" id="lstPCategoryType"
+                                <select class="form-control {{$Theme['input-size']}} select2" id="lstPCategoryType"
                                         data-selected="{{ $isEdit ? ($EditData[0]->PCTID ?? '') : '' }}">
                                     <option value="">Select a Product Category Type</option>
                                 </select>
                                 <div class="errors" id="lstPCategoryType-err"></div>
                             </div>
                         </div>
-                        <div class="col-sm-12 mt-20">
+                        <div class="row col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstPCategory"> Product Category <span class="required"> * </span> <span  class="addOption" id="btnReloadPCategoryInSC" title="Reload Product Category" ><i class="fa fa-refresh" id="btnReloadPCategoryIcon"></i></span>  @if($OtherCruds['PCategory']['add']==1)  <span class="addOption" id="btnAddPCategory" title="add new product category" ><i class="fa fa-plus"></i></span> @endif</label>
-                                <select class="form-control  {{$Theme['input-size']}} select2" id="lstPCategory" data-selected="{{ $isEdit ? ($EditData[0]->PCID ?? '') : ''}}">
+                                <select class="form-control  {{$Theme['input-size']}} select2" id="lstPCategory" data-selected="{{ $isEdit ? ($EditData[0]->PCID ?? '') : ''}}" data-category-type-id="lstPCategoryType">
                                     <option value="">Select a Product Category</option>
                                 </select>
                                 <div class="errors" id="lstPCategory-err"></div>
@@ -110,8 +110,8 @@
                             <div class="form-group">
                                 <label class="lstActiveStatus"> Active Status</label>
                                 <select class="form-control  {{$Theme['input-size']}}" id="lstActiveStatus">
-                                    <option value="Active" @if($isEdit==true) @if($EditData[0]->ActiveStatus=="Active") selected @endif @endif >Active</option>
-                                    <option value="Inactive" @if($isEdit==true) @if($EditData[0]->ActiveStatus=="Inactive") selected @endif @endif>Inactive</option>
+                                    <option value="Active" @if($isEdit) @if($EditData[0]->ActiveStatus=="Active") selected @endif @endif >Active</option>
+                                    <option value="Inactive" @if($isEdit) @if($EditData[0]->ActiveStatus=="Inactive") selected @endif @endif>Inactive</option>
                                 </select>
                                 <div class="errors" id="txtCategory-err"></div>
                             </div>
