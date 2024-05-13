@@ -46,8 +46,6 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/wishlist/add', [WishlistController::class, 'addWishlist']);
     Route::post('/wishlist/remove', [WishlistController::class, 'removeWishlist']);
     Route::post('/wishlist/my_wishlist', [WishlistController::class, 'my_wishlist']);
-    Route::post('/get/customer/products', [MasterController::class, 'getCustomerProducts']);
-    Route::post('/get/customer/product', [MasterController::class, 'getCustomerProduct']);
     Route::post('/support/get/ticket', [SupportAPIController::class, 'GetTicket']);
     Route::post('/support/create-ticket', [SupportAPIController::class, 'CreateTicket']);
 
@@ -82,6 +80,13 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/get/notifications', [CustomerAuthController::class, 'getNotifications']);
     Route::post('/get/notifications-count', [CustomerAuthController::class, 'getNotificationsCount']);
     Route::post('/notification-read', [CustomerAuthController::class, 'NotificationRead']);
+
+//    Products
+    Route::post('/get/customer/category-type', [MasterController::class, 'GetCustomerCategoryType']);
+    Route::post('/get/customer/category', [MasterController::class, 'GetCustomerCategory']);
+    Route::post('/get/customer/sub-category', [MasterController::class, 'GetCustomerSubCategory']);
+    Route::post('/get/customer/products', [MasterController::class, 'getCustomerProducts']);
+    Route::post('/get/customer/product', [MasterController::class, 'getCustomerProduct']);
 });
 
 // Master

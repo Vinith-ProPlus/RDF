@@ -90,7 +90,8 @@ class MasterController extends Controller
     }
 
 //    Product Data
-    public function GetCategoryType(Request $req){
+
+    public function GetCustomerCategoryType(Request $req){
         $lang = optional($req->auth_customer)->language ?? 'en';
         $pageNo = $req->PageNo ?? 1;
         $perPage = 15;
@@ -118,6 +119,57 @@ class MasterController extends Controller
             'LastPage' => $result->lastPage(),
         ]);
     }
+    public function GetCategoryType(Request $req){
+        $pageNo = $req->PageNo ?? 1;
+        $perPage = 15;
+
+        $Category = DB::table('tbl_product_category_type')
+            ->where('ActiveStatus', 'Active')->where('DFlag', 0)
+            ->when($req->has('SearchText') && !empty($req->SearchText), function ($query) use ($req) {
+                return $query->where('PCTName', 'like', '%' . $req->SearchText . '%');
+            });
+
+        $result = $Category->select('PCTName', 'PCTID', DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PCTImage, ""), "assets/images/no-image-b.png")) AS CategoryTypeImage'))
+            ->paginate($perPage, ['*'], 'page', $pageNo);
+
+        return response()->json([
+            'status' => true,
+            'data' => $result->items(),
+            'CurrentPage' => $result->currentPage(),
+            'LastPage' => $result->lastPage(),
+        ]);
+    }
+
+    public function GetCustomerCategory(Request $req){
+        $lang = optional($req->auth_customer)->language ?? 'en';
+        $pageNo = $req->PageNo ?? 1;
+        $perPage = 15;
+
+        $Category = DB::table('tbl_product_category as PC')
+            ->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)
+            ->when($req->PCTID, function ($query) use ($req) {
+                $PCTID = $req->PCTID;
+                $PCTIDs = is_array($PCTID) ? $PCTID : [$PCTID];
+                return $query->whereIn('PC.PCTID', $PCTIDs);
+            })
+            ->when($req->has('SearchText') && !empty($req->SearchText), function ($query) use ($req) {
+                return $query->where('PC.PCName', 'like', '%' . $req->SearchText . '%');
+            });
+
+        $result = $Category->select('PC.PCName', 'PC.PCNameInTranslation', 'PC.PCID', 'PC.PCTID', DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PC.PCImage, ""), "assets/images/no-image-b.png")) AS CategoryImage'))->paginate($perPage, ['*'], 'page', $pageNo);
+        $result->transform(function ($result) use ($lang) {
+            $translations = json_decode($result->PCNameInTranslation);
+            $result->PCName = $translations->$lang ?? $result->PCName;
+            unset($result->PCNameInTranslation);
+            return $result;
+        });
+        return response()->json([
+            'status' => true,
+            'data' => $result->items(),
+            'CurrentPage' => $result->currentPage(),
+            'LastPage' => $result->lastPage(),
+        ]);
+    }
 
     public function GetCategory(Request $req){
         $pageNo = $req->PageNo ?? 1;
@@ -135,6 +187,49 @@ class MasterController extends Controller
             });
 
         $result = $Category->select('PC.PCName', 'PC.PCID', 'PC.PCTID', DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PC.PCImage, ""), "assets/images/no-image-b.png")) AS CategoryImage'))->paginate($perPage, ['*'], 'page', $pageNo);
+
+        return response()->json([
+            'status' => true,
+            'data' => $result->items(),
+            'CurrentPage' => $result->currentPage(),
+            'LastPage' => $result->lastPage(),
+        ]);
+    }
+    public function GetCustomerSubCategory(Request $req){
+        $lang = optional($req->auth_customer)->language ?? 'en';
+        $pageNo = $req->PageNo ?? 1;
+        $perPage = 15;
+
+        $SubCategory = DB::table('tbl_product_subcategory as PSC')
+            ->join('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+            ->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)
+            ->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)
+            ->when($req->PCTID, function ($query) use ($req) {
+                $PCTID = $req->PCTID;
+                $PCTIDs = is_array($PCTID) ? $PCTID : [$PCTID];
+                return $query->whereIn('PSC.PCTID', $PCTIDs);
+            })
+            ->when($req->PCID, function ($query) use ($req) {
+                $PCID = $req->PCID;
+                $PCIDs = is_array($PCID) ? $PCID : [$PCID];
+                return $query->whereIn('PSC.PCID', $PCIDs);
+            })
+            ->when($req->has('SearchText') && !empty($req->SearchText), function ($query) use ($req) {
+                return $query->where('PSC.PSCName', 'like', '%' . $req->SearchText . '%');
+            });
+        $result = $SubCategory->select('PSC.PSCName', 'PSC.PSCNameInTranslation', 'PSC.PSCID', 'PC.PCID', 'PC.PCTID',
+            'PC.PCName', 'PC.PCNameInTranslation', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(PSC.PSCImage, ""), "assets/images/no-image-b.png")) AS SubCategoryImage'))
+            ->paginate($perPage, ['*'], 'page', $pageNo);
+
+        $result->transform(function ($result) use ($lang) {
+            $PSCNameInTranslation = json_decode($result->PSCNameInTranslation);
+            $PCNameInTranslation = json_decode($result->PCNameInTranslation);
+            $result->PSCName = $PSCNameInTranslation->$lang ?? $result->PSCName;
+            $result->PCName = $PCNameInTranslation->$lang ?? $result->PCName;
+            unset($result->PSCNameInTranslation);
+            unset($result->PCNameInTranslation);
+            return $result;
+        });
 
         return response()->json([
             'status' => true,
