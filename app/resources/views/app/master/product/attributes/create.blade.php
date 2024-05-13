@@ -24,13 +24,13 @@
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label class="txtAttrName">Attribute Name <span class="required"> * </span></label>
-                                <input type="text" class="form-control  {{$Theme['input-size']}}" id="txtAttrName" value="<?php if($isEdit==true){ echo $EditData[0]->AttrName;} ?>">
+                                <input type="text" class="form-control  {{$Theme['input-size']}}" id="txtAttrName" value="<?php if($isEdit==true){ echo $EditData[0]->AttrName;} ?>" autocomplete="off">
                                 <div class="errors" id="txtAttrName-err"></div>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
-                                <label class="txtValues">Values <span class="required"> * </span></label>
+                                <label class="txtValues">Value <span class="required"> * </span></label>
                                 <div class="input-group">
                                     <input type="text" class="form-control  {{$Theme['input-size']}}" id="txtValues">
                                     <button class="input-group-text btn-outline-primary px-4 position-relative" id="btnAddAttrValue"><i class="fa fa-plus"></i></button>
@@ -38,7 +38,27 @@
                                 <div class="errors" id="txtValues-err"></div>
                             </div>
                         </div>
-                        <div class="col-sm-12" id="divAttrValues">
+                        @if(count($languages) > 0)
+                            <div class="col-sm-12 text-center mt-20">
+                                <label class="align-middle fw-bold">Value Name Translations</label>
+                                @foreach($languages as $index=>$language)
+                                    <div class="form-group text-left mt-10">
+                                        <label class="txtAttrValueIn_{{ $language->code }}">Value
+                                            In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                        <input type="text"
+                                               class="form-control AttValueLanguageFieldsCheck AttValueLanguageFieldsClear {{$Theme['input-size']}}"
+                                               id="txtAttrValueIn_{{ $language->code }}"
+                                               data-language-code="{{ $language->code }}"
+                                               data-language="{{ $language->name_in_english }}"
+                                               value=""
+                                               autocomplete="off">
+                                        <div class="errors" id="txtAttrValueIn_{{ $language->code }}-err"></div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                        <div class="col-sm-12 text-center mt-20" id="divAttrValues">
+                            <label class="align-middle fw-bold">Attribute details</label>
                             @if($isEdit)
                                 @foreach($EditValuesData as $Key=>$row)
                                     <?php $AcnIndex = $Key + 1; ?>
@@ -62,10 +82,26 @@
                                                                         <div class="row mb-10 d-flex justify-content-center d-none">
                                                                             <div class="col-sm-10 col-10 col-lg-4 text-center">
                                                                                 <label class="txtValueLogo{{$AcnIndex}}"> Logo </label>
-                                                                                <input type="file" class="dropify imageScrop" data-aspect-ratio="{{$Settings['profile-image-crop-ratio']['w']/$Settings['profile-image-crop-ratio']['h']}}" data-remove="0" id="txtValueLogo{{$AcnIndex}}" data-default-path="@if($isEdit && $row->ValueLogo){{$row->ValueLogo}}@endif" data-default-file="<?php if($isEdit==true){if($row->ValueLogo!=""){ echo url('/')."/".$row->ValueLogo;}}?>" data-slno="{{$row->Values}}" data-allowed-file-extensions="<?php echo implode(" ",$FileTypes['category']['Images']) ?>" >
+                                                                                <input type="file" class="dropify imageScrop"
+                                                                                       data-aspect-ratio="{{$Settings['profile-image-crop-ratio']['w']/$Settings['profile-image-crop-ratio']['h']}}"
+                                                                                       data-remove="0" id="txtValueLogo{{$AcnIndex}}" data-default-path="@if($isEdit && $row->ValueLogo){{$row->ValueLogo}}@endif"
+                                                                                       data-default-file="<?php if($isEdit){if($row->ValueLogo!=""){ echo url('/')."/".$row->ValueLogo;}}?>"
+                                                                                       data-slno="{{$row->Values}}" data-allowed-file-extensions="<?php echo implode(" ",$FileTypes['category']['Images']) ?>" >
                                                                                 <div class="errors Vendors err-sm" id="txtValueLogo{{$AcnIndex}}-err"></div>
                                                                             </div>
                                                                         </div>
+                                                                        @if(count($languages) > 0)
+                                                                        <div class="row mb-10 d-flex justify-content-center">
+                                                                            @foreach($languages as $index=>$language)
+                                                                                <div class="col-sm-6 col-6 col-lg-6 text-center">
+                                                                                    <label class="txtValueAccTranslation_{{$AcnIndex}}">Value in {{ $language->name_in_english }}:</label>
+                                                                                    <input type="text" name="AccTranslation_{{$AcnIndex}}_{{$index}}" class="form-control {{$Theme['input-size']}} AttTranslationAcc{{$AcnIndex}}"
+                                                                                           data-language="{{ $language->name_in_english }}" data-language-code="{{ $language->code }}" value="{{ $row ? ($row->valuesInTranslation->{$language->code} ?? '') : '' }}">
+                                                                                    <div class="errors translations err-sm" id="txtAccAttrValueIn_{{ $AcnIndex }}_{{ $language->code }}-err"></div>
+                                                                                </div>
+                                                                            @endforeach
+                                                                        </div>
+                                                                        @endif
                                                                         <div class="row mt-20 divPCategoryInputs{{$AcnIndex}}">
                                                                             <div class="col-sm-4">
                                                                                 <div class="form-group">
@@ -130,12 +166,12 @@
                     </div>
                     <div class="row mt-20">
                         <div class="col-sm-12 text-right">
-                            @if($crud['view']==true)
+                            @if($crud['view'])
                             <a href="{{url('/')}}/admin/master/product/attributes" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
 
-                            @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
-                                <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit==true) Update @else Save @endif</button>
+                            @if((($crud['add']) && (!$isEdit))||($crud['edit'] && $isEdit))
+                                <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit) Update @else Save @endif</button>
                             @endif
                         </div>
                     </div>
@@ -179,7 +215,7 @@
                     if (uploadedImageURL) {
                         URL.revokeObjectURL(uploadedImageURL);
                     }
-                    uploadedImageURL = URL.createObjectURL(file); console.log(options)
+                    uploadedImageURL = URL.createObjectURL(file);
                     $image.cropper('destroy').attr('src', uploadedImageURL).cropper(options);
                 } else {
                     window.alert('Please choose an image file.');
@@ -201,7 +237,7 @@
                         try {
                             data.option = JSON.parse($target.val());
                         } catch (e) {
-                            console.log(e.message);
+                            // console.log(e.message);
                         }
                     }
                 }
@@ -310,10 +346,11 @@
                     return false;
                 }
             });
-            if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
+            if(status===false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
         }
-        const createAccordion = async (Value) => {
+
+        const createAccordion = async (Value, translations) => {
             var accordionContent = `
                 <div class="col-sm-12 divAttrValHead" id="divAttrValHead${AcnIndex}">
                     <div class="row mt-10">
@@ -338,6 +375,14 @@
                                                             <input type="file" class="dropify imageScrop" data-aspect-ratio="{{$Settings['profile-image-crop-ratio']['w']/$Settings['profile-image-crop-ratio']['h']}}" data-remove="0" id="txtValueLogo${AcnIndex}" data-default-path="" data-default-file="" data-slno="${Value}" data-allowed-file-extensions="<?php echo implode(" ",$FileTypes['category']['Images']) ?>" >
                                                             <div class="errors Vendors err-sm" id="txtValueLogo${AcnIndex}-err"></div>
                                                         </div>
+                                                    </div>
+                                                    <div class="row mb-10 d-flex justify-content-center">
+                                                         ${translations.map((translation, index) => `
+                                                        <div class="col-sm-6 col-6 col-lg-6 text-center">
+                                                            <label class="txtValueAccTranslation_${AcnIndex}">Value in ${translation.language}:</label>
+                                                            <input type="text" name="AccTranslation_${AcnIndex}_${index}" class="form-control {{$Theme['input-size']}} AttTranslationAcc${AcnIndex}" data-language="${translation.language}" data-language-code="${translation.language_code}" value="${translation.value}">
+                                                            <div class="errors translations err-sm" id="txtAccAttrValueIn_${AcnIndex}_${translation.language_code}-err"></div>
+                                                        </div>`).join('')}
                                                     </div>
                                                     <div class="row mt-20 divPCategoryInputs${AcnIndex}">
                                                         <div class="col-sm-4">
@@ -393,28 +438,50 @@
             getPCategory(AcnIndex);
             $('.dropify').dropify();
             $('#txtValues').val('');
+            $('.AttValueLanguageFieldsClear').val('');
             AcnIndex++;
         };
-        $("#btnAddAttrValue").on("click", async function () {
 
-            console.log(AcnIndex);
+        $("#btnAddAttrValue").on("click", async function () {
             let AttrName = $('#txtAttrName').val();
             let Value = $('#txtValues').val();
             let status = await ValuesExistingValidation(Value);
-            if (AttrName=="") {
-                $('#txtAttrName-err').html('Attr Name is required');status = false;
-            }else if(AttrName.length<3){
-                $('#txtAttrName-err').html('Attribute Name must be greater than 2 characters');status=false;
-            }else if(AttrName.length>100){
-                $('#txtAttrName-err').html('Attribute Name may not be greater than 100 characters');status=false;
+            if (AttrName === "") {
+                $('#txtAttrName-err').html('Attr Name is required');
+                status = false;
+            } else if (AttrName.length < 3) {
+                $('#txtAttrName-err').html('Attribute Name must be greater than 2 characters');
+                status = false;
+            } else if (AttrName.length > 100) {
+                $('#txtAttrName-err').html('Attribute Name may not be greater than 100 characters');
+                status = false;
             }
-            if (Value=="") {
-                $('#txtValues-err').html('Value is required');status = false;
+            if (Value === "") {
+                $('#txtValues-err').html('Value is required');
+                status = false;
             }
+
+            let translations = [];
+            $('.AttValueLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtAttrValueIn_' + languageCode + '-err').html('The Value in ' + language + ' is required.');
+                    status = false;
+                } else {
+                    $('#txtAttrValueIn_' + languageCode + '-err').html('');
+                    translations.push({language: language, language_code: languageCode, value: value});
+                }
+            });
+
             if (status) {
-            createAccordion(Value);
+                createAccordion(Value, translations);
             }
         });
+
         $(document).on('click', '.btnDeleteAttrValue', function (e) {
             e.stopPropagation();
             let $clickedElement = $(this);
@@ -553,19 +620,44 @@
             let status=true;
             let AttrName=$('#txtAttrName').val();
             let ValuesLength=$('#divAttrValues .divAttrValHead:not(".d-none")').length;
-            if(AttrName==""){
-                $('#txtAttrName-err').html('Attribute Name is required.');status=false;
-            }else if(AttrName.length<3){
-                $('#txtAttrName-err').html('Attribute Name must be greater than 2 characters');status=false;
-            }else if(AttrName.length>100){
-                $('#txtAttrName-err').html('Attribute Name may not be greater than 100 characters');status=false;
+            if (AttrName === "") {
+                $('#txtAttrName-err').html('Attribute Name is required.');
+                status = false;
+            } else if (AttrName.length < 3) {
+                $('#txtAttrName-err').html('Attribute Name must be greater than 2 characters');
+                status = false;
+            } else if (AttrName.length > 100) {
+                $('#txtAttrName-err').html('Attribute Name may not be greater than 100 characters');
+                status = false;
             }
-            if(ValuesLength == 0){
-                $("#txtValues-err").html('Add a Value');status=false;
+            if (ValuesLength === 0) {
+                $("#txtValues-err").html('Add a Value');
+                status = false;
             }
 
             for (let i = 1; i < AcnIndex; i++) {
                 if ($('#divAttrValHead' + i + ':not(".d-none")').length) {
+                    let translationsComplete = true;
+                    $('.AttTranslationAcc' + i).each(function () {
+                        let input = $(this);
+                        let value = input.val();
+                        let language = input.data('language');
+                        let languageCode = input.data('language-code');
+
+                        if (value === "") {
+                            $('#txtAccAttrValueIn_' + i + '_' + languageCode + '-err').html('The Value in ' + language + ' is required.');
+                            translationsComplete = false;
+                        }
+                    });
+
+                    if (!translationsComplete) {
+                        status = false;
+                        if (!$('#collapse' + i).hasClass('show')) {
+                            $('#accordionTrigger' + i).trigger('click');
+                        }
+                        break;
+                    }
+
                     if ($('#tblCategories' + i + ' tbody tr:not(".d-none")').length === 0) {
                         $("#tblCategories" + i + "-err").html('Add a Product Category and Sub Category');
                         status = false;
@@ -582,7 +674,6 @@
         };
         const getData=async()=>{
             let tmp=await UploadImages();
-            console.log(tmp);
             let formData=new FormData();
             formData.append('AttrName',$('#txtAttrName').val());
             formData.append('ActiveStatus','Active');
@@ -592,9 +683,17 @@
             };
             for (let i = 1; i < AcnIndex; i++) {
                 if ($('#divAttrValHead' + i + ':not(".d-none")').length) {
+                    let AttValueInTranslation = {};
+
+                    $('.AttTranslationAcc' + i).each(function() {
+                        let input = $(this);
+                        let language_code = input.data('language-code');
+                        AttValueInTranslation[language_code] = input.val();
+                    });
                     let existingValue = {
                         ValueName: $('#divExistingValue' + i).text(),
                         ValueID: $('#divExistingValue' + i).attr('data-value-id'),
+                        valuesInTranslation: JSON.stringify(AttValueInTranslation),
                         CategoryData: {
                             Categories: {
                                 DetailID:"",
@@ -621,12 +720,14 @@
                         });
                     }
 
+
                     tmp.gallery.forEach(function (item) {
                         if (item.slno === existingValue.ValueName) {
                             existingValue.ValueLogo.uploadPath= item.uploadPath;
                             existingValue.ValueLogo.fileName= item.fileName;
                         }
                     });
+
                     Values.ExistingValues.push(existingValue);
                 } else {
                     if($('#divExistingValue' + i).attr('data-value-id')){
@@ -634,9 +735,7 @@
                     }
                 }
             }
-            console.log(Values);
             formData.append('VData', JSON.stringify(Values));
-
             return formData;
         }
         $('#btnSave').click(async function(){
@@ -645,16 +744,16 @@
                 let formData=await getData();
                 swal({
                     title: "Are you sure?",
-                    text: "You want @if($isEdit==true)Update @else Save @endif this Attribute!",
+                    text: "You want @if($isEdit)Update @else Save @endif this Attribute!",
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonClass: "btn-outline-success",
-                    confirmButtonText: "Yes, @if($isEdit==true)Update @else Save @endif it!",
+                    confirmButtonText: "Yes, @if($isEdit)Update @else Save @endif it!",
                     closeOnConfirm: false
                 },function(){
                     swal.close();
                     btnLoading($('#btnSave'));
-                    let postUrl=@if($isEdit==true) "{{url('/')}}/admin/master/product/attributes/edit/{{$EditData[0]->AttrID}}"; @else "{{url('/')}}/admin/master/product/attributes/create"; @endif
+                    let postUrl=@if($isEdit) "{{url('/')}}/admin/master/product/attributes/edit/{{$EditData[0]->AttrID}}"; @else "{{url('/')}}/admin/master/product/attributes/create"; @endif
                     $.ajax({
                         type:"post",
                         url:postUrl,
