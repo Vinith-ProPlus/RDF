@@ -1575,6 +1575,8 @@ $(document).ready(function(){
             if (value === "") {
                 $('#txtMPCTNameIn_' + languageCode + '-err').html('Product Category Type Name in ' + language + ' is required.');
                 status = false;
+            } else {
+                $('#txtMPCTNameIn_' + languageCode + '-err').html('');
             }
         });
 
@@ -1772,6 +1774,8 @@ $(document).ready(function(){
             if (value === "") {
                 $('#txtMPCNameIn_' + languageCode + '-err').html('Product Category Name in ' + language + ' is required.');
                 status = false;
+            } else {
+                $('#txtMPCNameIn_' + languageCode + '-err').html('');
             }
         });
 
@@ -1987,6 +1991,8 @@ $(document).ready(function(){
             if (value === "") {
                 $('#txtMPSCNameIn_' + languageCode + '-err').html('Product Sub Category Name in ' + language + ' is required.');
                 status = false;
+            } else {
+                $('#txtMPSCNameIn_' + languageCode + '-err').html('');
             }
         });
 
@@ -2341,6 +2347,20 @@ $(document).ready(function(){
         if(UName==''){
             $('#txtMUName-err').html('The Unit Name name is required.');status=false;
         }
+
+        $('.MuomLanguageFieldsCheck').each(function() {
+            let input = $(this);
+            let value = input.val();
+            let languageCode = input.data('language-code');
+            let language = input.data('language');
+
+            if (value === "") {
+                $('#txtMUNameIn_' + languageCode + '-err').html('The Unit Name in ' + language + ' is required.');
+                status = false;
+            } else {
+                $('#txtMUNameIn_' + languageCode + '-err').html('');
+            }
+        });
         return status;
     }
     const getUOM=async(elem)=>{
@@ -2397,10 +2417,18 @@ $(document).ready(function(){
     });
     $(document).on('click','#btnCreateUOM',async function(){
         let status=await validateUOM();
-        if(status==true){
+        if(status===true){
             let formData=new FormData();
+            let MUNameInTranslation = {};
+
+            $('.PcLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                MUNameInTranslation[language_code] = input.val();
+            });
             formData.append('UCode',$('#txtMUCode').val());
             formData.append('UName',$('#txtMUName').val());
+            formData.append('UNameInTranslation', JSON.stringify(MUNameInTranslation));
             formData.append('ActiveStatus',$('#lstMActiveStatus').val());
             swal({
                 title: "Are you sure?",

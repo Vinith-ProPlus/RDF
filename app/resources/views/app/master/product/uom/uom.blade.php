@@ -21,7 +21,7 @@
 				<div class="card-header text-center"><h5 class="mt-10">{{$PageTitle}}</h5></div>
 				<div class="card-body " >
                     <div class="row">
-                        
+
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label class="txtUCode">Unit Code<span class="required"> * </span></label>
@@ -37,6 +37,25 @@
                                 <div class="errors" id="txtUName-err"></div>
                             </div>
                         </div>
+                        @if(count($languages) > 0)
+                            <div class="col-sm-12 text-center mt-20">
+                                <label class="align-middle fw-bold">Unit Name Translations</label>
+                                @foreach($languages as $index=>$language)
+                                    <div class="form-group text-left mt-20">
+                                        <label class="txtUNameIn_{{ $language->code }}">Unit Name
+                                            In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                        <input type="text"
+                                               class="form-control uomLanguageFieldsCheck {{$Theme['input-size']}}"
+                                               id="txtUNameIn_{{ $language->code }}"
+                                               data-language-code="{{ $language->code }}"
+                                               data-language="{{ $language->name_in_english }}"
+                                               value="{{ $isEdit ? ($EditData[0]->UNameInTranslation->{$language->code} ?? '') : '' }}"
+                                               autocomplete="off">
+                                        <div class="errors" id="txtUNameIn_{{ $language->code }}-err"></div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label class="lstActiveStatus"> Active Status</label>
@@ -53,7 +72,7 @@
                             @if($crud['view']==true)
                             <a href="{{url('/')}}/admin/master/product/unit-of-measurement/" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
-                            
+
                             @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
                                 <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit==true) Update @else Save @endif</button>
                             @endif
@@ -69,21 +88,34 @@
 @section('scripts')
 <script>
     $(document).ready(function(){
-    
+
         const formValidation=()=>{
             $('.errors').html('');
             let status=true;
             let UCode=$('#txtUCode').val();
             let UName =$('#txtUName').val();
-            if(UCode==""){
+            if(UCode===""){
                 $('#txtUCode-err').html('Unit Code  is required.');status=false;
             }else if(UCode.length>100){
                 $('#txtUCode-err').html('Unit Code  may not be greater than 100 characters');status=false;
             }
-            if(UName==''){
-                $('#txtUName-err').html('The Unit Name name is required.');status=false; 
+            if(UName ===''){
+                $('#txtUName-err').html('The Unit Name name is required.');status=false;
             }
-            if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
+
+            $('.uomLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtUNameIn_' + languageCode + '-err').html('The Unit Name in ' + language + ' is required.');
+                    status = false;
+                }
+            });
+
+            if(status===false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
         }
 
@@ -92,19 +124,27 @@
             if(status){
                 swal({
                     title: "Are you sure?",
-                    text: "You want @if($isEdit==true)Update @else Save @endif this UOM!",
+                    text: "You want @if($isEdit)Update @else Save @endif this UOM!",
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonClass: "btn-outline-success",
-                    confirmButtonText: "Yes, @if($isEdit==true)Update @else Save @endif it!",
+                    confirmButtonText: "Yes, @if($isEdit)Update @else Save @endif it!",
                     closeOnConfirm: false
                 },function(){
                     swal.close();
                     btnLoading($('#btnSave'));
-                    let postUrl=@if($isEdit==true) "{{url('/')}}/admin/master/product/unit-of-measurement/edit/{{$EditData[0]->UID}}"; @else "{{url('/')}}/admin/master/product/unit-of-measurement/create"; @endif
+                    let postUrl=@if($isEdit) "{{url('/')}}/admin/master/product/unit-of-measurement/edit/{{$EditData[0]->UID}}"; @else "{{url('/')}}/admin/master/product/unit-of-measurement/create"; @endif
                     let formData=new FormData();
+                    let UNameInTranslation = {};
+
+                    $('.uomLanguageFieldsCheck').each(function() {
+                        let input = $(this);
+                        let language_code = input.data('language-code');
+                        UNameInTranslation[language_code] = input.val();
+                    });
                     formData.append('UCode',$('#txtUCode').val());
                     formData.append('UName',$('#txtUName').val());
+                    formData.append('UNameInTranslation', JSON.stringify(UNameInTranslation));
                     formData.append('ActiveStatus',$('#lstActiveStatus').val());
 
                     $.ajax({
@@ -139,7 +179,7 @@
                         complete: function(e, x, settings, exception){btnReset($('#btnSave'));ajaxIndicatorStop();$("html, body").animate({ scrollTop: 0 }, "slow");},
                         success:function(response){
                             document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
-                            if(response.status==true){
+                            if(response.status === true){
                                 swal({
                                     title: "SUCCESS",
                                     text: response.message,
@@ -149,14 +189,12 @@
                                     confirmButtonText: "Okay",
                                     closeOnConfirm: false
                                 },function(){
-                                    @if($isEdit==true)
+                                    @if($isEdit)
                                         window.location.replace("{{url('/')}}/admin/master/product/unit-of-measurement");
                                     @else
                                         window.location.reload();
                                     @endif
-                                    
                                 });
-                                
                             }else{
                                 toastr.error(response.message, "Failed", {
                                     positionClass: "toast-top-right",
@@ -165,12 +203,12 @@
                                     hideMethod: "slideUp",
                                     progressBar: !0
                                 })
-                                if(response['errors']!=undefined){
+                                if(response['errors'] !== undefined){
                                     $('.errors').html('');
                                     $.each( response['errors'], function( KeyName, KeyValue ) {
                                         var key=KeyName;
-                                        if(key=="UCode"){$('#txtUCode-err').html(KeyValue);}
-                                        if(key=="UName"){$('#txtUName-err').html(KeyValue);}
+                                        if(key === "UCode"){$('#txtUCode-err').html(KeyValue);}
+                                        if(key === "UName"){$('#txtUName-err').html(KeyValue);}
                                     });
                                 }
                             }

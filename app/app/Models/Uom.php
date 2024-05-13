@@ -15,6 +15,7 @@ class Uom extends Model
         "UID",
         "UCode",
         "UName",
+        "UNameInTranslation",
         "DFlag",
         "ActiveStatus",
         "CreatedBy",
