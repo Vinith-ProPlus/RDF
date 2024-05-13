@@ -13,6 +13,7 @@ use logs;
 use Illuminate\Support\Facades\Session;
 use App\Rules\ValidDB;
 use App\Rules\ValidUnique;
+use stdClass;
 
 class ProductHelper {
     private static $ProcessStatus=0;
@@ -187,11 +188,12 @@ class ProductHelper {
                         $RemoveImg[]=$t[0]->ProductBrochure;
                     }
                 }
-                //product information save to main tabe
+                //product information save to main table
                 if( $isNewProductID==false){
                     $data=array(
                         "Slug"=>Helper::generateSlug($result[0]->ProductName),
                         "ProductName"=>$result[0]->ProductName,
+                        "ProductNameInTranslation"=>$result[0]->ProductNameInTranslation,
                         "ProductType"=>$result[0]->ProductType,
                         "ProductCode"=>$result[0]->ProductCode,
 //                        "Stages"=>$result[0]->Stages,
@@ -232,6 +234,7 @@ class ProductHelper {
                         "ProductID"=>$ProductID,
                         "Slug"=>Helper::generateSlug($result[0]->ProductName),
                         "ProductName"=>$result[0]->ProductName,
+                        "ProductNameInTranslation"=>$result[0]->ProductNameInTranslation,
                         "ProductType"=>$result[0]->ProductType,
                         "ProductCode"=>$result[0]->ProductCode,
 //                        "Stages"=>$result[0]->Stages,
@@ -583,80 +586,82 @@ class ProductHelper {
 			return array('status'=>false,'message'=>"Product save Failed");
 		}
     }
-	private static function variationProductSave($req,$UserID){
-		$tmpDBName=Helper::getTmpDB();
-        DB::Table($tmpDBName.'tbl_products')->where('ProductID',$req->ProductID)->delete();
-        DB::Table($tmpDBName.'tbl_products_variation')->where('ProductID',$req->ProductID)->delete();
-		$ValidDB=array();
-		//Category Type
-		$ValidDB['CategoryType']['TABLE']="tbl_product_category_type";
-		$ValidDB['CategoryType']['ErrMsg']="Category Type does not exist";
-		$ValidDB['CategoryType']['WHERE'][]=array("COLUMN"=>"PCTID","CONDITION"=>"=","VALUE"=>$req->CategoryType);
-		$ValidDB['CategoryType']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-		$ValidDB['CategoryType']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
-		//Category
-		$ValidDB['Category']['TABLE']="tbl_product_category";
-		$ValidDB['Category']['ErrMsg']="Category does not exist";
-		$ValidDB['Category']['WHERE'][]=array("COLUMN"=>"PCID","CONDITION"=>"=","VALUE"=>$req->Category);
-		$ValidDB['Category']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-		$ValidDB['Category']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
-		//Sub Category
-		$ValidDB['SubCategory']['TABLE']="tbl_product_subcategory";
-		$ValidDB['SubCategory']['ErrMsg']="Sub Category does not exist";
-		$ValidDB['SubCategory']['WHERE'][]=array("COLUMN"=>"PSCID","CONDITION"=>"=","VALUE"=>$req->SubCategory);
-		$ValidDB['SubCategory']['WHERE'][]=array("COLUMN"=>"PCID","CONDITION"=>"=","VALUE"=>$req->Category);
-		$ValidDB['SubCategory']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-		$ValidDB['SubCategory']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
-		//UOM
-		$ValidDB['UOM']['TABLE']="tbl_uom";
-		$ValidDB['UOM']['ErrMsg']="unit of measurement does not exist";
-		$ValidDB['UOM']['WHERE'][]=array("COLUMN"=>"UID","CONDITION"=>"=","VALUE"=>$req->UID);
-		$ValidDB['UOM']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-		$ValidDB['UOM']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
-		//Tax
+
+    private static function variationProductSave($req, $UserID)
+    {
+        $tmpDBName = Helper::getTmpDB();
+        DB::Table($tmpDBName . 'tbl_products')->where('ProductID', $req->ProductID)->delete();
+        DB::Table($tmpDBName . 'tbl_products_variation')->where('ProductID', $req->ProductID)->delete();
+        $ValidDB = array();
+        //Category Type
+        $ValidDB['CategoryType']['TABLE'] = "tbl_product_category_type";
+        $ValidDB['CategoryType']['ErrMsg'] = "Category Type does not exist";
+        $ValidDB['CategoryType']['WHERE'][] = array("COLUMN" => "PCTID", "CONDITION" => "=", "VALUE" => $req->CategoryType);
+        $ValidDB['CategoryType']['WHERE'][] = array("COLUMN" => "DFlag", "CONDITION" => "=", "VALUE" => 0);
+        $ValidDB['CategoryType']['WHERE'][] = array("COLUMN" => "ActiveStatus", "CONDITION" => "=", "VALUE" => 'Active');
+        //Category
+        $ValidDB['Category']['TABLE'] = "tbl_product_category";
+        $ValidDB['Category']['ErrMsg'] = "Category does not exist";
+        $ValidDB['Category']['WHERE'][] = array("COLUMN" => "PCID", "CONDITION" => "=", "VALUE" => $req->Category);
+        $ValidDB['Category']['WHERE'][] = array("COLUMN" => "DFlag", "CONDITION" => "=", "VALUE" => 0);
+        $ValidDB['Category']['WHERE'][] = array("COLUMN" => "ActiveStatus", "CONDITION" => "=", "VALUE" => 'Active');
+        //Sub Category
+        $ValidDB['SubCategory']['TABLE'] = "tbl_product_subcategory";
+        $ValidDB['SubCategory']['ErrMsg'] = "Sub Category does not exist";
+        $ValidDB['SubCategory']['WHERE'][] = array("COLUMN" => "PSCID", "CONDITION" => "=", "VALUE" => $req->SubCategory);
+        $ValidDB['SubCategory']['WHERE'][] = array("COLUMN" => "PCID", "CONDITION" => "=", "VALUE" => $req->Category);
+        $ValidDB['SubCategory']['WHERE'][] = array("COLUMN" => "DFlag", "CONDITION" => "=", "VALUE" => 0);
+        $ValidDB['SubCategory']['WHERE'][] = array("COLUMN" => "ActiveStatus", "CONDITION" => "=", "VALUE" => 'Active');
+        //UOM
+        $ValidDB['UOM']['TABLE'] = "tbl_uom";
+        $ValidDB['UOM']['ErrMsg'] = "unit of measurement does not exist";
+        $ValidDB['UOM']['WHERE'][] = array("COLUMN" => "UID", "CONDITION" => "=", "VALUE" => $req->UID);
+        $ValidDB['UOM']['WHERE'][] = array("COLUMN" => "DFlag", "CONDITION" => "=", "VALUE" => 0);
+        $ValidDB['UOM']['WHERE'][] = array("COLUMN" => "ActiveStatus", "CONDITION" => "=", "VALUE" => 'Active');
+        //Tax
 //		$ValidDB['Tax']['TABLE']="tbl_tax";
 //		$ValidDB['Tax']['ErrMsg']="Tax does not exist";
 //		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"TaxID","CONDITION"=>"=","VALUE"=>$req->TaxID);
 //		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
 //		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
-		$rules=array(
-			'ProductName' =>['required','min:2','max:150',new ValidUnique(array("TABLE"=>"tbl_products","WHERE"=>" ProductName='".$req->ProductName."'  and ProductID<>'".$req->ProductID."' "),"This Product Name is already taken.")],
-			'CategoryType'=>['required',new ValidDB($ValidDB['CategoryType'])],
-			'Category'=>['required',new ValidDB($ValidDB['Category'])],
-			'SubCategory'=>['required',new ValidDB($ValidDB['SubCategory'])],
-			'UID'=>['required',new ValidDB($ValidDB['UOM'])],
+        $rules = array(
+            'ProductName' => ['required', 'min:2', 'max:150', new ValidUnique(array("TABLE" => "tbl_products", "WHERE" => " ProductName='" . $req->ProductName . "'  and ProductID<>'" . $req->ProductID . "' "), "This Product Name is already taken.")],
+            'ProductNameInTranslation' => 'required',
+            'CategoryType' => ['required', new ValidDB($ValidDB['CategoryType'])],
+            'Category' => ['required', new ValidDB($ValidDB['Category'])],
+            'SubCategory' => ['required', new ValidDB($ValidDB['SubCategory'])],
+            'UID' => ['required', new ValidDB($ValidDB['UOM'])],
 //			'TaxID'=>['required',new ValidDB($ValidDB['Tax'])],
 //			'TaxType'=>'required|in:Include,Exclude',
-			'RegularPrice'=>'required|numeric|min:0',
-			'SalesPrice'=>'required|numeric|min:0',
+            'RegularPrice' => 'required|numeric|min:0',
+            'SalesPrice' => 'required|numeric|min:0',
 //			'Decimals'=>'required|in:auto, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9',
-		);
-		$message=array(
-			'UOM.required'=>"Unit of measurement is required",
-		);
-		$validator = Validator::make($req->all(), $rules,$message);
+        );
+        $message = array(
+            'UOM.required' => "Unit of measurement is required",
+        );
+        $validator = Validator::make($req->all(), $rules, $message);
 
-		if ($validator->fails()) {
-			return array('status'=>false,'message'=>"Product Create Failed",'errors'=>$validator->errors());
-		}
-		DB::beginTransaction();
-		$status=false;
-		$images=array();
-		$ProductImage="";
-		$ProductBrochure="";
-		$Stages="";
-		$galleryImages=array();
-		try {
-			$ProductID=$req->ProductID!=""?$req->ProductID:date("YmdHis")."-".Helper::RandomString(20);
-			$tmpImage=json_decode($req->ProductImage,true);
+        if ($validator->fails()) {
+            return array('status' => false, 'message' => "Product Create Failed", 'errors' => $validator->errors());
+        }
+        DB::beginTransaction();
+        $images = array();
+        $ProductImage = "";
+        $ProductBrochure = "";
+        $Stages = "";
+        $galleryImages = array();
+        try {
+            $ProductID = $req->ProductID != "" ? $req->ProductID : date("YmdHis") . "-" . Helper::RandomString(20);
+            $tmpImage = json_decode($req->ProductImage, true);
 //			$tmpDoc=json_decode($req->ProductBrochure,true);
-			$gallery=json_decode($req->gallery);
+            $gallery = json_decode($req->gallery);
 
 
             if ($tmpImage !== null) {
                 if (isset($tmpImage->data) && !empty((array)$tmpImage->data)) {
-                    if($tmpImage->data->referData->isTemp =="1" && file_exists($tmpImage->data->uploadPath) ){
-                        $ProductImage=$tmpImage->data->uploadPath;
+                    if ($tmpImage->data->referData->isTemp == "1" && file_exists($tmpImage->data->uploadPath)) {
+                        $ProductImage = $tmpImage->data->uploadPath;
                     }
                 }
             }
@@ -667,59 +672,71 @@ class ProductHelper {
 //                    }
 //                }
 //            }
-			foreach($gallery as $ImgID=>$gData){
-				if($gData->referData->isTemp =="1" && file_exists($gData->uploadPath) ){
-					$fileName1=$gData->fileName!=""?$gData->fileName:Helper::RandomString(10)."png";
+            foreach ($gallery as $ImgID => $gData) {
+                if ($gData->referData->isTemp == "1" && file_exists($gData->uploadPath)) {
+                    $fileName1 = $gData->fileName != "" ? $gData->fileName : Helper::RandomString(10) . "png";
 
-					$t=array("gImage"=>$gData->uploadPath,"ImgID"=>$ImgID,"Images"=>array());
-					$galleryImages[]=$t;
-				}
-			}
-			$data=[
-				"ProductID"=>$ProductID,
-				"Slug"=>Helper::generateSlug($req->ProductName),
-				"ProductName"=>$req->ProductName,
-				"ProductType"=>$req->ProductType,
-                "ProductCode"=>$req->ProductCode,
-                'Stages'=>serialize([]),
-                'RelatedProducts'=>serialize($req->RelatedProducts),
-                "VideoURL"=>$req->VideoURL ?? '',
-				"HSNSAC"=>$req->HSNSAC,
-				"CTID"=>$req->CategoryType,
-				"CID"=>$req->Category,
-				"SCID"=>$req->SubCategory,
-				"UID"=>$req->UID,
+                    $t = array("gImage" => $gData->uploadPath, "ImgID" => $ImgID, "Images" => array());
+                    $galleryImages[] = $t;
+                }
+            }
+            $data = [
+                "ProductID" => $ProductID,
+                "Slug" => Helper::generateSlug($req->ProductName),
+                "ProductName" => $req->ProductName,
+                "ProductNameInTranslation" => $req->ProductNameInTranslation,
+                "ProductType" => $req->ProductType,
+                "ProductCode" => $req->ProductCode,
+                'Stages' => serialize([]),
+                'RelatedProducts' => serialize($req->RelatedProducts),
+                "VideoURL" => $req->VideoURL ?? '',
+                "HSNSAC" => $req->HSNSAC,
+                "CTID" => $req->CategoryType,
+                "CID" => $req->Category,
+                "SCID" => $req->SubCategory,
+                "UID" => $req->UID,
 //				"TaxType"=>$req->TaxType,
 //				"TaxID"=>$req->TaxID,
-				"PRate"=>$req->RegularPrice,
-				"SRate"=>$req->SalesPrice,
+                "PRate" => $req->RegularPrice,
+                "SRate" => $req->SalesPrice,
 //				"Decimals"=>$req->Decimals,
-				"Description"=>$req->Description,
-				"ShortDescription"=>$req->ShortDescription,
-                "Attributes"=>serialize(json_decode($req->Attributes,true)),
-				'Images'=>serialize(json_decode($req->ProductImage,true)),
-				'ProductBrochure'=>serialize(json_decode($req->ProductBrochure,true)),
-				'gallery'=>serialize(json_decode($req->gallery,true)),
-				"ActiveStatus"=>$req->ActiveStatus,
-				"CreatedBy"=>$UserID,
-				"CreatedOn"=>date("Y-m-d H:i:s")
-			];
-			DB::Table($tmpDBName.'tbl_products')->insert($data);
+                "Description" => $req->Description,
+                "ShortDescription" => $req->ShortDescription,
+                "Attributes" => serialize(json_decode($req->Attributes, true)),
+                'Images' => serialize(json_decode($req->ProductImage, true)),
+                'ProductBrochure' => serialize(json_decode($req->ProductBrochure, true)),
+                'gallery' => serialize(json_decode($req->gallery, true)),
+                "ActiveStatus" => $req->ActiveStatus,
+                "CreatedBy" => $UserID,
+                "CreatedOn" => date("Y-m-d H:i:s")
+            ];
+            $savedProduct = DB::Table('tbl_products')->where("ProductID", $ProductID)->first();
+            if ($savedProduct) {
+                $newTranslations = json_decode($req->ProductNameInTranslation);
+                $existingTranslations = json_decode($savedProduct->ProductNameInTranslation);
+                if (!$existingTranslations) {
+                    $existingTranslations = new stdClass();
+                }
+                foreach ($newTranslations as $lang => $value) {
+                    $existingTranslations->$lang = $value;
+                }
+                $data['ProductNameInTranslation'] = json_encode($existingTranslations);
+            }
+            DB::Table($tmpDBName . 'tbl_products')->insert($data);
             DB::commit();
-            return array('status'=>true,"ProductID"=>$ProductID);
-		}catch(Exception $e) {
+            return array('status' => true, "ProductID" => $ProductID);
+        } catch (Exception $e) {
             logger($e);
             DB::rollback();
-            foreach($images as $KeyName=>$Img){
+            foreach ($images as $Img) {
                 Helper::removeFile($Img['url']);
             }
-            return array('status'=>false,'message'=>"Product Create Failed");
-		}
-	}
+            return array('status' => false, 'message' => "Product Create Failed");
+        }
+    }
 	private static function variationSave($req,$UserID){
         $tmpDBName=Helper::getTmpDB();
         DB::beginTransaction();
-		$status=false;
 		$images=array();
 		$Image="";
 		$galleryImages=array();

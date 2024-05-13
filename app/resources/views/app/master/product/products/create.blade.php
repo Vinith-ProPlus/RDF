@@ -360,10 +360,29 @@
                 <div class="col-12 p-0">
                     <div class="form-group">
                         <label for="txtProductName">Product Name  <span class="required"> * </span></label>
-                        <input type="text" class="form-control form-control-lg" id="txtProductName" placeholder="Product Name" value="<?php if($isEdit){ echo $data->ProductName;} ?>">
+                        <input type="text" class="form-control form-control-lg" id="txtProductName" placeholder="Product Name" value="<?php if($isEdit){ echo $data->ProductName;} ?>" autocomplete="off">
                         <div class="errors err-sm" id="txtProductName-err"></div>
                     </div>
                 </div>
+                @if(count($languages) > 0)
+                    <div class="col-sm-12 p-0 text-center mt-20">
+                        <label class="align-middle fw-bold mb-0">Product Name Translations</label>
+                        @foreach($languages as $index=>$language)
+                            <div class="form-group text-left mt-10">
+                                <label class="txtProductNameIn_{{ $language->code }}">Product Name
+                                    In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                <input type="text"
+                                       class="form-control PNameLanguageFieldsCheck {{$Theme['input-size']}}"
+                                       id="txtProductNameIn_{{ $language->code }}"
+                                       data-language-code="{{ $language->code }}"
+                                       data-language="{{ $language->name_in_english }}"
+                                       value="{{ $isEdit ? ($data->ProductNameInTranslation->{$language->code} ?? '') : '' }}"
+                                       autocomplete="off">
+                                <div class="errors" id="txtProductNameIn_{{ $language->code }}-err"></div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             <div class="row d-none d-md-flex mt-20">
                 <div class="col-12 p-0">
@@ -371,7 +390,7 @@
                         <div class="card-header">
                             <div class="row">
                                 <div class="col-18 col-sm-8 col-md-6 col-lg-5 col-xl-4 d-flex align-items-center">
-                                    <div class=" fw-700 text-nowrap pr-10">Product Data  </div>
+                                    <div class=" fw-700 text-nowrap pr-10">Product Data</div>
                                     <select class="form-control" id="lstProductType">
                                         <option value="Simple"  @if($isEdit) @if($data->ProductType=="Simple") selected @endif @else selected @endif>Simple Product</option>
                                         <option value="Variable"  @if($isEdit) @if($data->ProductType=="Variable") selected @endif @endif>Variable Product</option>
@@ -1406,7 +1425,7 @@
                         html+='</h5>';
                         html+='<div id="'+uuid+'" class="accordion-collapse collapse" aria-labelledby="'+uuid+'-heading" data-bs-parent="#variationAccordion">';
                             html+='<div class="accordion-body">';
-                                html+='<div class="row mt-10">';
+                                html+='<div class="row">';
                                     html+='<div class="col-12  col-md-6 d-none">';
                                         html+='<div class="row">';
                                             html+='<div class="col-12 text-center">';
@@ -1419,14 +1438,14 @@
                                     html+='</div>';
                                     html+='<div class="col-12 col-md-12">';
                                         html+='<div class="row">';
-                                            html+='<div class="col-12">';
+                                            html+='<div class="col-12 d-none">';
                                                 html+='<div class="form-group">';
                                                     html+='<label for="">Variation Title <span class="required"> * </span></label>';
                                                     html+='<input type="text" class="form-control txtVTtitle" data-uuid="'+uuid+'" id="txtVTtitle-'+uuid+'" value="'+title+'">';
                                                     html+='<div class="errors err-sm" id="txtVTtitle-'+uuid+'-err"></div>';
                                                 html+='</div>';
                                             html+='</div>';
-                                            html+='<div class="col-12 mt-15">';
+                                            html+='<div class="col-12">';
                                                 html+='<div class="form-group">';
                                                     html+='<label for="">Regular Price <span class="required"> * </span></label>';
                                                     html+='<input type="number" min=0 step="{{Helper::NumberSteps($Settings["PRICE-DECIMALS"])}}" class="form-control txtVRegularPrice" data-uuid="'+uuid+'" id="txtVRegularPrice-'+uuid+'" value="'+PurchasePrice+'">';
@@ -1742,8 +1761,16 @@
                 }
             });
             let formData={};
+            let ProductNameInTranslation = {};
+
+            $('.PNameLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let language_code = input.data('language-code');
+                ProductNameInTranslation[language_code] = input.val();
+            });
             formData.ProductID="<?php if($isEdit){ echo $ProductID;} ?>";
             formData.ProductName=$('#txtProductName').val();
+            formData.ProductNameInTranslation=JSON.stringify(ProductNameInTranslation);
             formData.ProductType=$('#lstProductType').val();
             formData.ProductCode=$('#txtProductCode').val();
             // formData.Stages=$('#lstStages').val();
@@ -1784,6 +1811,21 @@
             }else if(data.ProductName.length>150){
                 $('#txtProductName-err').html('The Product Name may not be greater than 150 characters');status=false;
             }
+
+            $('.PNameLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtProductNameIn_' + languageCode + '-err').html('Product Name in ' + language + ' is required.');
+                    status = false;
+                } else {
+                    $('#txtProductNameIn_' + languageCode + '-err').html('');
+                }
+            });
+
             if(data.ProductType==""){
                 $('#lstProductType-err').html('Product Type is required');status=false;isGeneral=true;
             }
@@ -1831,7 +1873,6 @@
             }else if(parseFloat(data.SalesPrice)<0){
                 $('#txtSalesPrice-err').html('Sales Price is must be equal or  greater than 0.');status=false;isGeneral=true;
             }
-
 
             let errorUUID=null;
             if(data.ProductType=="Variable"){
@@ -1902,7 +1943,7 @@
                     $.ajax({
                         type:"post",
                         url:postUrl,
-                        headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content')},
+                        headers: { 'X-CSRF-Token' : "{{ csrf_token() }}" },
                         data:{TotalImagesCount:TotalImagesCount,ProductID:ProductID,ProductType:"Variable",saveType:"confirm",deletedImages:JSON.stringify(deletedImages)},
                         dataType:"json",
                         async:true,
@@ -1933,7 +1974,7 @@
                                     confirmButtonText: "Okay",
                                     closeOnConfirm: false
                                 },function(){
-                                    @if($isEdit==true)
+                                    @if($isEdit)
                                         window.location.replace("{{url('/')}}/admin/master/product/products");
                                     @else
                                         window.location.reload();

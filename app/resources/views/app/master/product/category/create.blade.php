@@ -322,6 +322,8 @@
                 if (value === "") {
                     $('#txtPCNameIn_' + languageCode + '-err').html('Product Category Name in ' + language + ' is required.');
                     status = false;
+                } else {
+                    $('#txtPCNameIn_' + languageCode + '-err').html('');
                 }
             });
 
