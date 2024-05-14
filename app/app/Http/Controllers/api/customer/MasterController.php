@@ -717,17 +717,18 @@ class MasterController extends Controller
                 ->where('P.ActiveStatus', 'Active')
                 ->where('P.DFlag', 0)
                 ->distinct()
-                ->select('P.ProductID', 'P.ProductName', 'U.UName', 'U.UCode', 'U.UID',
+                ->select('P.ProductID', 'P.ProductName', 'P.ProductNameInTranslation', 'U.UName', 'U.UCode', 'U.UID',
                     DB::raw("CONCAT('" . config('app.url') . "/', COALESCE(P.ProductImage, 'assets/images/no-image-b.png')) as ProductImage"),
                     DB::raw('COALESCE((SELECT PRate FROM tbl_products_variation WHERE tbl_products_variation.ProductID = P.ProductID ORDER BY SRate LIMIT 1), P.PRate) as PRate'),
                     DB::raw('COALESCE((SELECT SRate FROM tbl_products_variation WHERE tbl_products_variation.ProductID = P.ProductID ORDER BY SRate LIMIT 1), P.SRate) as SRate'),
                     DB::raw('IF(tbl_wishlists.product_id IS NOT NULL, "true", "false") as isInWishlist')
                 )->get();
 
-            $relatedProducts->transform(function ($item) {
+            $relatedProducts->transform(function ($item) use ($lang, $product) {
+                $item->ProductName = json_decode($item->ProductNameInTranslation)->$lang ?? $item->ProductName;
                 $item->PRate = Helper::formatAmount($item->PRate);
                 $item->SRate = Helper::formatAmount($item->SRate);
-                $item->unit = DB::table('tbl_products_variation')
+                $relatedProductsUnit = DB::table('tbl_products_variation')
                     ->where('tbl_products_variation.ProductID', $item->ProductID)
                     ->where('tbl_products_variation.SRate', function ($query) use ($item) {
                         $query->select(DB::raw('min(SRate)'))
@@ -742,8 +743,29 @@ class MasterController extends Controller
                             ->on('AD.AttrID', '=', 'D.AttributeID');
                     })
                     ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
-                    ->pluck('AD.Values')
-                    ->first() ?? ($item->UName ? "In $item->UName" : '-');
+                    ->select('AD.Values', 'AD.valuesInTranslation')
+                    ->first();
+                if (isset($relatedProductsUnit->valuesInTranslation)) {
+                    $valuesInTranslation = json_decode($relatedProductsUnit->valuesInTranslation, true);
+                    if (isset($valuesInTranslation[$lang])) {
+                        $item->unit = $valuesInTranslation[$lang];
+                    } else {
+                        $item->unit = $relatedProductsUnit->Values ?? $product->UName ?? '-';
+                    }
+                } elseif (isset($product->UNameInTranslation)) {
+                    $UNameInTranslation = json_decode($product->UNameInTranslation, true);
+                    if (isset($UNameInTranslation[$lang])) {
+                        $item->unit = $UNameInTranslation[$lang];
+                    } else {
+                        $item->unit = $product->UName ?? '-';
+                    }
+                } else {
+                    $item->unit = $product->UName ?? '-';
+                }
+                unset($item->ProductNameInTranslation);
+                unset($item->UName);
+                unset($item->UCode);
+                unset($item->UID);
                 return $item;
             });
 
@@ -757,18 +779,33 @@ class MasterController extends Controller
             }
 
             $variations = DB::table('tbl_products_variation')
-                ->select('VariationID', 'UUID', 'ProductID', 'Slug', 'Title', 'PRate', 'SRate')
+                ->select('VariationID', 'ProductID', 'PRate', 'SRate')
                 ->where('ProductID', $product->ProductID)
                 ->get();
 
             foreach ($variations as $variation) {
-                $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
+                $sql = "SELECT D.DetailID, D.ProductID, D.VariationID, D.AttributeID, A.AttrName, D.AttributeValueID, AD.Values, AD.ValuesInTranslation, D.DFlag FROM tbl_products_variation_details as D LEFT JOIN tbl_attributes_details as AD ON AD.ValueID=D.AttributeValueID and AD.AttrID=D.AttributeID LEFT JOIN tbl_attributes as A On A.AttrID=AD.AttrID ";
                 $sql .= " Where D.ProductID='" . $product->ProductID . "' and D.VariationID='" . $variation->VariationID . "'";
                 $AttributeDetails = DB::select($sql);
-
                 $variation->PRate = Helper::formatAmount($variation->PRate);
                 $variation->SRate = Helper::formatAmount($variation->SRate);
-                $variation->unit = isset($AttributeDetails[0]) ? ($AttributeDetails[0]->Values) : (($product->UName ? "In $product->UName" : '-') ?? '-');
+                if (isset($AttributeDetails[0]) && ($AttributeDetails[0]->ValuesInTranslation)) {
+                    $vValuesInTranslation = json_decode($AttributeDetails[0]->ValuesInTranslation, true);
+                    if (isset($vValuesInTranslation[$lang])) {
+                        $variation->unit = $vValuesInTranslation[$lang];
+                    } else {
+                        $variation->unit = $AttributeDetails[0]->Values ?? $product->UName ?? '-';
+                    }
+                } elseif (isset($product->UNameInTranslation)) {
+                    $UNameInTranslation = json_decode($product->UNameInTranslation, true);
+                    if (isset($UNameInTranslation[$lang])) {
+                        $variation->unit = $UNameInTranslation[$lang];
+                    } else {
+                        $variation->unit = $product->UName ?? '-';
+                    }
+                } else {
+                    $variation->unit = $product->UName ?? '-';
+                }
             }
 
             $reviews = ProductReview::with('customerDetails')->where('ProductID', $product->ProductID)
@@ -783,8 +820,7 @@ class MasterController extends Controller
                         ->exists();
                     return $review;
                 });
-            $ratings = ProductReview::where('ProductID', $product->ProductID)
-                ->avg('rating');
+            $ratings = ProductReview::where('ProductID', $product->ProductID)->avg('rating');
 
             $productUnit = DB::table('tbl_products_variation')
                 ->where('tbl_products_variation.ProductID', $product->ProductID)
@@ -808,7 +844,7 @@ class MasterController extends Controller
                 if (isset($valuesInTranslation[$lang])) {
                     $productUnit = $valuesInTranslation[$lang];
                 } else {
-                    $productUnit = $productUnit->Values ?? $productUnit->UName ?? '-';
+                    $productUnit = $productUnit->Values ?? $product->UName ?? '-';
                 }
             } elseif (isset($product->UNameInTranslation)) {
                 $UNameInTranslation = json_decode($product->UNameInTranslation, true);
@@ -829,9 +865,6 @@ class MasterController extends Controller
                 'PCID' => $product->PCID,
                 'PSCName' => json_decode($product->PSCNameInTranslation)->$lang ?? $product->PSCName,
                 'PSCID' => $product->PSCID,
-                'UName' => $product->UName,
-                'UCode' => $product->UCode,
-                'UID' => $product->UID,
                 'ProductImage' => config('app.url') . '/' . (!empty($product->ProductImage) ? $product->ProductImage : 'assets/images/no-image-b.png'),
                 'PRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->exists() ?
                     DB::table('tbl_products_variation')->where('ProductID', $product->ProductID)->orderBy('SRate')->value('PRate') :
