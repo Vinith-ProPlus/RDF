@@ -354,9 +354,10 @@ class CustomerAPIController extends Controller{
         }
     }
 
-    public function homeSearch(Request $req){
+    public function homeSearch(Request $req)
+    {
         $lang = optional($req->auth_customer)->language ?? 'en';
-        if($req->SearchText){
+        if ($req->SearchText) {
             $PCategories = DB::table('tbl_product_category as PC')
                 ->where('PC.PCName', 'like', '%' . $req->SearchText . '%')
                 ->distinct()
@@ -368,11 +369,11 @@ class CustomerAPIController extends Controller{
                 return $PCategory;
             });
 
-                $PSCategories = DB::table('tbl_product_subcategory as PSC')
-                    ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
-                    ->where('PSC.PSCName', 'like', '%' . $req->SearchText . '%')
-                    ->distinct()
-                    ->select('PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation', 'PSC.PSCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation')->take(3)->get();
+            $PSCategories = DB::table('tbl_product_subcategory as PSC')
+                ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+                ->where('PSC.PSCName', 'like', '%' . $req->SearchText . '%')
+                ->distinct()
+                ->select('PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation', 'PSC.PSCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation')->take(3)->get();
             $PSCategories->transform(function ($PSCategory) use ($lang) {
                 $PSCategory->PCName = json_decode($PSCategory->PCNameInTranslation)->$lang ?? $PSCategory->PCName;
                 $PSCategory->PSCName = json_decode($PSCategory->PSCNameInTranslation)->$lang ?? $PSCategory->PSCName;
@@ -381,12 +382,12 @@ class CustomerAPIController extends Controller{
                 return $PSCategory;
             });
 
-                $Products = DB::table('tbl_products as P')
-                    ->leftJoin('tbl_product_subcategory as PSC', 'P.SCID', 'PSC.PSCID')
-                    ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
-                    ->where('P.ProductName', 'like', '%' . $req->SearchText . '%')
-                    ->distinct()
-                    ->select('P.ProductID', 'P.ProductName', 'P.ProductNameInTranslation', 'PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation', 'PSC.PSCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation')->take(3)->get();
+            $Products = DB::table('tbl_products as P')
+                ->leftJoin('tbl_product_subcategory as PSC', 'P.SCID', 'PSC.PSCID')
+                ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+                ->where('P.ProductName', 'like', '%' . $req->SearchText . '%')
+                ->groupBy('P.ProductID', 'P.ProductName', 'P.ProductNameInTranslation', 'PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation', 'PSC.PSCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation')
+                ->select('P.ProductID', 'P.ProductName', 'P.ProductNameInTranslation', 'PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation', 'PSC.PSCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation')->take(3)->get();
             $Products->transform(function ($Product) use ($lang) {
                 $Product->PCName = json_decode($Product->PCNameInTranslation)->$lang ?? $Product->PCName;
                 $Product->PSCName = json_decode($Product->PSCNameInTranslation)->$lang ?? $Product->PSCName;
@@ -397,12 +398,12 @@ class CustomerAPIController extends Controller{
                 return $Product;
             });
 
-                $ProductData = ['PCategories'=>$PCategories,'PSCategories'=>$PSCategories,'Products'=>$Products];
+            $ProductData = ['PCategories' => $PCategories, 'PSCategories' => $PSCategories, 'Products' => $Products];
 
-                return response()->json(['status' => true, 'data' => $ProductData ]);
-            } else{
-                return response()->json(['status' => false, 'message' => "search text is empty"]);
-            }
+            return response()->json(['status' => true, 'data' => $ProductData]);
+        } else {
+            return response()->json(['status' => false, 'message' => "search text is empty"]);
+        }
     }
 
     public function guestHomeScreen()
@@ -430,7 +431,32 @@ class CustomerAPIController extends Controller{
                      FROM tbl_products_variation AS PV
                      WHERE PV.ProductID = P.ProductID) AS SRate'),
                     DB::raw('false AS IsInWishlist'))
-                ->distinct()->take(9)->get();;
+                ->distinct()->take(9)->get();
+            $response->products->transform(function ($Product) {
+                $productUnit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $Product->ProductID)
+                    ->where('tbl_products_variation.SRate', function ($query) use ($Product) {
+                        $query->select(DB::raw('min(SRate)'))
+                            ->from('tbl_products_variation')
+                            ->where('ProductID', $Product->ProductID);
+                    })
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->select('AD.Values', 'AD.valuesInTranslation')
+                    ->first();
+                $Product->unit = $productUnit->Values ?? $Product->UName ?? '-';
+                $Product->SRate = Helper::formatAmount($Product->SRate);
+                $Product->PRate = Helper::formatAmount($Product->PRate);
+                unset($Product->UName);
+                return $Product;
+            });
+
             return $this->successResponse($response, "Guest Home screen data fetched Successfully");
         } catch (Exception $e) {
             logger($e);
@@ -440,9 +466,10 @@ class CustomerAPIController extends Controller{
     public function customerHomeScreen(Request $request)
     {
         try {
+            $lang = optional($request->auth_customer)->language ?? 'en';
             $CustomerID = $request->auth_customer->CustomerID;
-            $response = $this->getHomeScreenBannerAndCategories();
-            $response->products = DB::table('tbl_products as P')
+            $response = $this->getHomeScreenBannerAndCategories($lang);
+            $Products = DB::table('tbl_products as P')
                 ->leftjoin('tbl_product_category_type as PCT', 'PCT.PCTID', 'P.CTID')
                 ->leftjoin('tbl_product_category as PC', 'PC.PCID', 'P.CID')
                 ->leftjoin('tbl_product_subcategory as PSC', 'PSC.PSCID', 'P.SCID')
@@ -453,7 +480,8 @@ class CustomerAPIController extends Controller{
                 })
                 ->where('P.ActiveStatus', 'Active')->where('P.DFlag', 0)->where('PC.ActiveStatus', 'Active')
                 ->where('PC.DFlag', 0)->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)
-                ->select('P.ProductName', 'P.ProductID', 'PCT.PCTName', 'PCT.PCTID', 'PC.PCName', 'PC.PCID', 'PSC.PSCName', 'PSC.PSCID', 'U.UName', 'U.UCode', 'U.UID',
+                ->select('P.ProductName', 'P.ProductNameInTranslation', 'P.ProductID', 'PCT.PCTName', 'PCT.PCTNameInTranslation', 'PCT.PCTID', 'PC.PCName',
+                    'PC.PCNameInTranslation', 'PC.PCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation', 'PSC.PSCID', 'U.UName', 'U.UNameInTranslation',
                     DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage'),
                     DB::raw('(SELECT CASE
                        WHEN EXISTS (SELECT 1 FROM tbl_products_variation WHERE ProductID = P.ProductID)
@@ -467,7 +495,57 @@ class CustomerAPIController extends Controller{
                      FROM tbl_products_variation AS PV
                      WHERE PV.ProductID = P.ProductID) AS SRate'),
                     DB::raw('IF(W.product_id IS NOT NULL, true, false) AS IsInWishlist'))
-                ->distinct()->take(9)->get();;
+                ->distinct()->take(9)->get();
+            $Products->transform(function ($Product) use ($lang) {
+                $productUnit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $Product->ProductID)
+                    ->where('tbl_products_variation.SRate', function ($query) use ($Product) {
+                        $query->select(DB::raw('min(SRate)'))
+                            ->from('tbl_products_variation')
+                            ->where('ProductID', $Product->ProductID);
+                    })
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->select('AD.Values', 'AD.valuesInTranslation')
+                    ->first();
+                if (isset($productUnit->valuesInTranslation)) {
+                    $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
+                    if (isset($valuesInTranslation[$lang])) {
+                        $Product->unit = $valuesInTranslation[$lang];
+                    } else {
+                        $Product->unit = $productUnit->Values ?? $Product->UName ?? '-';
+                    }
+                } elseif (isset($Product->UNameInTranslation)) {
+                    $UNameInTranslation = json_decode($Product->UNameInTranslation, true);
+                    if (isset($UNameInTranslation[$lang])) {
+                        $Product->unit = $UNameInTranslation[$lang];
+                    } else {
+                        $Product->unit = $Product->UName ?? '-';
+                    }
+                } else {
+                    $Product->unit = $Product->UName ?? '-';
+                }
+                $Product->PCTName = json_decode($Product->PCTNameInTranslation)->$lang ?? $Product->PCTName;
+                $Product->PCName = json_decode($Product->PCNameInTranslation)->$lang ?? $Product->PCName;
+                $Product->PSCName = json_decode($Product->PSCNameInTranslation)->$lang ?? $Product->PSCName;
+                $Product->ProductName = json_decode($Product->ProductNameInTranslation)->$lang ?? $Product->ProductName;
+                $Product->SRate = Helper::formatAmount($Product->SRate);
+                $Product->PRate = Helper::formatAmount($Product->PRate);
+                unset($Product->PCTNameInTranslation);
+                unset($Product->PCNameInTranslation);
+                unset($Product->PSCNameInTranslation);
+                unset($Product->ProductNameInTranslation);
+                unset($Product->UNameInTranslation);
+                unset($Product->UName);
+                return $Product;
+            });
+            $response->products = $Products;
             return $this->successResponse($response, "Customer Home screen data fetched Successfully");
         } catch (Exception $e) {
             logger($e);
@@ -478,17 +556,23 @@ class CustomerAPIController extends Controller{
     /**
      * @return \stdClass
      */
-    public function getHomeScreenBannerAndCategories(): \stdClass
+    public function getHomeScreenBannerAndCategories($lang = 'en'): \stdClass
     {
         $response = new \stdClass();
         $response->banners = DB::Table('tbl_banner_images')->where('BannerType', 'Mobile')->where('DFlag', 0)
             ->select(DB::raw('CONCAT("' . url('/') . '/", BannerImage) AS BannerImage'))
-            ->get();;
-        $response->categories = DB::table('tbl_product_category as PC')
+            ->get();
+        $categories = DB::table('tbl_product_category as PC')
             ->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)
-            ->select('PC.PCName', 'PC.PCID', 'PC.PCTID',
+            ->select('PC.PCName','PC.PCNameInTranslation', 'PC.PCID', 'PC.PCTID',
                 DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(PC.PCImage, ""), "assets/images/no-image-b.png")) AS CategoryImage'))
-            ->take(9)->get();;
+            ->take(9)->get();
+        $categories->transform(function ($category) use ($lang) {
+            $category->PCName = json_decode($category->PCNameInTranslation)->$lang ?? $category->PCName;
+            unset($category->PCNameInTranslation);
+            return $category;
+        });
+        $response->categories = $categories;
         return $response;
     }
 
