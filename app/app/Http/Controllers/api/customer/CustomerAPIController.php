@@ -355,24 +355,47 @@ class CustomerAPIController extends Controller{
     }
 
     public function homeSearch(Request $req){
-            if($req->SearchText){
-                $PCategories = DB::table('tbl_product_category as PC')
-                    ->where('PC.PCName', 'like', '%' . $req->SearchText . '%')
-                    ->groupBy('PC.PCID', 'PC.PCName')
-                    ->select('PC.PCID', 'PC.PCName')->take(3)->get();
+        $lang = optional($req->auth_customer)->language ?? 'en';
+        if($req->SearchText){
+            $PCategories = DB::table('tbl_product_category as PC')
+                ->where('PC.PCName', 'like', '%' . $req->SearchText . '%')
+                ->distinct()
+                ->select('PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation')
+                ->take(3)->get();
+            $PCategories->transform(function ($PCategory) use ($lang) {
+                $PCategory->PCName = json_decode($PCategory->PCNameInTranslation)->$lang ?? $PCategory->PCName;
+                unset($PCategory->PCNameInTranslation);
+                return $PCategory;
+            });
 
                 $PSCategories = DB::table('tbl_product_subcategory as PSC')
                     ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
                     ->where('PSC.PSCName', 'like', '%' . $req->SearchText . '%')
-                    ->groupBy('PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')
-                    ->select('PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')->take(3)->get();
+                    ->distinct()
+                    ->select('PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation', 'PSC.PSCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation')->take(3)->get();
+            $PSCategories->transform(function ($PSCategory) use ($lang) {
+                $PSCategory->PCName = json_decode($PSCategory->PCNameInTranslation)->$lang ?? $PSCategory->PCName;
+                $PSCategory->PSCName = json_decode($PSCategory->PSCNameInTranslation)->$lang ?? $PSCategory->PSCName;
+                unset($PSCategory->PCNameInTranslation);
+                unset($PSCategory->PSCNameInTranslation);
+                return $PSCategory;
+            });
 
                 $Products = DB::table('tbl_products as P')
                     ->leftJoin('tbl_product_subcategory as PSC', 'P.SCID', 'PSC.PSCID')
                     ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
                     ->where('P.ProductName', 'like', '%' . $req->SearchText . '%')
-                    ->groupBy('P.ProductID', 'P.ProductName', 'PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')
-                    ->select('P.ProductID', 'P.ProductName', 'PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')->take(3)->get();
+                    ->distinct()
+                    ->select('P.ProductID', 'P.ProductName', 'P.ProductNameInTranslation', 'PC.PCID', 'PC.PCName', 'PC.PCNameInTranslation', 'PSC.PSCID', 'PSC.PSCName', 'PSC.PSCNameInTranslation')->take(3)->get();
+            $Products->transform(function ($Product) use ($lang) {
+                $Product->PCName = json_decode($Product->PCNameInTranslation)->$lang ?? $Product->PCName;
+                $Product->PSCName = json_decode($Product->PSCNameInTranslation)->$lang ?? $Product->PSCName;
+                $Product->ProductName = json_decode($Product->ProductNameInTranslation)->$lang ?? $Product->ProductName;
+                unset($Product->PCNameInTranslation);
+                unset($Product->PSCNameInTranslation);
+                unset($Product->ProductNameInTranslation);
+                return $Product;
+            });
 
                 $ProductData = ['PCategories'=>$PCategories,'PSCategories'=>$PSCategories,'Products'=>$Products];
 
