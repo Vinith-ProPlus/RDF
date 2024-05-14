@@ -85,6 +85,7 @@ class WishlistController extends Controller
     public function my_wishlist(Request $request): JsonResponse
     {
         try {
+            $lang = optional($request->auth_customer)->language ?? 'en';
             $customerId = $request->auth_customer->CustomerID;
             $searchText = $request->input('SearchText', '');
 
@@ -92,34 +93,60 @@ class WishlistController extends Controller
 
             $formattedWishlist = [];
             foreach ($wishlistProducts as $wishlistProduct) {
-                $productQuery = $wishlistProduct->product_variation_id
-                    ? DB::table('tbl_products_variation')->where('VariationID', $wishlistProduct->product_variation_id)
-                    : DB::table('tbl_products')->where('ProductID', $wishlistProduct->product_id);
+                $productQuery = DB::table('tbl_products as P')->where('P.ProductID', $wishlistProduct->product_id)
+                    ->leftJoin('tbl_uom as U', 'U.UID', 'P.UID');
 
                 if (!empty($searchText)) {
-                    if($wishlistProduct->product_variation_id) {
-                        $productQuery->where('Title', 'like', "%$searchText%");
-                    } else {
                         $productQuery->where('ProductName', 'like', "%$searchText%");
-                    }
                 }
 
                 $productDetails = $productQuery->first();
                 if ($productDetails) {
-                    if ($wishlistProduct->product_variation_id) {
-                        $productImage = $productDetails->VImage ? url($productDetails->VImage) : url('assets/images/no-image-b.png');
-                        $productName = $productDetails->Title;
+                    $productUnit = DB::table('tbl_products_variation')
+                        ->where('tbl_products_variation.ProductID', $productDetails->ProductID)
+                        ->where('tbl_products_variation.SRate', function ($query) use ($productDetails) {
+                            $query->select(DB::raw('min(SRate)'))
+                                ->from('tbl_products_variation')
+                                ->where('ProductID', $productDetails->ProductID);
+                        })
+                        ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                            $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                        })
+                        ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                            $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                                ->on('AD.AttrID', '=', 'D.AttributeID');
+                        })
+                        ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                        ->select('AD.Values', 'AD.valuesInTranslation')
+                        ->first();
+                    if (isset($productUnit->valuesInTranslation)) {
+                        $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
+                        if (isset($valuesInTranslation[$lang])) {
+                            $productUnit = $valuesInTranslation[$lang];
+                        } else {
+                            $productUnit = $productUnit->Values ?? $productDetails->UName ?? '-';
+                        }
+                    } elseif (isset($productDetails->UNameInTranslation)) {
+                        $UNameInTranslation = json_decode($productDetails->UNameInTranslation, true);
+                        if (isset($UNameInTranslation[$lang])) {
+                            $productUnit = $UNameInTranslation[$lang];
+                        } else {
+                            $productUnit = $productDetails->UName ?? '-';
+                        }
                     } else {
-                        $productImage = $productDetails->ProductImage ? url($productDetails->ProductImage) : url('assets/images/no-image-b.png');
-                        $productName = $productDetails->ProductName;
+                        $productUnit = $productDetails->UName ?? '-';
                     }
                     $formattedWishlist[] = [
                         'product_id' => $productDetails->ProductID,
-                        'product_variation_id' => $wishlistProduct->product_variation_id,
-                        'Title' => $productName,
-                        'PRate' => Helper::formatAmount($productDetails->PRate),
-                        'SRate' => Helper::formatAmount($productDetails->SRate),
-                        'ProductImage' => $productImage
+                        'Title' => json_decode($productDetails->ProductNameInTranslation)->$lang ?? $productDetails->ProductName,
+                        'PRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $productDetails->ProductID)->exists() ?
+                            DB::table('tbl_products_variation')->where('ProductID', $productDetails->ProductID)->orderBy('SRate')->value('PRate') :
+                            $productDetails->PRate),
+                        'SRate' => Helper::formatAmount(DB::table('tbl_products_variation')->where('ProductID', $productDetails->ProductID)->exists() ?
+                            DB::table('tbl_products_variation')->where('ProductID', $productDetails->ProductID)->min('SRate') :
+                            $productDetails->SRate),
+                        'unit' => $productUnit,
+                        'ProductImage' => config('app.url') . '/' . ((!empty($productDetails->ProductImage) && file_exists($productDetails->ProductImage)) ? $productDetails->ProductImage : 'assets/images/no-image-b.png'),
                     ];
                 }
             }
