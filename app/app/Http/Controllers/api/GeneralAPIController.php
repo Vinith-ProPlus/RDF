@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\general;
 use Laravel\Passport\RefreshToken;
 use Laravel\Passport\Token;
+
 class GeneralAPIController extends Controller{
 	private $generalDB;
     private $tmpDB;
@@ -271,5 +273,23 @@ class GeneralAPIController extends Controller{
         return $return;
     }
 
+    public function translate(Request $request)
+    {
+        // Get the source text, source language, and target language from the request
+        $sourceText = $request->input('sourceText');
+        $sourceLang = $request->input('sourceLang', 'en'); // Default to English if sourceLang not provided
+        $targetLang = $request->input('targetLang', 'ta'); // Default to Tamil if targetLang not provided
 
+        // Build the URL for translation
+        $url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sourceLang&tl=$targetLang&dt=t&q=" . urlencode($sourceText);
+
+        // Make the API request to Google Translate
+        $response = Http::get($url);
+
+        // Extract the translated text from the response
+        $translatedText = optional($response->json())[0][0][0] ?? '';
+
+        // Return the translated text
+        return response()->json(['translatedText' => $translatedText]);
+    }
 }

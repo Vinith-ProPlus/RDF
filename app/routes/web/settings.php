@@ -5,6 +5,7 @@ use App\Http\Controllers\web\Settings\CMSController;
 use App\Http\Controllers\web\Settings\CompanyController;
 use App\Http\Controllers\web\Settings\GeneralSettingsController;
 use App\Http\Controllers\web\Settings\MobileVersionController;
+use App\Http\Controllers\web\Settings\TranslationController;
 
 Route::group(['prefix'=>'company'],function (){
     Route::controller(CompanyController::class)->group(function () {
@@ -45,5 +46,14 @@ Route::group(['prefix'=>'banners'],function (){
         Route::post('/upload', 'save');
         Route::POST('/edit/{TranNo}', 'update');
         Route::POST('/delete/{TranNo}', 'Delete');
+    });
+});
+Route::group(['prefix'=>'translations'],function (){
+    Route::controller(TranslationController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/edit/{LangID}', 'edit');
+        Route::post('/update', 'update')->name('translation.update');
+        Route::post('/data', 'TableView');
+//        Route::Post('/edit/{ID}', 'Update');
     });
 });

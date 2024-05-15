@@ -111,3 +111,4 @@ Route::post('/get/stages', [GeneralAPIController::class, 'getStages']);
 Route::post('/get/support-type', [GeneralAPIController::class, 'getSupportType']);
 Route::post('/get/cms', [GeneralAPIController::class, 'getCMS']);
 Route::post('/get/banner-images', [GeneralAPIController::class, 'getBannerImages']);
+Route::post('/translate', [GeneralAPIController::class, 'translate']);

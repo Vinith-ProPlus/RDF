@@ -20,4 +20,9 @@ class Language extends Model
     {
         return $query->whereStatus('Active');
     }
+
+    public function translations()
+    {
+        return $this->hasOne(Translation::class, 'language_id', 'id');
+    }
 }
