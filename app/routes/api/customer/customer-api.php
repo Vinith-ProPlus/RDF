@@ -48,7 +48,7 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/wishlist/my_wishlist', [WishlistController::class, 'my_wishlist']);
     Route::post('/support/get/ticket', [SupportAPIController::class, 'GetTicket']);
     Route::post('/support/create-ticket', [SupportAPIController::class, 'CreateTicket']);
-    Route::post('homeSearch', [CustomerAPIController::class, 'homeSearch'])->name('homeSearch');
+    Route::post('/customer/homeSearch', [CustomerAPIController::class, 'customerHomeSearch'])->name('customerHomeSearch');
 
 //    Cart
     Route::post('/customer/get/cart', [CustomerAuthController::class, 'getCart']);
@@ -107,6 +107,7 @@ Route::post('/get/product', [MasterController::class, 'getProduct']);
 Route::post('/tmp/file-upload', [GeneralAPIController::class, 'tmpFileUpload']);
 
 Route::post('/guest/homeScreen', [CustomerAPIController::class, 'guestHomeScreen']);
+Route::post('/guest/homeSearch', [CustomerAPIController::class, 'guestHomeSearch'])->name('guestHomeSearch');
 Route::post('/get/stages', [GeneralAPIController::class, 'getStages']);
 Route::post('/get/support-type', [GeneralAPIController::class, 'getSupportType']);
 Route::post('/get/cms', [GeneralAPIController::class, 'getCMS']);

@@ -354,7 +354,7 @@ class CustomerAPIController extends Controller{
         }
     }
 
-    public function homeSearch(Request $req)
+    public function customerHomeSearch(Request $req)
     {
         $lang = optional($req->auth_customer)->language ?? 'en';
         if ($req->SearchText) {
@@ -397,6 +397,36 @@ class CustomerAPIController extends Controller{
                 unset($Product->ProductNameInTranslation);
                 return $Product;
             });
+
+            $ProductData = ['PCategories' => $PCategories, 'PSCategories' => $PSCategories, 'Products' => $Products];
+
+            return response()->json(['status' => true, 'data' => $ProductData]);
+        } else {
+            return response()->json(['status' => false, 'message' => "search text is empty"]);
+        }
+    }
+
+    public function guestHomeSearch(Request $req)
+    {
+        if ($req->SearchText) {
+            $PCategories = DB::table('tbl_product_category as PC')
+                ->where('PC.PCName', 'like', '%' . $req->SearchText . '%')
+                ->distinct()
+                ->select('PC.PCID', 'PC.PCName')
+                ->take(3)->get();
+
+            $PSCategories = DB::table('tbl_product_subcategory as PSC')
+                ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+                ->where('PSC.PSCName', 'like', '%' . $req->SearchText . '%')
+                ->distinct()
+                ->select('PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')->take(3)->get();
+
+            $Products = DB::table('tbl_products as P')
+                ->leftJoin('tbl_product_subcategory as PSC', 'P.SCID', 'PSC.PSCID')
+                ->leftJoin('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+                ->where('P.ProductName', 'like', '%' . $req->SearchText . '%')
+                ->groupBy('P.ProductID', 'P.ProductName', 'PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')
+                ->select('P.ProductID', 'P.ProductName', 'PC.PCID', 'PC.PCName', 'PSC.PSCID', 'PSC.PSCName')->take(3)->get();
 
             $ProductData = ['PCategories' => $PCategories, 'PSCategories' => $PSCategories, 'Products' => $Products];
 
