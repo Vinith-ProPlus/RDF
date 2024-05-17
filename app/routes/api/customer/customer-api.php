@@ -16,15 +16,6 @@ Route::post('/registered-details', [CustomerAuthController::class, 'RegisteredDe
 
 Route::post('/get/construction-type', [CustomerAuthController::class, 'getConstructionType']);
 Route::post('/get/customer-type', [CustomerAuthController::class, 'getCustomerType']);
-//Route::post('/get/category', [CustomerAuthController::class, 'getCategory']);
-//Route::post('/get/sub-category', [CustomerAuthController::class, 'getSubCategory']);
-//Route::post('/get/products', [CustomerAuthController::class, 'getProducts']);
-//Route::post('/get/category/search', [CustomerAuthController::class, 'getCategorySearch']);
-//Route::post('/get/sub-category/search', [CustomerAuthController::class, 'getSubCategorySearch']);
-//Route::post('/get/products/search', [CustomerAuthController::class, 'getProductsSearch']);
-
-
-
 
 Route::post('/google-register', [CustomerAPIController::class, 'GoogleRegister']);
 
@@ -112,4 +103,6 @@ Route::post('/get/stages', [GeneralAPIController::class, 'getStages']);
 Route::post('/get/support-type', [GeneralAPIController::class, 'getSupportType']);
 Route::post('/get/cms', [GeneralAPIController::class, 'getCMS']);
 Route::post('/get/banner-images', [GeneralAPIController::class, 'getBannerImages']);
+Route::get('/get/languages', [GeneralAPIController::class, 'getLanguages']);
+Route::post('/get/translations', [CustomerAPIController::class, 'getTranslation']);
 Route::post('/translate', [GeneralAPIController::class, 'translate']);

@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
 use App\Http\Requests\MobileNoRegistrationRequest;
 use App\Models\Customer;
+use App\Models\Language;
 use App\Models\TextLocal;
+use App\Models\Translation;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -627,6 +629,22 @@ class CustomerAPIController extends Controller{
             throw new Exception($response['message']);
         } else {
             info('NO ERROR FOUND');
+        }
+    }
+
+    public function getTranslation(Request $request)
+    {
+        $validatedData = Validator::make($request->all(), [
+            'language_code' => 'required|string|exists:languages,code'
+        ]);
+        if ($validatedData->fails()) {
+            return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+        }
+        $language = Language::with('translations')->where('code', $request->language_code)->first();
+        if($language->translations){
+            return json_decode($language->translations->value);
+        } else {
+            return [];
         }
     }
 }

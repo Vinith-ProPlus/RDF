@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api;
 
 use App\helper\helper;
 use App\Http\Controllers\Controller;
+use App\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Input;
@@ -291,5 +292,10 @@ class GeneralAPIController extends Controller{
 
         // Return the translated text
         return response()->json(['translatedText' => $translatedText]);
+    }
+
+    public function getLanguages()
+    {
+        return Language::active()->select("name", "name_in_english", "code")->get();
     }
 }
