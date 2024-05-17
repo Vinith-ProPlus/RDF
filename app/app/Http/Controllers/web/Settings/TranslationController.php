@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Language;
 use App\Models\Translation;
 use App\Models\TranslationKey;
+use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
@@ -26,6 +27,7 @@ use stdClass;
 
 class TranslationController extends Controller
 {
+    use ApiResponse;
     private $general;
     private $DocNum;
     private $UserID;
@@ -74,7 +76,7 @@ class TranslationController extends Controller
             logger($FormData['languages']);
             $FormData['translation_keys'] = TranslationKey::all();
             if (count($FormData['languages']) > 0) {
-                return view('app.settings.translations.create', $FormData);
+                return view('app.settings.translations.edit', $FormData);
             } else {
                 return view('errors.400');
             }

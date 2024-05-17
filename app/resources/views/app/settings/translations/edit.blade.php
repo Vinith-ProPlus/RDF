@@ -83,25 +83,21 @@
     @if(($crud['view'])&&($crud['edit']))
         <script>
             $(document).ready(function () {
-                $('.updateField').blur(function () {
-                    let thiss = $(this);
-                    let language_id = thiss.data('language-id');
+                const getData = async (language_id) => {
                     let translations = {};
                     $('.language-' + language_id).each(function () {
-                        let translation = $(this);
-                        let translationKey = translation.data('translation-key');
-                        let translationValue = translation.val().trim(); // Trim the value to remove whitespace
-                        translations[translationKey] = translationValue;
-                        console.log(translationValue);
+                        translations[$(this).data('translation-key')] = $(this).val().trim();
                     });
-                    console.log("translations")
-                    console.log(translations)
-                    let jsonTranslations = JSON.stringify(translations);
-                    console.log(jsonTranslations);
-                    let formData = {
+                    let jsonTranslation = JSON.stringify(translations);
+                    return {
                         language_id: language_id,
-                        value: jsonTranslations
+                        value: jsonTranslation
                     };
+                };
+
+                $('.updateField').on('blur', async function () {
+                    let language_id = $(this).data('language-id');
+                    const formData = await getData(language_id);
                     $.ajax({
                         type: "POST",
                         url: "{{ route('translation.update') }}",
