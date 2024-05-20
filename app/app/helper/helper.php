@@ -4,6 +4,8 @@ use App\Models\DocNum;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use Session;
 class helper{
     public static function formatAmount($amount)
@@ -844,5 +846,26 @@ class helper{
         }
 
         return round($value, 1) . $abbreviations[$abbrevIndex];
+    }
+
+    public static function translate($sourceText, $targetLang, $sourceLang = 'auto')
+    {
+        try {
+            $url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sourceLang&tl=$targetLang&dt=t&q=" . urlencode($sourceText);
+            $response = Http::get($url);
+            if ($response->successful()) {
+                $responseData = $response->json();
+                return $responseData[0][0][0] ?? '';
+            } else {
+                logger([
+                    'error' => 'Translation API error',
+                    'status' => $response->status(),
+                ]);
+                return $sourceText;
+            }
+        } catch (\Exception $e) {
+            logger($e);
+            return $sourceText;
+        }
     }
 }
