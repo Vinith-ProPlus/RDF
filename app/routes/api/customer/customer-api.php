@@ -40,6 +40,7 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/support/get/ticket', [SupportAPIController::class, 'GetTicket']);
     Route::post('/support/create-ticket', [SupportAPIController::class, 'CreateTicket']);
     Route::post('/customer/homeSearch', [CustomerAPIController::class, 'customerHomeSearch'])->name('customerHomeSearch');
+    Route::post('/get/cms', [GeneralAPIController::class, 'getCMS']);
 
 //    Cart
     Route::post('/customer/get/cart', [CustomerAuthController::class, 'getCart']);
@@ -101,7 +102,6 @@ Route::post('/guest/homeScreen', [CustomerAPIController::class, 'guestHomeScreen
 Route::post('/guest/homeSearch', [CustomerAPIController::class, 'guestHomeSearch'])->name('guestHomeSearch');
 Route::post('/get/stages', [GeneralAPIController::class, 'getStages']);
 Route::post('/get/support-type', [GeneralAPIController::class, 'getSupportType']);
-Route::post('/get/cms', [GeneralAPIController::class, 'getCMS']);
 Route::post('/get/banner-images', [GeneralAPIController::class, 'getBannerImages']);
 Route::get('/get/languages', [GeneralAPIController::class, 'getLanguages']);
 Route::post('/get/translations', [CustomerAPIController::class, 'getTranslation']);

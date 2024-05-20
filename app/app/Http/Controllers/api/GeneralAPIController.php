@@ -255,16 +255,21 @@ class GeneralAPIController extends Controller{
     }
 
     public function getCMS(request $req){
+        $lang = optional($req->auth_customer)->language ?? 'en';
         $query = DB::Table('tbl_page_content');
         if ($req->has('PageName') && !empty($req->PageName)) {
             $query->where('PageName',$req->PageName);
         }
-        $CMS = $query->select('PageName', 'PageContent')->where('DFlag',0)->where('ActiveStatus',1)->get();
-        $return = [
+        $CMS = $query->select('PageName', 'PageContent', 'PageContentInTranslation')->where('DFlag',0)->where('ActiveStatus',1)->get();
+        $CMS->transform(function ($content) use ($lang) {
+            $content->PageContent = json_decode($content->PageContentInTranslation)->$lang ?? $content->PageContent;
+            unset($content->PageContentInTranslation);
+            return $content;
+        });
+        return [
             'status' => true,
             'data' => $CMS,
         ];
-        return $return;
     }
 
     public function getBannerImages(request $req){
