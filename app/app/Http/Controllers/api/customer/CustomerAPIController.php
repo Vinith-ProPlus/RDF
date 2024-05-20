@@ -57,7 +57,7 @@ class CustomerAPIController extends Controller{
 
         DB::beginTransaction();
         try {
-            $customer = Customer::where('MobileNo1', $request->mobile_no)->first();
+            $customer = Customer::where('MobileNo1', $request->mobile_no)->where('DFlag', 0)->first();
             $otp = Random::generate(4, '0-9');
             if ($customer){
                 $oldCustomer = $customer->replicate();
@@ -125,7 +125,7 @@ class CustomerAPIController extends Controller{
 
         DB::beginTransaction();
         try {
-            $customer = Customer::where('MobileNo1', $request->mobile_no)->first();
+            $customer = Customer::where('MobileNo1', $request->mobile_no)->where('DFlag', 0)->first();
             if (!$customer) {
                 return $this->errorResponse([], "Customer not found", 404);
             }

@@ -84,7 +84,7 @@
 </div>
 @endsection
 @section('scripts')
-    <script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
+    <script src="{{ url('/assets/js/editor/ckeditor/ckeditor.js') }}"></script>
     <script>
     $(document).ready(function(){
         var editorClassElements = document.querySelectorAll('.ckeditor');
