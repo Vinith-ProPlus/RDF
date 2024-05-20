@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\web\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -73,8 +74,10 @@ class CMSController extends Controller
             $FormData['menus'] = $this->Menus;
             $FormData['crud'] = $this->CRUD;
             $FormData['CID'] = $CID;
+            $FormData['languages'] = Language::active()->get();
             $FormData['EditData'] = DB::Table('tbl_page_content')->where('DFlag', 0)->Where('CID', $CID)->get();
             if (count($FormData['EditData']) > 0) {
+                $FormData['EditData'][0]->PageContentInTranslation = json_decode($FormData['EditData'][0]->PageContentInTranslation);
                 return view('app.settings.cms.create', $FormData);
             } else {
                 return view('errors.400');
@@ -87,16 +90,14 @@ class CMSController extends Controller
     public function Update(Request $req, $CID)
     {
         if ($this->general->isCrudAllow($this->CRUD, "edit") == true) {
-
             $OldData = DB::Table('tbl_page_content')->where('CID', $CID)->get();
             $NewData = array();
             DB::beginTransaction();
             $status = true;
             try {
-
-
                 $data = array(
                     "PageContent" => $req->pageContent,
+                    "PageContentInTranslation" => $req->PageContentInTranslation,
                     "UpdatedOn" => date("Y-m-d H:i:s"),
                     "UpdatedBy" => $this->UserID
                 );
