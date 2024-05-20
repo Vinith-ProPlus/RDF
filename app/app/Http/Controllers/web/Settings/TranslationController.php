@@ -73,7 +73,6 @@ class TranslationController extends Controller
                 $translationsValue = $translationsValue ?? new stdClass();
                 $language->translations_value = $translationsValue;
             }
-            logger($FormData['languages']);
             $FormData['translation_keys'] = TranslationKey::all();
             if (count($FormData['languages']) > 0) {
                 return view('app.settings.translations.edit', $FormData);
