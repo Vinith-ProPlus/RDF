@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Hash;
 use logs;
 use Nette\Utils\Random;
 use PhpParser\Node\Stmt\If_;
+use PHPUnit\TextUI\Help;
 
 class CustomerAPIController extends Controller{
     use ApiResponse;
@@ -309,7 +310,10 @@ class CustomerAPIController extends Controller{
     public function profileDetails(Request $request): JsonResponse
     {
         try {
-            $customer = $request->auth_customer;
+            $customer = (object) $request->auth_customer->only("CustomerID", "CustomerName", "nick_name", "MobileNo1",
+                "Email", "language", "api_token", "fcmToken", "profileImageUrl");
+            $customer->CustomerName = Helper::translate($customer->CustomerName, $customer->language);
+            $customer->nick_name = Helper::translate($customer->nick_name, $customer->language);
             return $this->successResponse($customer, "Customer profile details.");
         } catch (\Exception $e) {
             logger($e);
