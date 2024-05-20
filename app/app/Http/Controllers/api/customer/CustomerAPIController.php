@@ -5,32 +5,21 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
-use App\Http\Requests\MobileNoRegistrationRequest;
 use App\Models\Customer;
 use App\Models\Language;
 use App\Models\TextLocal;
-use App\Models\Translation;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Laravel\Passport\RefreshToken;
-use Laravel\Passport\Token;
-use App\Rules\ValidUnique;
-use App\Rules\ValidDB;
 use App\Models\DocNum;
 use App\enums\docTypes;
-use Illuminate\Support\Facades\Hash;
 use logs;
 use Nette\Utils\Random;
-use PhpParser\Node\Stmt\If_;
-use PHPUnit\TextUI\Help;
 
 class CustomerAPIController extends Controller{
     use ApiResponse;
@@ -312,8 +301,6 @@ class CustomerAPIController extends Controller{
         try {
             $customer = (object) $request->auth_customer->only("CustomerID", "CustomerName", "nick_name", "MobileNo1",
                 "Email", "language", "api_token", "fcmToken", "profileImageUrl");
-            $customer->CustomerName = Helper::translate($customer->CustomerName, $customer->language);
-            $customer->nick_name = Helper::translate($customer->nick_name, $customer->language);
             return $this->successResponse($customer, "Customer profile details.");
         } catch (\Exception $e) {
             logger($e);
