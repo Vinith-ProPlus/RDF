@@ -409,9 +409,9 @@
                         <div class="card-body p-0 woo-commerce-style">
                             <ul class="woo-commerce-style ">
                                 <li class="general_options active"><a href="#general-tab"><span>General</span></a></li>
-                                <li class="short_description_options"><a href="#short-description-tab"><span>Short Description</span></a></li>
-                                <li class="description_options"><a href="#description-tab"><span>Description</span></a></li>
-                                <li class="attribute_options " ><a href="#attributes-tab"><span>Attributes</span></a></li>
+                                <li class="short_description_options d-none"><a href="#short-description-tab"><span>Short Description</span></a></li>
+                                <li class="description_options d-none"><a href="#description-tab"><span>Description</span></a></li>
+                                <li class="attribute_options" ><a href="#attributes-tab"><span>Attributes</span></a></li>
                                 <li class="variation_options"  style="{{$isVariationTab}}"><a href="#variations-tab"><span>Variations</span></a></li>
                             </ul>
                             <div class="tab-contents" id="general-tab">
