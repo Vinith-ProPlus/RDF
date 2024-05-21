@@ -6,7 +6,6 @@ return $r = [
     "Sign in" => "உள்நுழைக",
     "Generate OTP" => "OTP ஐ உருவாக்கவும்",
     "We Sent A Verification Code To Registered Mobile Number" => "பதிவுசெய்யப்பட்ட மொபைல் எண்ணுக்கு சரிபார்ப்புக் குறியீட்டை அனுப்பியுள்ளோம்",
-    "OTP Verification Successfully Completed" => "OTP சரிபார்ப்பு வெற்றிகரமாக முடிந்தது",
     "Enter Your Nick Name & Swipe To Get Started" => "தொடங்குவதற்கு உங்கள் புனைப்பெயரை உள்ளிட்டு ஸ்வைப் செய்யுங்கள்.",
     "Swipe To Started" => "துவக்குவதற்கு ஸ்வைப் செய்யவும்",
     "What Do You Like To Find Today..." => "இன்று நீங்கள் எதைக் கண்டுபிடிக்க விரும்புகிறீர்கள்...",
@@ -145,9 +144,40 @@ return $r = [
     "Related Products" => "தொடர்புடைய தயாரிப்புகள்",
     "Buy now" => "இப்போது வாங்க",
     "skip" => "தவிர்க்க",
+    "Enter OTP" => "OTP ஐ உள்ளிடவும்",
+    "We have sent a verification code to registered mobile number" => "பதிவுசெய்யப்பட்ட மொபைல் எண்ணிற்கு சரிபார்ப்பு குறியீட்டை அனுப்பியுள்ளோம்",
+    "OTP Verification Successfully Completed" => "OTP சரிபார்ப்பு வெற்றிகரமாக முடிந்தது",
+    "Make Payment" => "கட்டணம் செலுத்தவும்",
+    "Read more" => "மேலும் படிக்க",
+    "Read less" => "குறைவாக படிக்க",
+    "Thank you for spending your time in sharing your ratings & reviews with us." => "உங்கள் மதிப்பீடுகள் மற்றும் விமர்சனங்களை எங்களுடன் பகிர்ந்து கொண்டதற்காக உங்கள் நேரத்தை செலவழித்ததற்கு நன்றி.",
+    "Mark Us Your Rating" => "எங்களை மதிப்பீடு செய்யவும்",
+    "Please enter subject" => "கருப்பொருளை உள்ளிடவும்",
+    "Please select support type" => "ஆதரவு வகையைத் தேர்ந்தெடுக்கவும்",
+    "Please enter description" => "விளக்கத்தை உள்ளிடவும்",
+    "Filter by" => "வடிகட்டி",
+    "Start date" => "தொடக்க தேதி",
+    "End date" => "முடிவு தேதி",
+    "To" => "வரை",
+    "View" => "பார்வையிட",
+    "Helpful" => "உதவிகரமாக",
+    "Products" => "தயாரிப்புகள்",
+    "Product-total" => "தயாரிப்பு மொத்தம்",
+    "Enter your 10 digit mobile number" => "உங்கள் 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்",
+    "Full name" => "முழுப் பெயர்",
+    "Email Id" => "மின்னஞ்சல் ஐடி",
+    "Mobile number" => "மொபைல் எண்",
+    "Delivery address" => "விநியோக முகவரி",
+    "Postal code" => "அஞ்சல் குறியீடு",
+    "City" => "நகரம்",
+    "District" => "மாவட்டம்",
+    "State" => "மாநிலம்",
+    "Purchase details" => "கொள்முதல் விவரங்கள்"
 ];
 
+App\Models\TranslationKey::truncate();
 foreach ($r as $key => $value){
     App\Models\TranslationKey::updateOrCreate(['key' => $key]);
 }
+App\Models\Translation::find(2)->updateOrCreate(['value' => json_encode($r)]);
 ?>
