@@ -141,6 +141,9 @@ return $r = [
     "Verify OTP" => "ஓடிபியை சரிபார்க்கவும்",
     "Skip for now" => "இப்போதைக்கு விலகுங்கள்",
     "Kindly drop your mobile number for verification" => "சரிபார்ப்புக்கு உங்கள் மொபைல் எண்ணை தயவுசெய்து பகிர்ந்து கொள்ளுங்கள்",
+    "Rating" => "மதிப்பீடு",
+    "Related Products" => "தொடர்புடைய தயாரிப்புகள்",
+    "Buy now" => "இப்போது வாங்க",
 ];
 
 foreach ($r as $key => $value){
