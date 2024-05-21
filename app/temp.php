@@ -34,16 +34,25 @@ if($states->count() > 0) {
 
 
 $cities = DB::table('rdf_general.tbl_cities')->where('CityNameInTranslation', "{}")->get();
+$citiesCount = $cities->count();
+if($citiesCount > 0) {
 
-if($cities->count() > 0) {
+    $processingDataCount = 0;
     foreach ($cities as $city) {
         $std = new stdClass();
         $std->en = $city->CityName;
         $std->ta = App\helper\helper::translate($city->CityName, 'ta');
 
-        DB::table('rdf_general.tbl_cities')
+        $updated = DB::table('rdf_general.tbl_cities')
             ->where('CityID', $city->CityID)
             ->update(['CityNameInTranslation' => json_encode($std)]);
+        if ($updated) {
+            $processingDataCount++;
+        }
+
+        $progressPercentage = ($processingDataCount / $citiesCount) * 100;
+        echo "Count : " . $processingDataCount . " / " . $citiesCount . " \n";
+        echo "Progress: " . round($progressPercentage, 2) . "%\n";
     }
     echo "City Name Translation finished.";
 }
@@ -57,9 +66,13 @@ if($districtsCount > 0) {
         $std->en = $district->DistrictName;
         $std->ta = App\helper\helper::translate($district->DistrictName, 'ta');
 
-        $processingDataCount += DB::table('rdf_general.tbl_districts')
+        $updated = DB::table('rdf_general.tbl_districts')
             ->where('DistrictID', $district->DistrictID)
             ->update(['DistrictNameInTranslation' => json_encode($std)]);
+        if ($updated) {
+            $processingDataCount++;
+        }
+
         $progressPercentage = ($processingDataCount / $districtsCount) * 100;
         echo "Progress: " . round($progressPercentage, 2) . "%\n";
     }
