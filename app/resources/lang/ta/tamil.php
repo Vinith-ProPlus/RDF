@@ -144,6 +144,7 @@ return $r = [
     "Rating" => "மதிப்பீடு",
     "Related Products" => "தொடர்புடைய தயாரிப்புகள்",
     "Buy now" => "இப்போது வாங்க",
+    "skip" => "தவிர்க்க",
 ];
 
 foreach ($r as $key => $value){
