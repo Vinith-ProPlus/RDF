@@ -10,6 +10,8 @@ class Product extends Model
     use HasFactory;
 
     protected $table = "tbl_products";
+    protected $primaryKey = 'ProductID';
+    public $timestamps = false;
 
     protected $fillable = [
         "ProductID",
@@ -43,4 +45,9 @@ class Product extends Model
         "DeletedOn",
         "DeletedBy",
     ];
+
+    public function uom()
+    {
+        return $this->belongsTo(UOM::class, 'UID', 'UID');
+    }
 }

@@ -8,11 +8,13 @@ use App\Http\Controllers\web\logController;
 use App\Models\Coupon;
 use App\Models\CustomerCart;
 use App\Models\CustomerOrderTrack;
+use App\Models\Language;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\ReviewLike;
+use App\Models\Translation;
 use App\Models\Wishlist;
 use App\Rules\ValidDB;
 use App\Traits\ApiResponse;
@@ -152,7 +154,9 @@ class CustomerAuthController extends Controller{
             'LastPage' => $products->lastPage(),
         ]);
     }
-    public function getCart(Request $req){
+    public function getCart(Request $req)
+    {
+        $lang = optional($req->auth_customer)->language ?? 'en';
         $customer = $req->auth_customer;
         $coupon_code = $req->coupon_code;
         $coupon_value = 0;
@@ -173,42 +177,85 @@ class CustomerAuthController extends Controller{
             ->where('PSC.ActiveStatus', 'Active')
             ->where('PSC.DFlag', 0)
             ->select(
-                'P.ProductName as product_name',
+                'P.ProductName',
+                'P.ProductNameInTranslation',
                 'P.ProductID',
                 'P.PRate as PRate',
                 'P.SRate as SRate',
                 'PV.VariationID as product_variation_id',
                 'C.Qty',
                 'PCT.PCTName',
+                'PCT.PCTNameInTranslation',
                 'PCT.PCTID',
                 'PC.PCName',
+                'PC.PCNameInTranslation',
                 'PC.PCID',
                 'PSC.PSCName',
+                'PSC.PSCNameInTranslation',
                 'U.UName',
-                'U.UCode',
-                'U.UID',
                 'PSC.PSCID',
-                'PV.Title as variation_title',
                 'PV.PRate as variation_PRate',
                 'PV.SRate as variation_SRate',
-                'PV.VImage as variation_image',
-                DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage')
+                'P.ProductImage'
             )
             ->get();
 
         foreach ($Cart as $item) {
             if ($item->product_variation_id) {
-                $item->product_name = $item->variation_title;
                 $item->PRate = $item->variation_PRate;
                 $item->SRate = $item->variation_SRate;
-                $item->ProductImage = $item->variation_image ? url($item->variation_image) : url("assets/images/no-image-b.png");
+                $productUnit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $item->ProductID)
+                    ->where('tbl_products_variation.VariationID', $item->product_variation_id)
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->select('AD.Values', 'AD.valuesInTranslation')
+                    ->first();
+            } else {
+                $productUnit = DB::table('tbl_products')
+                    ->where('tbl_products.ProductID', $item->ProductID)
+                    ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
+                    ->select('U.UName', 'U.UNameInTranslation')
+                    ->first();
             }
+
+            if (isset($productUnit->valuesInTranslation)) {
+                $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
+                if (isset($valuesInTranslation[$lang])) {
+                    $productUnit = $valuesInTranslation[$lang];
+                } else {
+                    $productUnit = $productUnit->Values ?? $productUnit->UName ?? '-';
+                }
+            } elseif (isset($productUnit->UNameInTranslation)) {
+                $UNameInTranslation = json_decode($productUnit->UNameInTranslation, true);
+                if (isset($UNameInTranslation[$lang])) {
+                    $productUnit = $UNameInTranslation[$lang];
+                } else {
+                    $productUnit = $productUnit->UName ?? '-';
+                }
+            } else {
+                $productUnit = $productUnit->UName ?? '-';
+            }
+
+            $item->unit = $productUnit;
+            $item->product_name = json_decode($item->ProductNameInTranslation)->$lang ?? $item->ProductName;
+            $item->PCTName = json_decode($item->PCTNameInTranslation)->$lang ?? $item->PCTName;
+            $item->PCName = json_decode($item->PCNameInTranslation)->$lang ?? $item->PCName;
+            $item->PSCName = json_decode($item->PSCNameInTranslation)->$lang ?? $item->PSCName;
+            $item->ProductImage = file_exists($item->ProductImage) ? url($item->ProductImage) : url("assets/images/no-image-b.png");
             $product_rate = $item->SRate * $item->Qty;
             $item->PTotalRate = Helper::formatAmount($product_rate);
             $item->PRate = Helper::formatAmount($item->PRate);
             $item->SRate = Helper::formatAmount($item->SRate);
             $subTotalAmount += $product_rate;
-            unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
+            unset($item->variation_PRate, $item->variation_SRate, $item->ProductName, $item->PCTNameInTranslation, $item->PCNameInTranslation,
+                $item->PSCNameInTranslation, $item->ProductNameInTranslation, $item->UNameInTranslation, $item->UName);
         }
 
         if($coupon_code) {
@@ -237,8 +284,17 @@ class CustomerAuthController extends Controller{
             ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
             ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
             ->orderBy('CA.CreatedOn','desc')
-            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID',
+                'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation', 'CA.CityID',
+                'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
             ->first();
+
+        $SAddress->StateName = json_decode($SAddress->StateNameInTranslation)->$lang ?? $SAddress->StateName;
+        $SAddress->DistrictName = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? $SAddress->DistrictName;
+        $SAddress->CityName = json_decode($SAddress->CityNameInTranslation)->$lang ?? $SAddress->CityName;
+        $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
+        $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
+        unset($SAddress->StateNameInTranslation, $SAddress->DistrictNameInTranslation, $SAddress->CityNameInTranslation);
 
         return response()->json(['status' => true, 'sub_total_amount' => Helper::formatAmount($subTotalAmount),
             'coupon_value' => Helper::formatAmount($coupon_value), 'shipping_charge' => Helper::formatAmount($shipping_charge),
@@ -646,6 +702,7 @@ class CustomerAuthController extends Controller{
     {
         DB::beginTransaction();
         try {
+            $lang = optional($request->auth_customer)->language ?? 'en';
             $customer = $request->auth_customer;
             $coupon_code = $request->coupon_code;
             $CustomerID = $customer->CustomerID;
@@ -670,7 +727,8 @@ class CustomerAuthController extends Controller{
                 ->where('PSC.ActiveStatus', 'Active')
                 ->where('PSC.DFlag', 0)
                 ->select(
-                    'P.ProductName as product_name',
+                    'P.ProductName',
+                    'P.ProductNameInTranslation',
                     'P.ProductID',
                     'P.PRate as PRate',
                     'P.SRate as SRate',
@@ -685,7 +743,6 @@ class CustomerAuthController extends Controller{
                     'U.UCode',
                     'U.UID',
                     'PSC.PSCID',
-                    'PV.Title as variation_title',
                     'PV.PRate as variation_PRate',
                     'PV.SRate as variation_SRate'
                 )
@@ -693,15 +750,15 @@ class CustomerAuthController extends Controller{
 
             foreach ($Cart as $item) {
                 if ($item->product_variation_id) {
-                    $item->product_name = $item->variation_title;
                     $item->PRate = $item->variation_PRate;
-                    $item->SRate = $item->variation_SRate;}
+                    $item->SRate = $item->variation_SRate;
+                }
                 $item->PRate = round($item->PRate,2);
                 $item->SRate = round($item->SRate,2);
                 $product_rate = $item->SRate * $item->Qty;
                 $item->PTotalRate = round($product_rate,2);
                 $subTotalAmount += $product_rate;
-                unset($item->variation_title, $item->variation_PRate, $item->variation_SRate);
+                unset($item->variation_PRate, $item->variation_SRate);
             }
 
             if ($coupon_code) {
@@ -772,7 +829,8 @@ class CustomerAuthController extends Controller{
                             'CID' => $item->PCID,
                             'SCID' => $item->PSCID,
                             'ProductID' => $item->ProductID,
-                            'ProductName' => $item->product_name,
+                            'ProductName' => $item->ProductName,
+                            'ProductNameInTranslation' => $item->ProductNameInTranslation,
                             'ProductVariationID' => $item->product_variation_id,
                             'Qty' => $item->Qty,
                             'PRate' => $item->PRate,
@@ -791,7 +849,21 @@ class CustomerAuthController extends Controller{
                 }
                 CustomerCart::where('CustomerID', $CustomerID)->delete();
                 DB::commit();
-                return $this->successResponse(Order::find($status->OrderID), "Cart Order Created Successfully!");
+                $orderDetail = Order::find($status->OrderID);
+                $orderDetail->CustomerName = Helper::translate($orderDetail->CustomerName, $lang);
+                $orderDetail->CompleteAddress = Helper::translate($orderDetail->CompleteAddress, $lang);
+                $orderDetail->Status = Helper::translate($orderDetail->Status, $lang);
+                $orderDetail->DiscountType = Helper::translate($orderDetail->DiscountType, $lang);
+                $orderDetail->TrackStatus = Helper::translate($orderDetail->TrackStatus, $lang);
+                $orderDetail->City = Helper::translate($orderDetail->City, $lang);
+                $orderDetail->District = Helper::translate($orderDetail->District, $lang);
+                $orderDetail->State = Helper::translate($orderDetail->State, $lang);
+                $orderDetail->DiscountAmount = Helper::formatAmount($orderDetail->DiscountAmount);
+                $orderDetail->TotalAmount = Helper::formatAmount($orderDetail->TotalAmount);
+                $orderDetail->ShippingCharge = Helper::formatAmount($orderDetail->ShippingCharge);
+                $orderDetail->SubTotal = Helper::formatAmount($orderDetail->SubTotal);
+                $orderDetail->PaymentStatus = Helper::translate($orderDetail->PaymentStatus, $lang);
+                return $this->successResponse($orderDetail, "Cart Order Created Successfully!");
             } else {
                 return $this->errorResponse([], "Cart is Empty, Can't create Order", 422);
             }
@@ -806,6 +878,7 @@ class CustomerAuthController extends Controller{
     {
         DB::beginTransaction();
         try {
+            $lang = optional($request->auth_customer)->language ?? 'en';
             $customer = $request->auth_customer;
             $coupon_code = $request->coupon_code;
             $CustomerID = $customer->CustomerID;
@@ -828,8 +901,8 @@ class CustomerAuthController extends Controller{
             $ProductID = $request->ProductID;
             $ProductVariationID = $request->ProductVariationID;
             $Qty = $request->Qty ?? 1;
-            $deleteCart = DB::table('tbl_temp_customer_cart')->where('CustomerID', $CustomerID)->delete();
-            $tempCart = DB::table('tbl_temp_customer_cart')->insert(['CustomerID' => $CustomerID, 'ProductID' => $ProductID,
+            DB::table('tbl_temp_customer_cart')->where('CustomerID', $CustomerID)->delete();
+            DB::table('tbl_temp_customer_cart')->insert(['CustomerID' => $CustomerID, 'ProductID' => $ProductID,
                 'ProductVariationID' => $ProductVariationID, 'Qty' => $Qty]);
 
             $Cart = DB::table('tbl_temp_customer_cart as C')
@@ -847,42 +920,86 @@ class CustomerAuthController extends Controller{
             ->where('PSC.ActiveStatus', 'Active')
             ->where('PSC.DFlag', 0)
             ->select(
-                'P.ProductName as product_name',
+                'P.ProductName',
+                'P.ProductNameInTranslation',
                 'P.ProductID',
+                'P.ProductImage',
                 'P.PRate as PRate',
                 'P.SRate as SRate',
                 'PV.VariationID as product_variation_id',
                 'C.Qty',
                 'PCT.PCTName',
+                'PCT.PCTNameInTranslation',
                 'PCT.PCTID',
                 'PC.PCName',
+                'PC.PCNameInTranslation',
                 'PC.PCID',
                 'PSC.PSCName',
+                'PSC.PSCNameInTranslation',
                 'U.UName',
-                'U.UCode',
-                'U.UID',
+                'U.UNameInTranslation',
                 'PSC.PSCID',
-                'PV.Title as variation_title',
                 'PV.PRate as variation_PRate',
-                'PV.SRate as variation_SRate',
-                'PV.VImage as variation_image',
-                DB::raw('CONCAT("' . config('app.url') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage')
-            )
+                'PV.SRate as variation_SRate')
             ->get();
 
         foreach ($Cart as $item) {
             if ($item->product_variation_id) {
-                $item->product_name = $item->variation_title;
                 $item->PRate = $item->variation_PRate;
                 $item->SRate = $item->variation_SRate;
-                $item->ProductImage = $item->variation_image ? url($item->variation_image) : url("assets/images/no-image-b.png");
+                $productUnit = DB::table('tbl_products_variation')
+                    ->where('tbl_products_variation.ProductID', $item->ProductID)
+                    ->where('tbl_products_variation.VariationID', $item->product_variation_id)
+                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                    })
+                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                    })
+                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                    ->select('AD.Values', 'AD.valuesInTranslation')
+                    ->first();
+            } else {
+                $productUnit = DB::table('tbl_products')
+                    ->where('tbl_products.ProductID', $item->ProductID)
+                    ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
+                    ->select('U.UName', 'U.UNameInTranslation')
+                    ->first();
             }
+
+            if (isset($productUnit->valuesInTranslation)) {
+                $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
+                if (isset($valuesInTranslation[$lang])) {
+                    $productUnit = $valuesInTranslation[$lang];
+                } else {
+                    $productUnit = $productUnit->Values ?? $productUnit->UName ?? '-';
+                }
+            } elseif (isset($productUnit->UNameInTranslation)) {
+                $UNameInTranslation = json_decode($productUnit->UNameInTranslation, true);
+                if (isset($UNameInTranslation[$lang])) {
+                    $productUnit = $UNameInTranslation[$lang];
+                } else {
+                    $productUnit = $productUnit->UName ?? '-';
+                }
+            } else {
+                $productUnit = $productUnit->UName ?? '-';
+            }
+
+            $item->unit = $productUnit;
+            $item->product_name = json_decode($item->ProductNameInTranslation)->$lang ?? $item->ProductName;
+            $item->PCTName = json_decode($item->PCTNameInTranslation)->$lang ?? $item->PCTName;
+            $item->PCName = json_decode($item->PCNameInTranslation)->$lang ?? $item->PCName;
+            $item->PSCName = json_decode($item->PSCNameInTranslation)->$lang ?? $item->PSCName;
+
+            $item->ProductImage = file_exists($item->ProductImage) ? url($item->ProductImage) : url("assets/images/no-image-b.png");
             $product_rate = $item->SRate * $item->Qty;
             $item->PTotalRate = Helper::formatAmount($product_rate);
             $item->PRate = Helper::formatAmount($item->PRate);
             $item->SRate = Helper::formatAmount($item->SRate);
             $subTotalAmount += $product_rate;
-            unset($item->variation_title, $item->variation_PRate, $item->variation_SRate, $item->variation_image);
+            unset($item->variation_PRate, $item->variation_SRate, $item->ProductName, $item->PCTNameInTranslation, $item->PCNameInTranslation,
+                $item->PSCNameInTranslation, $item->ProductNameInTranslation, $item->UNameInTranslation, $item->UName);
         }
 
         if($coupon_code) {
@@ -913,7 +1030,14 @@ class CustomerAuthController extends Controller{
             ->orderBy('CA.CreatedOn','desc')
             ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
             ->first();
-
+            if ($SAddress) {
+                $SAddress->ReceiverName = Helper::translate($SAddress->ReceiverName, $lang);
+                $SAddress->CityName = Helper::translate($SAddress->CityName, $lang);
+                $SAddress->StateName = Helper::translate($SAddress->StateName, $lang);
+                $SAddress->DistrictName = Helper::translate($SAddress->DistrictName, $lang);
+                $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
+                $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
+            }
 
             DB::commit();
             return response()->json(['status' => true, 'sub_total_amount' => Helper::formatAmount($subTotalAmount),
@@ -931,6 +1055,7 @@ class CustomerAuthController extends Controller{
     {
         DB::beginTransaction();
         try {
+            $lang = optional($request->auth_customer)->language ?? 'en';
             $customer = $request->auth_customer;
             $coupon_code = $request->coupon_code;
             $CustomerID = $customer->CustomerID;
@@ -973,28 +1098,30 @@ class CustomerAuthController extends Controller{
                 ->where('PSC.DFlag', 0)
                 ->select(
                     'P.ProductName as product_name',
+                    'P.ProductNameInTranslation',
                     'P.ProductID',
                     'P.PRate as PRate',
                     'P.SRate as SRate',
                     'PV.VariationID as product_variation_id',
                     'C.Qty',
                     'PCT.PCTName',
+                    'PCT.PCTNameInTranslation',
                     'PCT.PCTID',
                     'PC.PCName',
+                    'PC.PCNameInTranslation',
                     'PC.PCID',
                     'PSC.PSCName',
+                    'PSC.PSCNameInTranslation',
                     'U.UName',
                     'U.UCode',
                     'U.UID',
                     'PSC.PSCID',
-                    'PV.Title as variation_title',
                     'PV.PRate as variation_PRate',
                     'PV.SRate as variation_SRate')
                 ->get();
 
             foreach ($Cart as $item) {
                 if ($item->product_variation_id) {
-                    $item->product_name = $item->variation_title;
                     $item->PRate = $item->variation_PRate;
                     $item->SRate = $item->variation_SRate;}
                 $item->PRate = round($item->PRate,2);
@@ -1002,7 +1129,7 @@ class CustomerAuthController extends Controller{
                 $product_rate = $item->SRate * $item->Qty;
                 $item->PTotalRate = round($product_rate,2);
                 $subTotalAmount += $product_rate;
-                unset($item->variation_title, $item->variation_PRate, $item->variation_SRate);
+                unset($item->variation_PRate, $item->variation_SRate);
             }
 
             if ($coupon_code) {
@@ -1072,6 +1199,7 @@ class CustomerAuthController extends Controller{
                             'SCID' => $item->PSCID,
                             'ProductID' => $item->ProductID,
                             'ProductName' => $item->product_name,
+                            'ProductNameInTranslation' => $item->ProductNameInTranslation,
                             'ProductVariationID' => $item->product_variation_id,
                             'Qty' => $item->Qty,
                             'PRate' => $item->PRate,
@@ -1089,7 +1217,21 @@ class CustomerAuthController extends Controller{
                     DocNum::updateDocNum(docTypes::Order->value);
                 }
                 DB::commit();
-                return $this->successResponse(Order::find($status->OrderID), "Buy Now Order Created Successfully!");
+                $orderDetail = Order::find($status->OrderID);
+                $orderDetail->CustomerName = Helper::translate($orderDetail->CustomerName, $lang);
+                $orderDetail->CompleteAddress = Helper::translate($orderDetail->CompleteAddress, $lang);
+                $orderDetail->Status = Helper::translate($orderDetail->Status, $lang);
+                $orderDetail->DiscountType = Helper::translate($orderDetail->DiscountType, $lang);
+                $orderDetail->TrackStatus = Helper::translate($orderDetail->TrackStatus, $lang);
+                $orderDetail->City = Helper::translate($orderDetail->City, $lang);
+                $orderDetail->District = Helper::translate($orderDetail->District, $lang);
+                $orderDetail->State = Helper::translate($orderDetail->State, $lang);
+                $orderDetail->DiscountAmount = Helper::formatAmount($orderDetail->DiscountAmount);
+                $orderDetail->TotalAmount = Helper::formatAmount($orderDetail->TotalAmount);
+                $orderDetail->ShippingCharge = Helper::formatAmount($orderDetail->ShippingCharge);
+                $orderDetail->SubTotal = Helper::formatAmount($orderDetail->SubTotal);
+                $orderDetail->PaymentStatus = Helper::translate($orderDetail->PaymentStatus, $lang);
+                return $this->successResponse($orderDetail, "Buy Now Order Created Successfully!");
             } else {
                 return $this->errorResponse([], "Can't create Buy Now Order", 422);
             }
@@ -1101,6 +1243,9 @@ class CustomerAuthController extends Controller{
     }
     public function customerOrderList(Request $request)
     {
+        $lang = optional($request->auth_customer)->language ?? 'en';
+        $language = Language::with('translations')->where('code', $lang)->first();
+        $translation = $language->translations ? json_decode($language->translations->value) : new \stdClass();
         $customer = $request->auth_customer;
         $CustomerID = $customer->CustomerID;
         if($request->has('OrderID') && $request->OrderID){
@@ -1110,24 +1255,79 @@ class CustomerAuthController extends Controller{
                     ->where('CreatedBy', $CustomerID)
                     ->where('OrderID', $request->OrderID)
                     ->get();
-                $orderDetails->transform(function ($order) {
+                $orderDetails->transform(function ($order) use ($lang, $translation) {
+                    $order->OrderDate = Helper::translate($order->OrderDate, $lang);
+                    $order->City = Helper::translate($order->City, $lang);
+                    $order->District = Helper::translate($order->District, $lang);
+                    $order->State = Helper::translate($order->State, $lang);
+                    $order->CompleteAddress = Helper::translate($order->CompleteAddress, $lang);
+                    $order->DiscountType = Helper::translate($order->DiscountType, $lang);
+                    $order->TrackStatus = Helper::translate($order->TrackStatus, $lang);
+                    $order->PaymentStatus = Helper::translate($order->paymentStatus, $lang);
+                    $order->Status = Helper::translate($order->Status, $lang);
                     if ($order->orderDetails) {
-                        $order->orderDetails->transform(function ($detail) {
-                            $detail->PRate = Helper::addRupeesSymbol($detail->PRate);
-                            $detail->SRate = Helper::addRupeesSymbol($detail->SRate);
-                            $detail->Amount = Helper::addRupeesSymbol($detail->Amount);
+                        $order->orderDetails->transform(function ($detail) use ($lang) {
+                            $detail->ProductName = json_decode($detail->ProductNameInTranslation)->$lang ?? $detail->ProductName;
+                            $detail->PRate = Helper::formatAmount($detail->PRate);
+                            $detail->SRate = Helper::formatAmount($detail->SRate);
+                            $detail->Amount = Helper::formatAmount($detail->Amount);
+
+                            if ($detail->ProductVariationID) {
+                                $productUnit = DB::table('tbl_products_variation')
+                                    ->where('tbl_products_variation.ProductID', $detail->ProductID)
+                                    ->where('tbl_products_variation.VariationID', $detail->ProductVariationID)
+                                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                                    })
+                                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                                            ->on('AD.AttrID', '=', 'D.AttributeID');
+                                    })
+                                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                                    ->select('AD.Values', 'AD.valuesInTranslation')
+                                    ->first();
+                            } else {
+                                $productUnit = DB::table('tbl_products')
+                                    ->where('tbl_products.ProductID', $detail->ProductID)
+                                    ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
+                                    ->select('U.UName', 'U.UNameInTranslation')
+                                    ->first();
+                            }
+
+                            if (isset($productUnit->valuesInTranslation)) {
+                                $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
+                                if (isset($valuesInTranslation[$lang])) {
+                                    $productUnit = $valuesInTranslation[$lang];
+                                } else {
+                                    $productUnit = $productUnit->Values ?? $productUnit->UName ?? '-';
+                                }
+                            } elseif (isset($productUnit->UNameInTranslation)) {
+                                $UNameInTranslation = json_decode($productUnit->UNameInTranslation, true);
+                                if (isset($UNameInTranslation[$lang])) {
+                                    $productUnit = $UNameInTranslation[$lang];
+                                } else {
+                                    $productUnit = $productUnit->UName ?? '-';
+                                }
+                            } else {
+                                $productUnit = $productUnit->UName ?? '-';
+                            }
+
+                            $detail->unit = $productUnit;
+                            unset($detail->ProductNameInTranslation);
                             return $detail;
                         });
                     }
-                    $order->SubTotal = Helper::addRupeesSymbol($order->SubTotal);
-                    $order->DiscountAmount = Helper::addRupeesSymbol($order->DiscountAmount);
-                    $order->ShippingCharge = Helper::addRupeesSymbol($order->ShippingCharge);
-                    $order->TotalAmountInString = Helper::addRupeesSymbol($order->TotalAmount);
+                    $order->SubTotal = Helper::formatAmount($order->SubTotal);
+                    $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
+                    $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
+                    $order->TotalAmountInString = Helper::formatAmount($order->TotalAmount);
                     $order->isReviewed = ProductReview::where('OrderID', $order->OrderID)->exists();
-                    $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
+                    $order->OrderDate = Helper::translate(Carbon::parse($order->OrderDate)->format('D, M d, Y'), $lang);
                     $order->orderTrackDetails->sortBy('orderBy');
-                    $order->orderTrackDetails->transform(function ($orderTrack) {
-                        $orderTrack->StatusDate = $orderTrack->StatusDate ? Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y') : null;
+                    $order->orderTrackDetails->transform(function ($orderTrack) use ($lang, $translation) {
+                        $orderTrack->StatusDate = $orderTrack->StatusDate ? Helper::translate(Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y'), $lang) : null;
+                        $orderTrack->Description = $translation->{$orderTrack->Description} ??Helper::translate($orderTrack->Description, $lang);
+                        $orderTrack->Status = $translation->{$orderTrack->Status} ??Helper::translate($orderTrack->Status, $lang);
                         return $orderTrack;
                     });
                     return $order;
@@ -1152,25 +1352,81 @@ class CustomerAuthController extends Controller{
                 ->OrderBy('CreatedOn', 'desc')
                 ->paginate($perPage, ['*'], 'page', $pageNo);
 
-            $orderDetails->transform(function ($order) {
+            $orderDetails->transform(function ($order) use ($lang, $translation) {
+//                $order->OrderDate = Helper::translate($order->OrderDate, $lang);
+//                $order->City = Helper::translate($order->City, $lang);
+//                $order->District = Helper::translate($order->District, $lang);
+//                $order->State = Helper::translate($order->State, $lang);
+//                $order->CompleteAddress = Helper::translate($order->CompleteAddress, $lang);
+//                $order->DiscountType = Helper::translate($order->DiscountType, $lang);
+//                $order->TrackStatus = Helper::translate($order->TrackStatus, $lang);
+                $order->PaymentStatus = Helper::translate($order->paymentStatus, $lang);
+                $order->Status = Helper::translate($order->Status, $lang);
                 if ($order->orderDetails) {
-                    $order->orderDetails->transform(function ($detail) {
+                    $order->orderDetails->transform(function ($detail) use ($lang) {
+                        $detail->ProductName = json_decode($detail->ProductNameInTranslation)->$lang ?? $detail->ProductName;
                         $detail->PRate = Helper::formatAmount($detail->PRate);
                         $detail->SRate = Helper::formatAmount($detail->SRate);
                         $detail->Amount = Helper::formatAmount($detail->Amount);
+
+                        if ($detail->ProductVariationID) {
+                            $productUnit = DB::table('tbl_products_variation')
+                                ->where('tbl_products_variation.ProductID', $detail->ProductID)
+                                ->where('tbl_products_variation.VariationID', $detail->ProductVariationID)
+                                ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                                    $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                                })
+                                ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                                    $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                                        ->on('AD.AttrID', '=', 'D.AttributeID');
+                                })
+                                ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                                ->select('AD.Values', 'AD.valuesInTranslation')
+                                ->first();
+                        } else {
+                            $productUnit = DB::table('tbl_products')
+                                ->where('tbl_products.ProductID', $detail->ProductID)
+                                ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
+                                ->select('U.UName', 'U.UNameInTranslation')
+                                ->first();
+                        }
+
+                        if (isset($productUnit->valuesInTranslation)) {
+                            $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
+                            if (isset($valuesInTranslation[$lang])) {
+                                $productUnit = $valuesInTranslation[$lang];
+                            } else {
+                                $productUnit = $productUnit->Values ?? $productUnit->UName ?? '-';
+                            }
+                        } elseif (isset($productUnit->UNameInTranslation)) {
+                            $UNameInTranslation = json_decode($productUnit->UNameInTranslation, true);
+                            if (isset($UNameInTranslation[$lang])) {
+                                $productUnit = $UNameInTranslation[$lang];
+                            } else {
+                                $productUnit = $productUnit->UName ?? '-';
+                            }
+                        } else {
+                            $productUnit = $productUnit->UName ?? '-';
+                        }
+
+                        $detail->unit = $productUnit;
+                        unset($detail->ProductNameInTranslation);
                         return $detail;
                     });
                 }
-                $order->SubTotal = Helper::formatAmount($order->SubTotal);
-                $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
-                $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
+//                $order->SubTotal = Helper::formatAmount($order->SubTotal);
+//                $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
+//                $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
                 $order->TotalAmountInString = Helper::formatAmount($order->TotalAmount);
+//                $order->isReviewed = ProductReview::where('OrderID', $order->OrderID)->exists();
                 $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
-                $order->orderTrackDetails->sortBy('orderBy');
-                $order->orderTrackDetails->transform(function ($orderTrack) {
-                    $orderTrack->StatusDate = $orderTrack->StatusDate ? Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y') : null;
-                    return $orderTrack;
-                });
+//                $order->orderTrackDetails->sortBy('orderBy');
+//                $order->orderTrackDetails->transform(function ($orderTrack) use ($lang, $translation) {
+//                    $orderTrack->StatusDate = $orderTrack->StatusDate ? Helper::translate(Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y'), $lang) : null;
+//                    $orderTrack->Description = $translation->{$orderTrack->Description} ??Helper::translate($orderTrack->Description, $lang);
+//                    $orderTrack->Status = $translation->{$orderTrack->Status} ??Helper::translate($orderTrack->Status, $lang);
+//                    return $orderTrack;
+//                });
                 return $order;
             });
 

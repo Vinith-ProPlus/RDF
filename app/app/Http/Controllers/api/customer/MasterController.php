@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use mysql_xdevapi\Collection;
 
 class MasterController extends Controller
 {
@@ -48,37 +49,59 @@ class MasterController extends Controller
         return $return;
     }
     public function getState(request $req){
-        logger("state");
-        $return = [
+        $lang = optional($req->auth_customer)->language ?? 'en';
+        $states = Helper::getState(array("CountryID"=>$req->CountryID));
+        $states = collect($states);
+        $states->transform(function ($state) use ($lang){
+            $state->StateName = json_decode($state->StateNameInTranslation)->$lang ?? $state->StateName;
+            unset($state->StateNameInTranslation, $state->CreatedOn, $state->UpdatedOn, $state->DeletedOn,
+                $state->CreatedBy, $state->DeletedBy, $state->UpdatedBy, $state->ActiveStatus, $state->DFlag);
+            return $state;
+        });
+
+        return [
             'status' => true,
-            'data' => Helper::getState(array("CountryID"=>$req->CountryID)),
+            'data' => $states
         ];
-        return $return;
     }
     public function getDistrict(request $req){
-        $return = [
+        $lang = optional($req->auth_customer)->language ?? 'en';
+        $districts = collect(Helper::getDistrict(array("CountryID"=>$req->CountryID,"StateID"=>$req->StateID)));
+        $districts->transform(function ($district) use ($lang){
+            $district->DistrictName = json_decode($district->DistrictNameInTranslation)->$lang ?? $district->DistrictName;
+            unset($district->DistrictNameInTranslation, $district->CreatedOn, $district->UpdatedOn, $district->DeletedOn,
+                $district->CreatedBy, $district->DeletedBy, $district->UpdatedBy, $district->ActiveStatus, $district->DFlag);
+            return $district;
+        });
+        return [
             'status' => true,
-            'data' => Helper::getDistrict(array("CountryID"=>$req->CountryID,"StateID"=>$req->StateID)),
+            'data' => $districts,
         ];
-        return $return;
     }
 
     public function getCity(Request $req){
+        $lang = optional($req->auth_customer)->language ?? 'en';
         $data = Helper::getCity(["CountryID" => $req->CountryID,"StateID" => $req->StateID,"DistrictID" => $req->DistrictID,"TalukID" => $req->TalukID,"PostalID" => $req->PostalID,"PostalCode" => $req->PostalCode,]);
 
         if (isset($data['error'])) {
-            $return = [
+            return [
                 'status' => false,
                 'message' => $data['error'],
                 'data' => [],
             ];
         } else {
-            $return = [
+            $cities = collect($data);
+            $cities->transform(function ($city) use ($lang){
+                $city->CityName = json_decode($city->CityNameInTranslation)->$lang ?? $city->CityName;
+                unset($city->CityNameInTranslation, $city->CreatedOn, $city->UpdatedOn, $city->DeletedOn,
+                    $city->CreatedBy, $city->DeletedBy, $city->UpdatedBy, $city->ActiveStatus, $city->DFlag);
+                return $city;
+            });
+            return [
                 'status' => true,
-                'data' => $data,
+                'data' => $cities,
             ];
         }
-        return $return;
     }
     public function getPriceRanges(){
         return [

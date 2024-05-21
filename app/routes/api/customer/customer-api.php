@@ -80,6 +80,10 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/get/customer/sub-category', [MasterController::class, 'GetCustomerSubCategory']);
     Route::post('/get/customer/products', [MasterController::class, 'getCustomerProducts']);
     Route::post('/get/customer/product', [MasterController::class, 'getCustomerProduct']);
+
+    Route::post('/get/states', [MasterController::class, 'getState']);
+    Route::post('/get/districts', [MasterController::class, 'getDistrict']);
+    Route::post('/get/city', [MasterController::class, 'getCity']);
 });
 
 // Master
@@ -87,9 +91,6 @@ Route::get('/get/latest/mobile_version', [MasterController::class, 'latestMobile
 Route::get('/get/gender', [MasterController::class, 'getGender']);
 Route::get('/get/country', [MasterController::class, 'getCountry']);
 Route::get('/get/price-ranges', [MasterController::class, 'getPriceRanges']);
-Route::post('/get/states', [MasterController::class, 'getState']);
-Route::post('/get/districts', [MasterController::class, 'getDistrict']);
-Route::post('/get/city', [MasterController::class, 'getCity']);
 Route::post('/get/postal-code', [MasterController::class, 'getPostalCode']);
 Route::post('/get/category-type', [MasterController::class, 'GetCategoryType']);
 Route::post('/get/category', [MasterController::class, 'getCategory']);

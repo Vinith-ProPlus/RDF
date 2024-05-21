@@ -28,6 +28,7 @@ class OrderDetail extends Model
         "SCID",
         "ProductID",
         "ProductName",
+        "ProductNameInTranslation",
         "ProductVariationID",
         "Qty",
         "PRate",
@@ -59,5 +60,15 @@ class OrderDetail extends Model
             $image = config('app.url') . '/' . $image;
         }
         return $image;
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'ProductID', 'ProductID');
+    }
+
+    public function productVariation()
+    {
+        return $this->belongsTo(ProductVariation::class, 'ProductVariationID', 'VariationID');
     }
 }
