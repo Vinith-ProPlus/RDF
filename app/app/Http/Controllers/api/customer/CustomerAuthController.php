@@ -660,6 +660,9 @@ class CustomerAuthController extends Controller{
 
 //    Notifications
     public function getNotifications(Request $req){
+        $lang = optional($req->auth_customer)->language ?? 'en';
+        $language = Language::with('translations')->where('code', $lang)->first();
+        $translation = $language->translations ? json_decode($language->translations->value) : new \stdClass();
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
         $pageNo = $req->PageNo ?? 1;
@@ -671,6 +674,13 @@ class CustomerAuthController extends Controller{
             ->select('N.*')
 //            ->select('N.*','O.isCustomerRated')
             ->paginate($perPage, ['*'], 'page', $pageNo);
+
+        $Notifications->transform(function ($Notification) use ($translation, $lang) {
+            $Notification->Route = $translation->{$Notification->Route} ?? Helper::translate($Notification->Route, $lang);
+            $Notification->Title = $translation->{$Notification->Title} ?? Helper::translate($Notification->Title, $lang);
+            $Notification->Message = $translation->{$Notification->Message} ?? Helper::translate($Notification->Message, $lang);
+            return $Notification;
+        });
 
         return response()->json([
             'status' => true,

@@ -191,6 +191,8 @@ return $r = [
     "Mark as default" => "இயல்புநிலையாக குறிக்கவும்",
     "Edit" => "திருத்து",
     "Delete" => "நீக்கவும்",
+    "Order Place Successfully" => "ஆர்டர் இடம் வெற்றிகரமாக",
+    "Your Order placed successfully" => "உங்கள் ஆர்டர் வெற்றிகரமாக முடிந்தது",
     "Your Order Has Been Shipped , You Will Receive Shipped Within 2 To 3 Days" => "உங்கள் ஆர்டர் அனுப்பப்பட்டுள்ளது, 2 முதல் 3 நாட்களுக்குள் அனுப்பப்படும்",
     "Payment not completed. So, This Request can't be processed!" => "கட்டணம் முடிக்கப்படவில்லை. எனவே, இந்த கோரிக்கையை செயலாக்க முடியாது!",
     "Your Order Is Out For Delivery, Our Delivery Person Will Reach You AnyTime" => "உங்கள் ஆர்டர் விநியோகத்திற்கு வெளியே உள்ளது, எங்கள் விநியோக நபர் எந்த நேரத்திலும் உங்களை அடைய வருவார்",
@@ -203,7 +205,9 @@ return $r = [
     "Delivery Expected On" => "விநியோகம் எதிர்பார்க்கப்படும் தேதி",
     "Out To Delivery" => "விநியோகத்திற்கு வெளியே",
     "Percentage Coupon" => "சதவீத கூப்பன்",
-    "Amount Coupon" => "தொகை கூப்பன்"
+    "Amount Coupon" => "தொகை கூப்பன்",
+    "Shipment update" => "தொகை கூப்பன்",
+    "Order" => "ஆர்டர்",
 ];
 
 App\Models\TranslationKey::truncate();
