@@ -1353,7 +1353,7 @@ class CustomerAuthController extends Controller{
                 ->paginate($perPage, ['*'], 'page', $pageNo);
 
             $orderDetails->transform(function ($order) use ($lang, $translation) {
-//                $order->OrderDate = Helper::translate($order->OrderDate, $lang);
+                $order->OrderDate = Helper::translate($order->OrderDate, $lang);
 //                $order->City = Helper::translate($order->City, $lang);
 //                $order->District = Helper::translate($order->District, $lang);
 //                $order->State = Helper::translate($order->State, $lang);
