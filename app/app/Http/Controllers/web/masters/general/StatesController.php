@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\web\masters\general;
 
 use App\Http\Controllers\Controller;
+use App\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -14,6 +15,7 @@ use DB;
 use Auth;
 use Hash;
 use cruds;
+use stdClass;
 use ValidUnique;
 use ValidDB;
 use logs;
@@ -45,36 +47,36 @@ class StatesController extends Controller{
     }
 	public function view(Request $req){
 
-		if($this->general->isCrudAllow($this->CRUD,"view")==true){
+		if($this->general->isCrudAllow($this->CRUD,"view")){
 			$FormData=$this->general->UserInfo;
 			$FormData['ActiveMenuName']=$this->ActiveMenuName;
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['menus']=$this->Menus;
 			$FormData['crud']=$this->CRUD;
 			return view('app.master.general.states.view',$FormData);
-		}elseif($this->general->isCrudAllow($this->CRUD,"Add")==true){
+		}elseif($this->general->isCrudAllow($this->CRUD,"Add")){
 			return Redirect::to('/admin/master/general/states/create');
 		}else{
 			return view('errors.403');
 		}
 	}
-	
+
     public function TrashView(Request $req){
-        if($this->general->isCrudAllow($this->CRUD,"restore")==true){
+        if($this->general->isCrudAllow($this->CRUD,"restore")){
             $FormData=$this->general->UserInfo;
             $FormData['menus']=$this->Menus;
             $FormData['crud']=$this->CRUD;
 			$FormData['ActiveMenuName']=$this->ActiveMenuName;
 			$FormData['PageTitle']=$this->PageTitle;
             return view('app.master.general.states.trash',$FormData);
-        }elseif($this->general->isCrudAllow($this->CRUD,"view")==true){
+        }elseif($this->general->isCrudAllow($this->CRUD,"view")){
 			return Redirect::to('/admin/master/general/states/');
         }else{
             return view('errors.403');
         }
     }
     public function create(Request $req){
-        if($this->general->isCrudAllow($this->CRUD,"add")==true){
+        if($this->general->isCrudAllow($this->CRUD,"add")){
 			$OtherCruds=array(
 				"Country"=>$this->general->getCrudOperations(activeMenuNames::Country->value),
 			);
@@ -85,15 +87,16 @@ class StatesController extends Controller{
 			$FormData['ActiveMenuName']=$this->ActiveMenuName;
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['isEdit']=false;
+            $FormData['languages'] = Language::active()->get();
             return view('app.master.general.states.create',$FormData);
-        }elseif($this->general->isCrudAllow($this->CRUD,"view")==true){
+        }elseif($this->general->isCrudAllow($this->CRUD,"view")){
             return Redirect::to('/admin/master/general/states/');
         }else{
             return view('errors.403');
         }
     }
     public function edit(Request $req,$StateID){
-        if($this->general->isCrudAllow($this->CRUD,"edit")==true){
+        if($this->general->isCrudAllow($this->CRUD,"edit")){
 			$OtherCruds=array(
 				"Country"=>$this->general->getCrudOperations(activeMenuNames::Country->value),
 			);
@@ -105,13 +108,15 @@ class StatesController extends Controller{
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['isEdit']=true;
 			$FormData['StateID']=$StateID;
+            $FormData['languages'] = Language::active()->get();
 			$FormData['EditData']=DB::Table($this->generalDB.'tbl_states')->where('DFlag',0)->Where('StateID',$StateID)->get();
 			if(count($FormData['EditData'])>0){
+                $FormData['EditData'][0]->StateNameInTranslation = json_decode($FormData['EditData'][0]->StateNameInTranslation);
 				return view('app.master.general.states.create',$FormData);
 			}else{
 				return view('errors.403');
 			}
-        }else if($this->general->isCrudAllow($this->CRUD,"view")==true){
+        }else if($this->general->isCrudAllow($this->CRUD,"view")){
             return Redirect::to('/admin/master/general/states/');
         }else{
             return view('errors.403');
@@ -121,7 +126,7 @@ class StatesController extends Controller{
 		return DB::Table($this->generalDB.'tbl_countries')->where('ActiveStatus','Active')->where('DFlag',0)->get();
 	}
     public function save(Request $req){
-		if($this->general->isCrudAllow($this->CRUD,"add")==true){
+		if($this->general->isCrudAllow($this->CRUD,"add")){
 			$OldData=array();$NewData=array();$StateID="";
 			$ValidDB=array();
 			$ValidDB['Country']['TABLE']=$this->generalDB."tbl_countries";
@@ -134,10 +139,11 @@ class StatesController extends Controller{
 				'CountryID' =>['required',$ValidDB['Country']],
 				'StateName' =>['required','min:3','max:100',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_states","WHERE"=>" StateName='".$req->StateName."' and CountryID='".$req->CountryID."' "),"This State Name is already taken.")],
 				'StateCode' =>['required',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_states","WHERE"=>" StateCode='".$req->StateCode."' and CountryID='".$req->CountryID."' "),"This State Code is already taken.")],
+                'StateNameInTranslation' => 'required',
 			);
 			$message=array();
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
 				return array('status'=>false,'message'=>"State Create Failed",'errors'=>$validator->errors());
 			}
@@ -148,6 +154,7 @@ class StatesController extends Controller{
 				$data=array(
 					"StateID"=>$StateID,
 					"StateName"=>$req->StateName,
+					"StateNameInTranslation"=>$req->StateNameInTranslation,
 					"StateCode"=>$req->StateCode,
 					"CountryID"=>$req->CountryID,
 					"ActiveStatus"=>$req->ActiveStatus,
@@ -175,7 +182,7 @@ class StatesController extends Controller{
 		}
 	}
     public function update(Request $req,$StateID){
-		if($this->general->isCrudAllow($this->CRUD,"edit")==true){
+		if($this->general->isCrudAllow($this->CRUD,"edit")){
 			$OldData=array();$NewData=array();
 			$ValidDB=array();
 			$ValidDB['Country']['TABLE']=$this->generalDB."tbl_countries";
@@ -188,17 +195,18 @@ class StatesController extends Controller{
 				'CountryID' =>['required',$ValidDB['Country']],
 				'StateName' =>['required','min:3','max:100',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_states","WHERE"=>" StateName='".$req->StateName."' and CountryID='".$req->CountryID."' and StateID <> '".$StateID."' "),"This State Name is already taken.")],
 				'StateCode' =>['required',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_states","WHERE"=>" StateCode='".$req->StateCode."' and CountryID='".$req->CountryID."' and StateID <> '".$StateID."' "),"This State Code is already taken.")],
+                'StateNameInTranslation.required' => "State Name in Translation is required",
 			);
 			$message=array();
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
 				return array('status'=>false,'message'=>"State Update Failed",'errors'=>$validator->errors());
 			}
 			DB::beginTransaction();
 			$status=false;
 			try {
-				$OldData=DB::table($this->generalDB.'tbl_states')->where('StateID',$StateID)->get();
+				$OldData=DB::table($this->generalDB.'tbl_states')->where('StateID',$StateID)->first();
 				$data=array(
 					"StateName"=>$req->StateName,
 					"StateCode"=>$req->StateCode,
@@ -207,6 +215,17 @@ class StatesController extends Controller{
 					"UpdatedBy"=>$this->UserID,
 					"UpdatedOn"=>date("Y-m-d H:i:s")
 				);
+
+                $newTranslations = json_decode($req->StateNameInTranslation);
+                $existingTranslations = json_decode($OldData->StateNameInTranslation);
+                if (!$existingTranslations) {
+                    $existingTranslations = new stdClass();
+                }
+                foreach ($newTranslations as $lang => $value) {
+                    $existingTranslations->$lang = $value;
+                }
+                $data['StateNameInTranslation'] = json_encode($existingTranslations);
+
 				$status=DB::Table($this->generalDB.'tbl_states')->where('StateID',$StateID)->update($data);
 			}catch(Exception $e) {
 				$status=false;
@@ -226,17 +245,17 @@ class StatesController extends Controller{
 			return array('status'=>false,'message'=>'Access denined');
 		}
 	}
-	
+
 	public function Delete(Request $req,$StateID){
 		$OldData=$NewData=array();
-		if($this->general->isCrudAllow($this->CRUD,"delete")==true){
+		if($this->general->isCrudAllow($this->CRUD,"delete")){
 			DB::beginTransaction();
 			$status=false;
 			try{
 				$OldData=DB::table($this->generalDB.'tbl_states')->where('StateID',$StateID)->get();
 				$status=DB::table($this->generalDB.'tbl_states')->where('StateID',$StateID)->update(array("DFlag"=>1,"DeletedBy"=>$this->UserID,"DeletedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -253,14 +272,14 @@ class StatesController extends Controller{
 	}
 	public function Restore(Request $req,$StateID){
 		$OldData=$NewData=array();
-		if($this->general->isCrudAllow($this->CRUD,"restore")==true){
+		if($this->general->isCrudAllow($this->CRUD,"restore")){
 			DB::beginTransaction();
 			$status=false;
 			try{
 				$OldData=DB::table($this->generalDB.'tbl_states')->where('StateID',$StateID)->get();
 				$status=DB::table($this->generalDB.'tbl_states')->where('StateID',$StateID)->update(array("DFlag"=>0,"UpdatedBy"=>$this->UserID,"UpdatedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -277,7 +296,7 @@ class StatesController extends Controller{
 		}
 	}
 	public function TableView(Request $req){
-		if($this->general->isCrudAllow($this->CRUD,"view")==true){
+		if($this->general->isCrudAllow($this->CRUD,"view")){
 			$columns = array(
 				array( 'db' => 'S.StateID', 'dt' => '0' ),
 				array( 'db' => 'S.StateName', 'dt' => '1' ),
@@ -295,19 +314,19 @@ class StatesController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
 				array( 'db' => 'StateID', 'dt' => '4',
 					'formatter' => function( $d, $row ) {
 						$html='';
-						if($this->general->isCrudAllow($this->CRUD,"edit")==true){
+						if($this->general->isCrudAllow($this->CRUD,"edit")){
 							$html.='<button type="button" data-id="'.$d.'" class="btn  btn-outline-success '.$this->general->UserInfo['Theme']['button-size'].' m-5 mr-10 btnEdit" data-original-title="Edit"><i class="fa fa-pencil"></i></button>';
 						}
-						if($this->general->isCrudAllow($this->CRUD,"delete")==true){
+						if($this->general->isCrudAllow($this->CRUD,"delete")){
 							$html.='<button type="button" data-id="'.$d.'" class="btn  btn-outline-danger '.$this->general->UserInfo['Theme']['button-size'].' m-5 btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
 						}
 						return $html;
-					} 
+					}
 				)
 			);
 			$Where = " S.DFlag=0 and S.CountryID = '$req->CountryID'";
@@ -329,7 +348,7 @@ class StatesController extends Controller{
 		}
 	}
 	public function TrashTableView(Request $req){
-		if($this->general->isCrudAllow($this->CRUD,"restore")==true){
+		if($this->general->isCrudAllow($this->CRUD,"restore")){
 			$columns = array(
 				array( 'db' => 'S.StateID', 'dt' => '0' ),
 				array( 'db' => 'S.StateName', 'dt' => '1' ),
@@ -347,13 +366,13 @@ class StatesController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
 				array( 'db' => 'StateID', 'dt' => '4',
 					'formatter' => function( $d, $row ) {
 						$html='<button type="button" data-id="'.$d.'" class="btn btn-outline-success '.$this->general->UserInfo['Theme']['button-size'].'  m-2 btnRestore"> <i class="fa fa-repeat" aria-hidden="true"></i> </button>';
 						return $html;
-					} 
+					}
 				)
 			);
 			$data=array();

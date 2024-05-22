@@ -28,6 +28,25 @@
                                 <div class="errors" id="txtStateName-err"></div>
                             </div>
                         </div>
+                        @if(count($languages) > 0)
+                            <div class="col-sm-12 text-center mt-20">
+                                <label class="align-middle fw-bold">State Name Translations</label>
+                                @foreach($languages as $index=>$language)
+                                    <div class="form-group text-left mt-20">
+                                        <label class="txtStateNameIn_{{ $language->code }}">State Name
+                                            In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                        <input type="text"
+                                               class="form-control StateLanguageFieldsCheck {{$Theme['input-size']}}"
+                                               id="txtStateNameIn_{{ $language->code }}"
+                                               data-language-code="{{ $language->code }}"
+                                               data-language="{{ $language->name_in_english }}"
+                                               value="{{ $isEdit ? ($EditData[0]->StateNameInTranslation->{$language->code} ?? '') : '' }}"
+                                               autocomplete="off">
+                                        <div class="errors" id="txtStateNameIn_{{ $language->code }}-err"></div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label class="txtStateCode">State Code <span class="required"> * </span></label>
@@ -59,7 +78,7 @@
                             @if($crud['view']==true)
                             <a href="{{url('/')}}/admin/master/general/states" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
-                            
+
                             @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
                                 <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit==true) Update @else Save @endif</button>
                             @endif
@@ -118,6 +137,21 @@
             if(CountryID==""){
                 $('#lstCountry-err').html('The Country Name is required.');status=false;
             }
+
+            $('.StateLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtStateNameIn_' + languageCode + '-err').html('State Name in ' + language + ' is required.');
+                    status = false;
+                } else {
+                    $('#txtStateNameIn_' + languageCode + '-err').html('');
+                }
+            });
+
             if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
         }
@@ -137,7 +171,15 @@
                     btnLoading($('#btnSave'));
                     let postUrl=@if($isEdit==true) "{{url('/')}}/admin/master/general/states/edit/{{$EditData[0]->StateID}}"; @else "{{url('/')}}/admin/master/general/states/create"; @endif
                     let formData=new FormData();
+                    let StateNameInTranslation = {};
+
+                    $('.StateLanguageFieldsCheck').each(function() {
+                        let input = $(this);
+                        let language_code = input.data('language-code');
+                        StateNameInTranslation[language_code] = input.val();
+                    });
                     formData.append('StateName',$('#txtStateName').val());
+                    formData.append('StateNameInTranslation', JSON.stringify(StateNameInTranslation));
                     formData.append('StateCode',$('#txtStateCode').val());
                     formData.append('CountryID',$('#lstCountry').val());
                     formData.append('ActiveStatus',$('#lstActiveStatus').val());
@@ -188,9 +230,9 @@
                                     @else
                                         window.location.reload();
                                     @endif
-                                    
+
                                 });
-                                
+
                             }else{
                                 toastr.error(response.message, "Failed", {
                                     positionClass: "toast-top-right",
