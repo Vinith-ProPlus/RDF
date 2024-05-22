@@ -88,7 +88,6 @@ class BannersController extends Controller{
 			$FormData['crud']=$this->CRUD;
 			$FormData['TranNo']=$TranNo;
 			$FormData['EditData']=DB::Table('tbl_banner_images')->where('TranNo',$TranNo)->where('DFlag',0)->get();
-            logger($FormData['EditData']);
 			if(count($FormData['EditData'])>0){
 				return view('app.settings.banners.upload',$FormData);
 			}else{
@@ -162,7 +161,6 @@ class BannersController extends Controller{
 	}
 
 	public function Update(Request $req,$TranNo){
-        logger($req);
 		if($this->general->isCrudAllow($this->CRUD,"edit")==true){
             $OldData=DB::Table('tbl_banner_images')->where('TranNo',$TranNo)->get();
 			$NewData=array();

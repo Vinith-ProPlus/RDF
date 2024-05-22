@@ -115,7 +115,8 @@ class TranslationController extends Controller
                 logController::Store($logData);
                 return array('status' => true, 'message' => "Translation updated successfully");
             } catch (Exception $e) {
-                logger($e); DB::rollback();
+                logger($e);
+                DB::rollback();
                 return array('status' => false, 'message' => "Translation update failed");
             }
         } else {

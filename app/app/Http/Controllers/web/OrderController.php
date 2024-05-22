@@ -415,7 +415,6 @@ class OrderController extends Controller{
 			$columns1 = array(
 				array( 'db' => 'OrderID', 'dt' => '0' ),
 				array( 'db' => 'CreatedBy', 'dt' => '1','formatter' =>function($d,$row){
-                    logger($row);
                     $customer =DB::Table("tbl_customer")->Where("CustomerID", $row['CreatedBy'])->first();
                     $html= $customer->CustomerName ?? $customer->nick_name;
                     return $html;

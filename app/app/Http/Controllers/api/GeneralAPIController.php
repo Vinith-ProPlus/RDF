@@ -239,8 +239,7 @@ class GeneralAPIController extends Controller{
 		return $image;
 	}
 
-    public function getStages(Request $req){
-        logger("reg sta");
+    public function getStages(){
         $Stages = DB::Table($this->generalDB.'tbl_stages')->where('ActiveStatus','Active')->where('DFlag',0)
             ->select('StageID','StageName','Description')->get();
         return response()->json(['status' => true,'data' => $Stages]);

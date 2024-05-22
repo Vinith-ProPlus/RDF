@@ -115,8 +115,6 @@ class CustomerController extends Controller{
                     ->join($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
                     ->select('CA.SLNo as AID', 'CA.Address', 'CA.isDefault', 'CA.CountryID', 'C.CountryName', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode')
                     ->get();
-                logger($FormData['EditData']->SAddress);
-                logger($FormData['EditData']->SAddress);
                 return view('app.users.manage-customer.customer',$FormData);
             }else{
                 return view('errors.403');
