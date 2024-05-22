@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\web\masters\general;
 
 use App\Http\Controllers\Controller;
+use App\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -14,6 +15,7 @@ use DB;
 use Auth;
 use Hash;
 use cruds;
+use stdClass;
 use ValidUnique;
 use ValidDB;
 use logs;
@@ -58,7 +60,7 @@ class DistrictsController extends Controller{
 			return view('errors.403');
 		}
 	}
-	
+
     public function TrashView(Request $req){
         if($this->general->isCrudAllow($this->CRUD,"restore")==true){
             $FormData=$this->general->UserInfo;
@@ -86,6 +88,7 @@ class DistrictsController extends Controller{
 			$FormData['ActiveMenuName']=$this->ActiveMenuName;
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['isEdit']=false;
+            $FormData['languages'] = Language::active()->get();
             return view('app.master.general.districts.create',$FormData);
         }elseif($this->general->isCrudAllow($this->CRUD,"view")==true){
             return Redirect::to('/admin/master/general/districts/');
@@ -107,9 +110,11 @@ class DistrictsController extends Controller{
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['isEdit']=true;
 			$FormData['DistrictID']=$DistrictID;
+            $FormData['languages'] = Language::active()->get();
 			$FormData['EditData']=DB::Table($this->generalDB.'tbl_districts')->where('DFlag',0)->Where('DistrictID',$DistrictID)->get();
 			if(count($FormData['EditData'])>0){
-				return view('app.master.general.districts.create',$FormData);
+                $FormData['EditData'][0]->DistrictNameInTranslation = json_decode($FormData['EditData'][0]->DistrictNameInTranslation);
+                return view('app.master.general.districts.create',$FormData);
 			}else{
 				return view('errors.403');
 			}
@@ -132,7 +137,7 @@ class DistrictsController extends Controller{
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>1);
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-		
+
 			$ValidDB['State']['TABLE']=$this->generalDB."tbl_states";
 			$ValidDB['State']['ErrMsg']="State name  does not exist";
 			$ValidDB['State']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
@@ -143,10 +148,11 @@ class DistrictsController extends Controller{
 				'CountryID' =>['required',$ValidDB['Country']],
 				'StateID' =>['required',$ValidDB['State']],
 				'DistrictName' =>['required','min:3','max:100',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_districts","WHERE"=>" DistrictName='".$req->DistrictName."' and CountryID='".$req->CountryID."' and StateID='".$req->StateID."' "),"This District is already taken.")],
+                'DistrictNameInTranslation' => 'required',
 			);
 			$message=array();
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
 				return array('status'=>false,'message'=>"District Create Failed",'errors'=>$validator->errors());
 			}
@@ -157,6 +163,7 @@ class DistrictsController extends Controller{
 				$data=array(
 					"DistrictID"=>$DistrictID,
 					"DistrictName"=>$req->DistrictName,
+					"DistrictNameInTranslation"=>$req->DistrictNameInTranslation,
 					"StateID"=>$req->StateID,
 					"CountryID"=>$req->CountryID,
 					"ActiveStatus"=>$req->ActiveStatus,
@@ -192,7 +199,7 @@ class DistrictsController extends Controller{
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>1);
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-		
+
 			$ValidDB['State']['TABLE']=$this->generalDB."tbl_states";
 			$ValidDB['State']['ErrMsg']="State name does not exist";
 			$ValidDB['State']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
@@ -203,17 +210,18 @@ class DistrictsController extends Controller{
 				'CountryID' =>['required',$ValidDB['Country']],
 				'StateID' =>['required',$ValidDB['State']],
 				'DistrictName' =>['required','min:3','max:100',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_districts","WHERE"=>" DistrictName='".$req->DistrictName."' and CountryID='".$req->CountryID."' and StateID='".$req->StateID."' and DistrictID <> '".$DistrictID."' "),"This District is already taken.")],
+                'DistrictNameInTranslation.required' => "District Name in Translation is required",
 			);			;
 			$message=array();
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
 				return array('status'=>false,'message'=>"District Update Failed",'errors'=>$validator->errors());
 			}
 			DB::beginTransaction();
 			$status=false;
 			try {
-				$OldData=DB::table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->get();
+				$OldData=DB::table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->first();
 				$data=array(
 					"DistrictName"=>$req->DistrictName,
 					"StateID"=>$req->StateID,
@@ -222,7 +230,18 @@ class DistrictsController extends Controller{
 					"UpdatedBy"=>$this->UserID,
 					"UpdatedOn"=>date("Y-m-d H:i:s")
 				);
-				$status=DB::Table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->update($data);
+
+                $newTranslations = json_decode($req->DistrictNameInTranslation);
+                $existingTranslations = json_decode($OldData->DistrictNameInTranslation);
+                if (!$existingTranslations) {
+                    $existingTranslations = new stdClass();
+                }
+                foreach ($newTranslations as $lang => $value) {
+                    $existingTranslations->$lang = $value;
+                }
+                $data['DistrictNameInTranslation'] = json_encode($existingTranslations);
+
+                $status=DB::Table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->update($data);
 			}catch(Exception $e) {
 				$status=false;
 			}
@@ -251,7 +270,7 @@ class DistrictsController extends Controller{
 				$OldData=DB::table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->get();
 				$status=DB::table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->update(array("DFlag"=>1,"DeletedBy"=>$this->UserID,"DeletedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -275,7 +294,7 @@ class DistrictsController extends Controller{
 				$OldData=DB::table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->get();
 				$status=DB::table($this->generalDB.'tbl_districts')->where('DistrictID',$DistrictID)->update(array("DFlag"=>0,"UpdatedBy"=>$this->UserID,"UpdatedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -312,7 +331,7 @@ class DistrictsController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
 				array( 'db' => 'DistrictID', 'dt' => '5',
 					'formatter' => function( $d, $row ) {
@@ -324,7 +343,7 @@ class DistrictsController extends Controller{
 							$html.='<button type="button" data-id="'.$d.'" class="btn  btn-outline-danger '.$this->general->UserInfo['Theme']['button-size'].' m-5 btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
 						}
 						return $html;
-					} 
+					}
 				)
 			);
 			$Where = " D.DFlag=0 and D.CountryID = '$req->CountryID' and D.StateID = '$req->StateID'";
@@ -364,13 +383,13 @@ class DistrictsController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
 				array( 'db' => 'DistrictID', 'dt' => '4',
 					'formatter' => function( $d, $row ) {
 						$html='<button type="button" data-id="'.$d.'" class="btn btn-outline-success '.$this->general->UserInfo['Theme']['button-size'].'  m-2 btnRestore"> <i class="fa fa-repeat" aria-hidden="true"></i> </button>';
 						return $html;
-					} 
+					}
 				)
 			);
 			$data=array();

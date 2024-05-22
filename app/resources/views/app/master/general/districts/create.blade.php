@@ -8,7 +8,7 @@
 					<li class="breadcrumb-item"><a href="{{ url('/') }}" data-original-title="" title=""><i class="f-16 fa fa-home"></i></a></li>
 					<li class="breadcrumb-item">General Master</li>
 					<li class="breadcrumb-item"><a href="{{url('/')}}/admin/master/general/districts/" data-original-title="" title="">{{$PageTitle}}</a></li>
-                    <li class="breadcrumb-item">@if($isEdit==true)Update @else Create @endif</li>
+                    <li class="breadcrumb-item">@if($isEdit)Update @else Create @endif</li>
 				</ol>
 			</div>
 		</div>
@@ -28,6 +28,25 @@
                                 <div class="errors" id="txtDistrictName-err"></div>
                             </div>
                         </div>
+                        @if(count($languages) > 0)
+                            <div class="col-sm-12 text-center mt-20">
+                                <label class="align-middle fw-bold">District Name Translations</label>
+                                @foreach($languages as $index=>$language)
+                                    <div class="form-group text-left mt-20">
+                                        <label class="txtDistrictNameIn_{{ $language->code }}">District Name
+                                            In {{ $language->name_in_english }}<span class="required"> * </span></label>
+                                        <input type="text"
+                                               class="form-control DistrictLanguageFieldsCheck {{$Theme['input-size']}}"
+                                               id="txtDistrictNameIn_{{ $language->code }}"
+                                               data-language-code="{{ $language->code }}"
+                                               data-language="{{ $language->name_in_english }}"
+                                               value="{{ $isEdit ? ($EditData[0]->DistrictNameInTranslation->{$language->code} ?? '') : '' }}"
+                                               autocomplete="off">
+                                        <div class="errors" id="txtDistrictNameIn_{{ $language->code }}-err"></div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="col-sm-6 mt-20">
                             <div class="form-group">
                                 <label for="lstCountry">Country <span class="required"> * </span><span  class="addOption" id="btnReloadCountry" title="Reload Country" ><i class="fa fa-refresh"></i></span>  @if($OtherCruds['Country']['add']==1)  <span class="addOption" id="btnAddCountry" title="add new country" ><i class="fa fa-plus"></i></span> @endif</label>
@@ -59,11 +78,11 @@
                     </div>
                     <div class="row mt-20">
                         <div class="col-sm-12 text-right">
-                            @if($crud['view']==true)
+                            @if($crud['view'])
                             <a href="{{url('/')}}/admin/master/general/districts" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
-                            
-                            @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
+
+                            @if((($crud['add']) && ($isEdit==false))||(($crud['edit']) && ($isEdit)))
                                 <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit==true) Update @else Save @endif</button>
                             @endif
                         </div>
@@ -119,7 +138,7 @@
                     $('#lstState').append('<option value="" selected>Select a State</option>');
                     for(let Item of response){
                         let selected="";
-                        if($('#lstState').attr('data-selected')!=""){if(Item.StateID==$('#lstState').attr('data-selected')){selected="selected";}}else{if(Item.StateName.toString().toLowerCase()=='tamil nadu'){selected="selected";}} 
+                        if($('#lstState').attr('data-selected')!=""){if(Item.StateID==$('#lstState').attr('data-selected')){selected="selected";}}else{if(Item.StateName.toString().toLowerCase()=='tamil nadu'){selected="selected";}}
                         $('#lstState').append('<option '+selected+'  value="'+Item.StateID+'">'+Item.StateName+' </option>');
                     }
                     $('#lstState').select2();
@@ -151,6 +170,20 @@
             if(StateID==""){
                 $('#lstState-err').html('State is required.');status=false;
             }
+            $('.DistrictLanguageFieldsCheck').each(function() {
+                let input = $(this);
+                let value = input.val();
+                let languageCode = input.data('language-code');
+                let language = input.data('language');
+
+                if (value === "") {
+                    $('#txtDistrictNameIn_' + languageCode + '-err').html('District Name in ' + language + ' is required.');
+                    status = false;
+                } else {
+                    $('#txtDistrictNameIn_' + languageCode + '-err').html('');
+                }
+            });
+
             if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
         }
@@ -159,18 +192,26 @@
             if(status){
                 swal({
                     title: "Are you sure?",
-                    text: "You want @if($isEdit==true)Update @else Save @endif this District!",
+                    text: "You want @if($isEdit)Update @else Save @endif this District!",
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonClass: "btn-outline-success",
-                    confirmButtonText: "Yes, @if($isEdit==true)Update @else Save @endif it!",
+                    confirmButtonText: "Yes, @if($isEdit)Update @else Save @endif it!",
                     closeOnConfirm: false
                 },function(){
                     swal.close();
                     btnLoading($('#btnSave'));
-                    let postUrl=@if($isEdit==true) "{{url('/')}}/admin/master/general/districts/edit/{{$EditData[0]->DistrictID}}"; @else "{{url('/')}}/admin/master/general/districts/create"; @endif
+                    let postUrl=@if($isEdit) "{{url('/')}}/admin/master/general/districts/edit/{{$EditData[0]->DistrictID}}"; @else "{{url('/')}}/admin/master/general/districts/create"; @endif
                     let formData=new FormData();
+                    let DistrictNameInTranslation = {};
+
+                    $('.DistrictLanguageFieldsCheck').each(function() {
+                        let input = $(this);
+                        let language_code = input.data('language-code');
+                        DistrictNameInTranslation[language_code] = input.val();
+                    });
                     formData.append('DistrictName',$('#txtDistrictName').val());
+                    formData.append('DistrictNameInTranslation', JSON.stringify(DistrictNameInTranslation));
                     formData.append('CountryID',$('#lstCountry').val());
                     formData.append('StateID',$('#lstState').val());
                     formData.append('ActiveStatus',$('#lstActiveStatus').val());
@@ -221,9 +262,9 @@
                                     @else
                                         window.location.reload();
                                     @endif
-                                    
+
                                 });
-                                
+
                             }else{
                                 toastr.error(response.message, "Failed", {
                                     positionClass: "toast-top-right",
@@ -236,7 +277,7 @@
                                     $('.errors').html('');
                                     $.each( response['errors'], function( KeyName, KeyValue ) {
                                         var key=KeyName;
-                                        if(key=="DistrictName"){$('#txtDistrictName-err').html(KeyValue);}                          
+                                        if(key=="DistrictName"){$('#txtDistrictName-err').html(KeyValue);}
                                     });
                                 }
                             }
