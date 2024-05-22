@@ -407,20 +407,20 @@ class OrderController extends Controller{
 			$columns = array(
 				array( 'db' => 'O.OrderID', 'dt' => '0' ),
 				array( 'db' => 'O.CreatedBy', 'dt' => '1'),
-				array( 'db' => 'O.TotalAmount', 'dt' => '2' ),
+				array( 'db' => 'O.TotalAmount', 'dt' => '2'),
 				array( 'db' => 'O.Status', 'dt' => '3' ),
-				array( 'db' => 'O.OrderDate', 'dt' => '4' ,),
+				array( 'db' => 'O.OrderDate', 'dt' => '4'),
 				array( 'db' => 'O.OrderID', 'dt' => '5')
 			);
 			$columns1 = array(
-				array( 'db' => 'OrderID', 'dt' => '0' ),
+				array( 'db' => 'OrderID', 'dt' => '0'),
 				array( 'db' => 'CreatedBy', 'dt' => '1','formatter' =>function($d,$row){
                     $customer =DB::Table("tbl_customer")->Where("CustomerID", $row['CreatedBy'])->first();
                     $html= $customer->CustomerName ?? $customer->nick_name;
                     return $html;
 
                 } ),
-				array( 'db' => 'TotalAmount', 'dt' => '2' ),
+				array( 'db' => 'TotalAmount', 'dt' => '2'),
 				array( 'db' => 'Status', 'dt' => '3' ,'formatter' => function( $d, $row ) {
                     $Status="<span class='badge block  badge-secondary mr-2 '> Pending </span>";
                     $result=DB::Table("tbl_order")->Where("OrderID",$row['OrderID'])->get();
@@ -433,7 +433,7 @@ class OrderController extends Controller{
                             }elseif($d=="Delivered"){
                                 $Status="<span class='badge  block badge-success mr-2 ' > Delivered </span>";
                             }else {
-                                $Status="<span class='badge  block badge-info mr-2 ' > Unattend </span>";
+                                $Status="<span class='badge  block badge-info mr-2 ' > Unattended </span>";
                             }
                         }
                     }
@@ -535,7 +535,6 @@ class OrderController extends Controller{
                 'TrackStatus' => ['required', Rule::in(["Shipped", "Out To Delivery", "Delivery Expected On", "Delivered"])]
             ]);
             DB::beginTransaction();
-
             try {
                 $OldData = Order::where('OrderID', $OrderID)->first();
                 if(!$OldData->PaymentID){
