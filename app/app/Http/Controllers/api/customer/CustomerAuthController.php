@@ -412,6 +412,7 @@ class CustomerAuthController extends Controller{
     }
 
     public function getSAddress(Request $req){
+        $lang = optional($req->auth_customer)->language ?? 'en';
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
         $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$CustomerID)->where('CA.DFlag',0)
@@ -421,8 +422,21 @@ class CustomerAuthController extends Controller{
             ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
             ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
             ->orderBy('CA.CreatedOn','desc')
-            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault',
+                'CA.StateID', 'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation',
+                'CA.CityID', 'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
             ->get();
+
+        $SAddress->transform(function ($address) use ($lang) {
+            $address->CityName = json_decode($address->CityNameInTranslation)->{$lang} ?? $address->CityName;
+            $address->StateName = json_decode($address->StateNameInTranslation)->{$lang} ?? $address->StateName;
+            $address->DistrictName = json_decode($address->DistrictNameInTranslation)->{$lang} ?? $address->DistrictName;
+            $address->AddressType = Helper::translate($address->AddressType, $lang);
+            $address->Address = Helper::translate($address->Address, $lang);
+            $address->CompleteAddress = Helper::translate($address->CompleteAddress, $lang);
+            unset($address->CityNameInTranslation, $address->StateNameInTranslation, $address->DistrictNameInTranslation);
+            return $address;
+        });
 
         return response()->json(['status' => true,'data' => $SAddress]);
     }
