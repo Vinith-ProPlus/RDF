@@ -1261,8 +1261,8 @@ class CustomerAuthController extends Controller{
                     $order->District = Helper::translate($order->District, $lang);
                     $order->State = Helper::translate($order->State, $lang);
                     $order->CompleteAddress = Helper::translate($order->CompleteAddress, $lang);
-                    $order->DiscountType = Helper::translate($order->DiscountType, $lang);
-                    $order->TrackStatus = Helper::translate($order->TrackStatus, $lang);
+                    $order->DiscountType = $translation->{$order->DiscountType} ?? Helper::translate($order->DiscountType, $lang);
+                    $order->TrackStatus = $translation->{$order->TrackStatus} ?? Helper::translate($order->TrackStatus, $lang);
                     $order->PaymentStatus = Helper::translate($order->paymentStatus, $lang);
                     $order->Status = Helper::translate($order->Status, $lang);
                     if ($order->orderDetails) {
