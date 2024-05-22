@@ -8,7 +8,7 @@
 					<li class="breadcrumb-item"><a href="{{ url('/') }}" data-original-title="" title=""><i class="f-16 fa fa-home"></i></a></li>
 					<li class="breadcrumb-item">General Master</li>
 					<li class="breadcrumb-item"><a href="{{url('/')}}/admin/master/general/states/" data-original-title="" title="">{{$PageTitle}}</a></li>
-                    <li class="breadcrumb-item">@if($isEdit==true)Update @else Create @endif</li>
+                    <li class="breadcrumb-item">@if($isEdit)Update @else Create @endif</li>
 				</ol>
 			</div>
 		</div>
@@ -24,7 +24,7 @@
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label class="txtStateName">State Name <span class="required"> * </span></label>
-                                <input type="text" class="form-control  {{$Theme['input-size']}}" id="txtStateName" value="<?php if($isEdit==true){ echo $EditData[0]->StateName;} ?>">
+                                <input type="text" class="form-control  {{$Theme['input-size']}}" id="txtStateName" value="<?php if($isEdit){ echo $EditData[0]->StateName;} ?>">
                                 <div class="errors" id="txtStateName-err"></div>
                             </div>
                         </div>
@@ -50,7 +50,7 @@
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label class="txtStateCode">State Code <span class="required"> * </span></label>
-                                <input type="number" class="form-control  {{$Theme['input-size']}}" id="txtStateCode" value="<?php if($isEdit==true){ echo $EditData[0]->StateCode;} ?>">
+                                <input type="number" class="form-control  {{$Theme['input-size']}}" id="txtStateCode" value="<?php if($isEdit){ echo $EditData[0]->StateCode;} ?>">
                                 <div class="errors" id="txtStateCode-err"></div>
                             </div>
                         </div>
@@ -66,8 +66,8 @@
                             <div class="form-group">
                                 <label class="lstActiveStatus"> Active Status</label>
                                 <select class="form-control {{$Theme['input-size']}}" id="lstActiveStatus">
-                                    <option value="Active" @if($isEdit==true) @if($EditData[0]->ActiveStatus=="Active") selected @endif @endif >Active</option>
-                                    <option value="Inactive" @if($isEdit==true) @if($EditData[0]->ActiveStatus=="Inactive") selected @endif @endif>Inactive</option>
+                                    <option value="Active" @if($isEdit) @if($EditData[0]->ActiveStatus=="Active") selected @endif @endif >Active</option>
+                                    <option value="Inactive" @if($isEdit) @if($EditData[0]->ActiveStatus=="Inactive") selected @endif @endif>Inactive</option>
                                 </select>
                                 <div class="errors" id="lstActiveStatus-err"></div>
                             </div>
@@ -75,12 +75,12 @@
                     </div>
                     <div class="row mt-20">
                         <div class="col-sm-12 text-right">
-                            @if($crud['view']==true)
+                            @if($crud['view'])
                             <a href="{{url('/')}}/admin/master/general/states" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
 
-                            @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
-                                <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit==true) Update @else Save @endif</button>
+                            @if((($crud['add']) && ($isEdit==false))||(($crud['edit']) && ($isEdit)))
+                                <button class="btn {{$Theme['button-size']}} btn-outline-success" id="btnSave">@if($isEdit) Update @else Save @endif</button>
                             @endif
                         </div>
                     </div>
@@ -160,16 +160,16 @@
             if(status){
                 swal({
                     title: "Are you sure?",
-                    text: "You want @if($isEdit==true)Update @else Save @endif this State!",
+                    text: "You want @if($isEdit)Update @else Save @endif this State!",
                     type: "warning",
                     showCancelButton: true,
                     confirmButtonClass: "btn-outline-success",
-                    confirmButtonText: "Yes, @if($isEdit==true)Update @else Save @endif it!",
+                    confirmButtonText: "Yes, @if($isEdit)Update @else Save @endif it!",
                     closeOnConfirm: false
                 },function(){
                     swal.close();
                     btnLoading($('#btnSave'));
-                    let postUrl=@if($isEdit==true) "{{url('/')}}/admin/master/general/states/edit/{{$EditData[0]->StateID}}"; @else "{{url('/')}}/admin/master/general/states/create"; @endif
+                    let postUrl=@if($isEdit) "{{url('/')}}/admin/master/general/states/edit/{{$EditData[0]->StateID}}"; @else "{{url('/')}}/admin/master/general/states/create"; @endif
                     let formData=new FormData();
                     let StateNameInTranslation = {};
 
@@ -225,7 +225,7 @@
                                     confirmButtonText: "Okay",
                                     closeOnConfirm: false
                                 },function(){
-                                    @if($isEdit==true)
+                                    @if($isEdit)
                                         window.location.replace("{{url('/')}}/admin/master/general/states");
                                     @else
                                         window.location.reload();

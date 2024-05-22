@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\web\masters\general;
 
 use App\Http\Controllers\Controller;
+use App\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,7 @@ use Auth;
 use Hash;
 use App\enums\cruds;
 use App\Rules\ValidUnique;
+use stdClass;
 use ValidDB;
 use logs;
 use App\helper\Helper;
@@ -47,36 +49,36 @@ class CityController extends Controller{
     }
 	public function view(Request $req){
 
-		if($this->general->isCrudAllow($this->CRUD,"view")==true){
+		if($this->general->isCrudAllow($this->CRUD,"view")){
 			$FormData=$this->general->UserInfo;
 			$FormData['ActiveMenuName']=$this->ActiveMenuName;
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['menus']=$this->Menus;
 			$FormData['crud']=$this->CRUD;
 			return view('app.master.general.city.view',$FormData);
-		}elseif($this->general->isCrudAllow($this->CRUD,"Add")==true){
+		}elseif($this->general->isCrudAllow($this->CRUD,"Add")){
 			return Redirect::to('/admin/master/general/city/create');
 		}else{
 			return view('errors.403');
 		}
 	}
-	
+
     public function TrashView(Request $req){
-        if($this->general->isCrudAllow($this->CRUD,"restore")==true){
+        if($this->general->isCrudAllow($this->CRUD,"restore")){
             $FormData=$this->general->UserInfo;
             $FormData['menus']=$this->Menus;
             $FormData['crud']=$this->CRUD;
 			$FormData['ActiveMenuName']=$this->ActiveMenuName;
 			$FormData['PageTitle']=$this->PageTitle;
             return view('app.master.general.city.trash',$FormData);
-        }elseif($this->general->isCrudAllow($this->CRUD,"view")==true){
+        }elseif($this->general->isCrudAllow($this->CRUD,"view")){
 			return Redirect::to('/admin/master/general/city/');
         }else{
             return view('errors.403');
         }
     }
     public function create(Request $req){
-        if($this->general->isCrudAllow($this->CRUD,"add")==true){
+        if($this->general->isCrudAllow($this->CRUD,"add")){
 			$OtherCruds=array(
 				"Country"=>$this->general->getCrudOperations(activeMenuNames::Country->value),
 				"States"=>$this->general->getCrudOperations(activeMenuNames::States->value),
@@ -91,15 +93,16 @@ class CityController extends Controller{
 			$FormData['ActiveMenuName']=$this->ActiveMenuName;
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['isEdit']=false;
+            $FormData['languages'] = Language::active()->get();
             return view('app.master.general.city.create',$FormData);
-        }elseif($this->general->isCrudAllow($this->CRUD,"view")==true){
+        }elseif($this->general->isCrudAllow($this->CRUD,"view")){
             return Redirect::to('/admin/master/general/city/');
         }else{
             return view('errors.403');
         }
     }
     public function edit(Request $req,$CityID){
-        if($this->general->isCrudAllow($this->CRUD,"edit")==true){
+        if($this->general->isCrudAllow($this->CRUD,"edit")){
 			$OtherCruds=array(
 				"Country"=>$this->general->getCrudOperations(activeMenuNames::Country->value),
 				"States"=>$this->general->getCrudOperations(activeMenuNames::States->value),
@@ -115,13 +118,15 @@ class CityController extends Controller{
 			$FormData['PageTitle']=$this->PageTitle;
 			$FormData['isEdit']=true;
 			$FormData['CityID']=$CityID;
+            $FormData['languages'] = Language::active()->get();
 			$FormData['EditData']=DB::Table($this->generalDB.'tbl_cities')->where('DFlag',0)->Where('CityID',$CityID)->get();
 			if(count($FormData['EditData'])>0){
-				return view('app.master.general.city.create',$FormData);
+                $FormData['EditData'][0]->CityNameInTranslation = json_decode($FormData['EditData'][0]->CityNameInTranslation);
+                return view('app.master.general.city.create',$FormData);
 			}else{
 				return view('errors.403');
 			}
-        }elseif($this->general->isCrudAllow($this->CRUD,"view")==true){
+        }elseif($this->general->isCrudAllow($this->CRUD,"view")){
             return Redirect::to('/admin/master/general/city/');
         }else{
             return view('errors.403');
@@ -131,7 +136,7 @@ class CityController extends Controller{
 		return DB::Table($this->generalDB.'tbl_taluks')->where('ActiveStatus','Active')->where('DFlag',0)->get();
 	}
     public function save(Request $req){
-		if($this->general->isCrudAllow($this->CRUD,"add")==true){
+		if($this->general->isCrudAllow($this->CRUD,"add")){
 			$OldData=array();$NewData=array();$CityID="";
 			$ValidDB=array();
 			$ValidDB['Country']['TABLE']=$this->generalDB."tbl_countries";
@@ -180,20 +185,21 @@ class CityController extends Controller{
 				'TalukID' =>['required',$ValidDB['Taluk']],
 				'PostalCodeID' =>['required',$ValidDB['PostalCode']],
 				'CityName' =>['required','min:3','max:100',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_cities","WHERE"=>" CityName='".$req->CityName."' and CountryID='".$req->CountryID."' and StateID='".$req->StateID."' and DistrictID='".$req->DistrictID."' and TalukID='".$req->TalukID."' "),"This City Name is already taken.")],
+                'CityNameInTranslation' => 'required',
 			);
 			$message=array();
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
-				return array('status'=>false,'message'=>"City Create Failed",'errors'=>$validator->errors());			
+				return array('status'=>false,'message'=>"City Create Failed",'errors'=>$validator->errors());
 			}
 			DB::beginTransaction();
-			$status=false;
 			try {
 				$CityID=DocNum::getDocNum(docTypes::City->value,"",Helper::getCurrentFY());
 				$data=array(
 					"CityID"=>$CityID,
 					"CityName"=>$req->CityName,
+                    "CityNameInTranslation"=>$req->CityNameInTranslation,
 					"TalukID"=>$req->TalukID,
 					"DistrictID"=>$req->DistrictID,
 					"StateID"=>$req->StateID,
@@ -203,28 +209,24 @@ class CityController extends Controller{
 					"CreatedBy"=>$this->UserID,
 					"CreatedOn"=>date("Y-m-d H:i:s")
 				);
-				$status=DB::Table($this->generalDB.'tbl_cities')->insert($data);
-			}catch(Exception $e) {
-				$status=false;
-			}
-
-			if($status==true){
-				DB::commit();
-				DocNum::updateDocNum(docTypes::City->value);
-				$NewData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->get();
-				$logData=array("Description"=>"New City Created","ModuleName"=>$this->ActiveMenuName,"Action"=>cruds::ADD->value,"ReferID"=>$CityID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
-				logs::Store($logData);
-				return array('status'=>true,'message'=>"City Created Successfully");
-			}else{
-				DB::rollback();
-				return array('status'=>false,'message'=>"City Create Failedd");
+				DB::Table($this->generalDB.'tbl_cities')->insert($data);
+                DB::commit();
+                DocNum::updateDocNum(docTypes::City->value);
+                $NewData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->get();
+                $logData=array("Description"=>"New City Created","ModuleName"=>$this->ActiveMenuName,"Action"=>cruds::ADD->value,"ReferID"=>$CityID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
+                logs::Store($logData);
+                return array('status'=>true,'message'=>"City Created Successfully");
+            }catch(Exception $e) {
+                logger($e);
+                DB::rollback();
+                return array('status'=>false,'message'=>"City Create Failed");
 			}
 		}else{
-			return array('status'=>false,'message'=>'Access denined');
+			return array('status'=>false,'message'=>'Access denied');
 		}
 	}
     public function update(Request $req,$CityID){
-		if($this->general->isCrudAllow($this->CRUD,"edit")==true){
+		if($this->general->isCrudAllow($this->CRUD,"edit")){
 			$OldData=array();$NewData=array();
 			$ValidDB=array();
 			$ValidDB['Country']['TABLE']=$this->generalDB."tbl_countries";
@@ -232,14 +234,14 @@ class CityController extends Controller{
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>1);
 			$ValidDB['Country']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-	
+
 			$ValidDB['State']['TABLE']=$this->generalDB."tbl_states";
 			$ValidDB['State']['ErrMsg']="State name does not exist";
 			$ValidDB['State']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
 			$ValidDB['State']['WHERE'][]=array("COLUMN"=>"StateID","CONDITION"=>"=","VALUE"=>$req->StateID);
 			$ValidDB['State']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>1);
 			$ValidDB['State']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-	
+
 			$ValidDB['District']['TABLE']=$this->generalDB."tbl_districts";
 			$ValidDB['District']['ErrMsg']="District name does not exist";
 			$ValidDB['District']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
@@ -247,7 +249,7 @@ class CityController extends Controller{
 			$ValidDB['District']['WHERE'][]=array("COLUMN"=>"DistrictID","CONDITION"=>"=","VALUE"=>$req->DistrictID);
 			$ValidDB['District']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>1);
 			$ValidDB['District']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-	
+
 			$ValidDB['Taluk']['TABLE']=$this->generalDB."tbl_taluks";
 			$ValidDB['Taluk']['ErrMsg']="Taluk name does not exist";
 			$ValidDB['Taluk']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
@@ -256,7 +258,7 @@ class CityController extends Controller{
 			$ValidDB['Taluk']['WHERE'][]=array("COLUMN"=>"TalukID","CONDITION"=>"=","VALUE"=>$req->TalukID);
 			$ValidDB['Taluk']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>1);
 			$ValidDB['Taluk']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-	
+
 			$ValidDB['PostalCode']['TABLE']=$this->generalDB."tbl_postalcodes";
 			$ValidDB['PostalCode']['ErrMsg']="Postal Code does not exist";
 			$ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"CountryID","CONDITION"=>"=","VALUE"=>$req->CountryID);
@@ -265,7 +267,7 @@ class CityController extends Controller{
 			$ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"PID","CONDITION"=>"=","VALUE"=>$req->PostalCodeID);
 			$ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>1);
 			$ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-	
+
 			$rules=array(
 				'CountryID' =>['required',$ValidDB['Country']],
 				'StateID' =>['required',$ValidDB['State']],
@@ -273,17 +275,17 @@ class CityController extends Controller{
 				'TalukID' =>['required',$ValidDB['Taluk']],
 				'PostalCodeID' =>['required',$ValidDB['PostalCode']],
 				'CityName' =>['required','min:3','max:100',new ValidUnique(array("TABLE"=>$this->generalDB."tbl_cities","WHERE"=>" CityName='".$req->CityName."' and CountryID='".$req->CountryID."' and StateID='".$req->StateID."' and DistrictID='".$req->DistrictID."' and TalukID='".$req->TalukID."' and CityID<>'".$CityID."' "),"This City Name is already taken.")],
+                'CityNameInTranslation.required' => "City Name in Translation is required",
 			);
 			$message=array();
 			$validator = Validator::make($req->all(), $rules,$message);
-			
+
 			if ($validator->fails()) {
 				return array('status'=>false,'message'=>"City Update Failed",'errors'=>$validator->errors());
 			}
 			DB::beginTransaction();
-			$status=false;
 			try {
-				$OldData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->get();
+				$OldData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->first();
 				$data=array(
 					"CityName"=>$req->CityName,
 					"TalukID"=>$req->TalukID,
@@ -295,36 +297,43 @@ class CityController extends Controller{
 					"UpdatedBy"=>$this->UserID,
 					"UpdatedOn"=>date("Y-m-d H:i:s")
 				);
-				$status=DB::Table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->update($data);
-			}catch(Exception $e) {
-				$status=false;
-			}
 
-			if($status==true){
-				$NewData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->get();
-				$logData=array("Description"=>"City Updated ","ModuleName"=>$this->ActiveMenuName,"Action"=>cruds::UPDATE->value,"ReferID"=>$CityID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
-				logs::Store($logData);
-				DB::commit();
-				return array('status'=>true,'message'=>"City Updated Successfully");
-			}else{
-				DB::rollback();
-				return array('status'=>false,'message'=>"City Update Failed");
+                $newTranslations = json_decode($req->CityNameInTranslation);
+                $existingTranslations = json_decode($OldData->CityNameInTranslation);
+                if (!$existingTranslations) {
+                    $existingTranslations = new stdClass();
+                }
+                foreach ($newTranslations as $lang => $value) {
+                    $existingTranslations->$lang = $value;
+                }
+                $data['CityNameInTranslation'] = json_encode($existingTranslations);
+
+                DB::Table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->update($data);
+                $NewData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->get();
+                $logData=array("Description"=>"City Updated ","ModuleName"=>$this->ActiveMenuName,"Action"=>cruds::UPDATE->value,"ReferID"=>$CityID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$this->UserID,"IP"=>$req->ip());
+                logs::Store($logData);
+                DB::commit();
+                return array('status'=>true,'message'=>"City Updated Successfully");
+            }catch(Exception $e) {
+                logger($e);
+                DB::rollback();
+                return array('status'=>false,'message'=>"City Update Failed");
 			}
 		}else{
-			return array('status'=>false,'message'=>'Access denined');
+			return array('status'=>false,'message'=>'Access denied');
 		}
 	}
 
 	public function Delete(Request $req,$CityID){
 		$OldData=$NewData=array();
-		if($this->general->isCrudAllow($this->CRUD,"delete")==true){
+		if($this->general->isCrudAllow($this->CRUD,"delete")){
 			DB::beginTransaction();
 			$status=false;
 			try{
 				$OldData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->get();
 				$status=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->update(array("DFlag"=>1,"DeletedBy"=>$this->UserID,"DeletedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -341,14 +350,14 @@ class CityController extends Controller{
 	}
 	public function Restore(Request $req,$CityID){
 		$OldData=$NewData=array();
-		if($this->general->isCrudAllow($this->CRUD,"restore")==true){
+		if($this->general->isCrudAllow($this->CRUD,"restore")){
 			DB::beginTransaction();
 			$status=false;
 			try{
 				$OldData=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->get();
 				$status=DB::table($this->generalDB.'tbl_cities')->where('CityID',$CityID)->update(array("DFlag"=>0,"UpdatedBy"=>$this->UserID,"UpdatedOn"=>date("Y-m-d H:i:s")));
 			}catch(Exception $e) {
-				
+
 			}
 			if($status==true){
 				DB::commit();
@@ -364,8 +373,8 @@ class CityController extends Controller{
 			return response(array('status'=>false,'message'=>"Access Denied"), 403);
 		}
 	}
-	public function TableView(Request $req){ 
-		if($this->general->isCrudAllow($this->CRUD,"view")==true){
+	public function TableView(Request $req){
+		if($this->general->isCrudAllow($this->CRUD,"view")){
 			$columns = array(
 				array( 'db' => 'CI.CityID', 'dt' => '0' ),
 				array( 'db' => 'CI.CityName', 'dt' => '1' ),
@@ -389,19 +398,19 @@ class CityController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
 				array( 'db' => 'CityID', 'dt' => '7',
 					'formatter' => function( $d, $row ) {
 						$html='';
-						if($this->general->isCrudAllow($this->CRUD,"edit")==true){
+						if($this->general->isCrudAllow($this->CRUD,"edit")){
 							$html.='<button type="button" data-id="'.$d.'" class="btn  btn-outline-success '.$this->general->UserInfo['Theme']['button-size'].' m-5 mr-10 btnEdit" data-original-title="Edit"><i class="fa fa-pencil"></i></button>';
 						}
-						if($this->general->isCrudAllow($this->CRUD,"delete")==true){
+						if($this->general->isCrudAllow($this->CRUD,"delete")){
 							$html.='<button type="button" data-id="'.$d.'" class="btn  btn-outline-danger '.$this->general->UserInfo['Theme']['button-size'].' m-5 btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
 						}
 						return $html;
-					} 
+					}
 				)
 			);
 			$Where = " CI.DFlag=0 and CI.CountryID = '$req->CountryID' and CI.StateID = '$req->StateID'";
@@ -429,7 +438,7 @@ class CityController extends Controller{
 		}
 	}
 	public function TrashTableView(Request $request){
-		if($this->general->isCrudAllow($this->CRUD,"restore")==true){
+		if($this->general->isCrudAllow($this->CRUD,"restore")){
 			$columns = array(
 				array( 'db' => 'C.CityID', 'dt' => '0' ),
 				array( 'db' => 'C.CityName', 'dt' => '1' ),
@@ -447,13 +456,13 @@ class CityController extends Controller{
 						}else{
 							return "<span class='badge badge-danger m-1'>Inactive</span>";
 						}
-					} 
+					}
 				),
 				array( 'db' => 'CityID', 'dt' => '4',
 					'formatter' => function( $d, $row ) {
 						$html='<button type="button" data-id="'.$d.'" class="btn btn-outline-success '.$this->general->UserInfo['Theme']['button-size'].'  m-2 btnRestore"> <i class="fa fa-repeat" aria-hidden="true"></i> </button>';
 						return $html;
-					} 
+					}
 				)
 			);
 			$data=array();
