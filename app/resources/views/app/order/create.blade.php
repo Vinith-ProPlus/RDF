@@ -1,5 +1,41 @@
 @extends('layouts.app')
 @section('content')
+    <style>
+
+        select.minimal {
+            background-image:
+                linear-gradient(45deg, transparent 50%, gray 50%),
+                linear-gradient(135deg, gray 50%, transparent 50%),
+                linear-gradient(to right, #ccc, #ccc);
+            background-position:
+                calc(100% - 20px) calc(1em + 2px),
+                calc(100% - 15px) calc(1em + 2px),
+                calc(100% - 2.5em) 0.5em;
+            background-size:
+                5px 5px,
+                5px 5px,
+                1px 1.5em;
+            background-repeat: no-repeat;
+        }
+
+        select.minimal:focus {
+            background-image:
+                linear-gradient(45deg, green 50%, transparent 50%),
+                linear-gradient(135deg, transparent 50%, green 50%),
+                linear-gradient(to right, #ccc, #ccc);
+            background-position:
+                calc(100% - 15px) 1em,
+                calc(100% - 20px) 1em,
+                calc(100% - 2.5em) 0.5em;
+            background-size:
+                5px 5px,
+                5px 5px,
+                1px 1.5em;
+            background-repeat: no-repeat;
+            border-color: green;
+            outline: 0;
+        }
+    </style>
 <div class="container-fluid">
 	<div class="page-header">
 		<div class="row">
@@ -16,7 +52,7 @@
 </div>
 <div class="container-fluid">
 	<div class="row d-flex justify-content-center">
-		<div class="col-12 col-sm-12 col-lg-8">
+		<div class="col-12 col-sm-12 col-lg-12">
 			<div class="card">
 				<div class="card-header text-center"><h5 class="mt-10">{{$PageTitle}}</h5></div>
 				<div class="card-body">
@@ -69,10 +105,10 @@
                                 <label>{{ $EditData[0]->paymentStatus }}</label>
                             </div>
                         </div>
-                        <div class="col-sm-12 mt-20 {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}">
+                        <div class="col-sm-6 col-md-4 mt-20 {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}">
                             <div class="form-group">
                                 <label for="trackStatus"><b>Track status <span class="required"> * </span></b></label>
-                                <select class="form-control {{$Theme['input-size']}}" id="trackStatus">
+                                <select class="form-control {{$Theme['input-size']}} minimal" id="trackStatus">
                                     <option value="Order Confirmed" @if($isEdit==true) @if($EditData[0]->type=="Order Confirmed") selected @endif @endif @if(in_array($EditData[0]->TrackStatus, ["Shipped", "Out To Delivery", "Delivery Expected On", "Delivered"]))
                                         disabled
                                         @endif>Order Confirmed</option>
@@ -91,6 +127,7 @@
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
+                            <div class="table-responsive">
                             <table class="table table-sm no-footer dtr-inline">
                                 <thead>
                                 <tr>
@@ -131,17 +168,18 @@
                                 </tr>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
 				</div>
                 <div class="card-footer">
                     <div class="row">
                         <div class="col-sm-12 text-right">
-                            @if($crud['view']==true)
+                            @if($crud['view'])
                             <a href="{{ URL::previous() }}" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
 
-                            @if((($crud['add']==true) && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
+                            @if(($crud['add'] && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
                                 <button class="btn {{$Theme['button-size']}} btn-outline-success btn-air-success {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}" id="btnSave">@if($isEdit==true) Update @endif</button>
                             @endif
                         </div>
