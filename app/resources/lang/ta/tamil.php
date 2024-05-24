@@ -210,6 +210,15 @@ return $r = [
     "Order" => "ஆர்டர்",
     "Payment Pending" => "கட்டணம் நிலுவையில் உள்ளது",
     "Payment Completed" => "கட்டணம் செலுத்தப்பட்டது",
+    "All Products" => "அனைத்து தயாரிப்புகள்",
+    "Shipping Charges" => "கப்பல் கட்டணங்கள்",
+    "Sub-Total" => "உப-மொத்தம்",
+    "Discounts" => "தள்ளுபடிகள்",
+    "Processing" => "செயலாக்கம்",
+    "Ticket details" => "டிக்கெட் விவரங்கள்",
+    "Customer name" => "வாடிக்கையாளர் பெயர்",
+    "Reply" => "பதில்",
+    "Upload Attachment" => "இணைப்பு பதிவேற்றவும்"
 ];
 
 App\Models\TranslationKey::truncate();

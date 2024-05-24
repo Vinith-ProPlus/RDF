@@ -106,7 +106,7 @@
                     <div class="row mt-20">
                         <div class="col-sm-12 text-right">
                             @if($crud['view'])
-                            <a href="{{url('/')}}/master/general/city" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
+                            <a href="{{url('/')}}/admin/master/general/city" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
 
                             @if((($crud['add']) && ($isEdit==false))||(($crud['edit']) && ($isEdit)))
