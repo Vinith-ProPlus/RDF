@@ -1280,15 +1280,14 @@ class CustomerAuthController extends Controller{
                     ->where('OrderID', $request->OrderID)
                     ->get();
                 $orderDetails->transform(function ($order) use ($lang, $translation) {
-                    $order->OrderDate = Helper::translate($order->OrderDate, $lang);
                     $order->City = Helper::translate($order->City, $lang);
                     $order->District = Helper::translate($order->District, $lang);
                     $order->State = Helper::translate($order->State, $lang);
                     $order->CompleteAddress = Helper::translate($order->CompleteAddress, $lang);
                     $order->DiscountType = $translation->{$order->DiscountType} ?? Helper::translate($order->DiscountType, $lang);
                     $order->TrackStatus = $translation->{$order->TrackStatus} ?? Helper::translate($order->TrackStatus, $lang);
-                    $order->PaymentStatus = Helper::translate($order->paymentStatus, $lang);
-                    $order->Status = Helper::translate($order->Status, $lang);
+                    $order->PaymentStatus = $translation->{$order->paymentStatus} ?? Helper::translate($order->paymentStatus, $lang);
+                    $order->StatusInLang = Helper::translate($order->Status, $lang);
                     if ($order->orderDetails) {
                         $order->orderDetails->transform(function ($detail) use ($lang) {
                             $detail->ProductName = json_decode($detail->ProductNameInTranslation)->$lang ?? $detail->ProductName;

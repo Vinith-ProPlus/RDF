@@ -208,6 +208,8 @@ return $r = [
     "Amount Coupon" => "தொகை கூப்பன்",
     "Shipment update" => "தொகை கூப்பன்",
     "Order" => "ஆர்டர்",
+    "Payment Pending" => "கட்டணம் நிலுவையில் உள்ளது",
+    "Payment Completed" => "கட்டணம் செலுத்தப்பட்டது",
 ];
 
 App\Models\TranslationKey::truncate();
