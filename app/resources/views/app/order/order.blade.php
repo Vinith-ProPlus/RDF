@@ -46,7 +46,7 @@
                 <select class="form-control select2" id="lstUser">
                     <option value="">All Users</option>
                     @foreach($customers as $customer)
-                        <option value="{{ $customer->CustomerID }}">{{ $customer->CustomerName ?? $customer->nick_name}}</option>
+                        <option value="{{ $customer->CustomerID }}">{{ $customer->CustomerName ?? $customer->nick_name ?? $customer->MobileNo1 }}</option>
                     @endforeach
                 </select>
             </div>
