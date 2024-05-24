@@ -1368,7 +1368,7 @@ class CustomerAuthController extends Controller{
         }else{
             $pageNo = $request->PageNo ?? 1;
             $perPage = 15;
-            $orderDetails = Order::with('orderDetails', 'orderTrackDetails')
+            $orderDetails = Order::with('orderDetails')
                 ->where('CreatedBy', $CustomerID)
                 ->when($request->has('StatusType') && in_array($request->StatusType, ['In progress', 'Delivered']), function ($query) use ($request) {
                     return $query->where('Status', $request->StatusType);
@@ -1378,14 +1378,7 @@ class CustomerAuthController extends Controller{
 
             $orderDetails->transform(function ($order) use ($lang, $translation) {
                 $order->OrderDate = Helper::translate($order->OrderDate, $lang);
-//                $order->City = Helper::translate($order->City, $lang);
-//                $order->District = Helper::translate($order->District, $lang);
-//                $order->State = Helper::translate($order->State, $lang);
-//                $order->CompleteAddress = Helper::translate($order->CompleteAddress, $lang);
-//                $order->DiscountType = Helper::translate($order->DiscountType, $lang);
-//                $order->TrackStatus = Helper::translate($order->TrackStatus, $lang);
                 $order->PaymentStatus = Helper::translate($order->paymentStatus, $lang);
-                $order->Status = Helper::translate($order->Status, $lang);
                 if ($order->orderDetails) {
                     $order->orderDetails->transform(function ($detail) use ($lang) {
                         $detail->ProductName = json_decode($detail->ProductNameInTranslation)->$lang ?? $detail->ProductName;
@@ -1438,19 +1431,7 @@ class CustomerAuthController extends Controller{
                         return $detail;
                     });
                 }
-//                $order->SubTotal = Helper::formatAmount($order->SubTotal);
-//                $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
-//                $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
                 $order->TotalAmountInString = Helper::formatAmount($order->TotalAmount);
-//                $order->isReviewed = ProductReview::where('OrderID', $order->OrderID)->exists();
-                $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
-//                $order->orderTrackDetails->sortBy('orderBy');
-//                $order->orderTrackDetails->transform(function ($orderTrack) use ($lang, $translation) {
-//                    $orderTrack->StatusDate = $orderTrack->StatusDate ? Helper::translate(Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y'), $lang) : null;
-//                    $orderTrack->Description = $translation->{$orderTrack->Description} ??Helper::translate($orderTrack->Description, $lang);
-//                    $orderTrack->Status = $translation->{$orderTrack->Status} ??Helper::translate($orderTrack->Status, $lang);
-//                    return $orderTrack;
-//                });
                 return $order;
             });
 
