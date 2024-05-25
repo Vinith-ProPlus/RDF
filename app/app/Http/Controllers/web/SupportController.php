@@ -94,12 +94,12 @@ class SupportController extends Controller{
 //        $result=DB::SELECT($sql);
 //        if(count($result)>0){
 //            if(intval($result[0]->LoginType)==2){
-                $sql="SELECT U.CustomerID, U.CustomerName as UserName, U.MobileNo1 as MobileNumber FROM ".$this->supportDB."tbl_support as S LEFT JOIN tbl_customer as U ON U.CustomerID=S.UserID LEFT JOIN tbl_customer as UI ON UI.CustomerID=S.UserID LEFT JOIN ".$this->generalDB."tbl_countries as C ON C.CountryID=UI.CountryID Where S.SupportID='".$SupportID."'";
+                $sql="SELECT U.CustomerID, U.CustomerName as UserName, U.nick_name, U.MobileNo1 as MobileNumber FROM ".$this->supportDB."tbl_support as S LEFT JOIN tbl_customer as U ON U.CustomerID=S.UserID LEFT JOIN tbl_customer as UI ON UI.CustomerID=S.UserID";
                 $tmp=DB::SELECT($sql);
                 if(count($tmp)>0){
                     $return=array(
-                        "Name"=>$tmp[0]->UserName,
-                        "MobileNumber"=>$tmp[0]->MobileNumber
+                        "Name"=> ($tmp[0]->CustomerName ?? $tmp[0]->nick_name ?? $tmp[0]->MobileNumber) ?? "User",
+                        "MobileNumber"=>$tmp[0]->MobileNumber ?? "-"
                     );
                 }
 //            }else{
