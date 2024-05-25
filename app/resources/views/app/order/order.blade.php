@@ -56,9 +56,12 @@
                 <label style="margin-bottom:0px;">Status</label>
                 <select class="form-control" id="lstStatus">
                     <option value="">All</option>
-                    <option value="In progress">In progress</option>
-                    <option value="Delivered">Delivered </option>
-                    <option value="deleted">Deleted</option>
+{{--                    <option value="Payment Pending">Payment Pending</option>--}}
+                    <option value="Order Confirmed">Order Confirmed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Out To Delivery">Out To Delivery</option>
+                    <option value="Delivery Expected On">Delivery Expected On</option>
+                    <option value="Delivered">Delivered</option>
                 </select>
             </div>
         </div>

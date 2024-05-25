@@ -408,7 +408,7 @@ class OrderController extends Controller{
 				array( 'db' => 'O.OrderID', 'dt' => '0' ),
 				array( 'db' => 'O.CreatedBy', 'dt' => '1'),
 				array( 'db' => 'O.TotalAmount', 'dt' => '2'),
-				array( 'db' => 'O.Status', 'dt' => '3' ),
+				array( 'db' => 'O.TrackStatus', 'dt' => '3' ),
 				array( 'db' => 'O.OrderDate', 'dt' => '4'),
 				array( 'db' => 'O.OrderID', 'dt' => '5')
 			);
@@ -421,19 +421,25 @@ class OrderController extends Controller{
 
                 } ),
 				array( 'db' => 'TotalAmount', 'dt' => '2'),
-				array( 'db' => 'Status', 'dt' => '3' ,'formatter' => function( $d, $row ) {
+				array( 'db' => 'TrackStatus', 'dt' => '3' ,'formatter' => function( $d, $row ) {
                     $Status="<span class='badge block  badge-secondary mr-2 '> Pending </span>";
                     $result=DB::Table("tbl_order")->Where("OrderID",$row['OrderID'])->get();
                     if(count($result)>0){
                         if($result[0]->DFlag==1){
                             $Status="<span class='badge  block badge-danger mr-2'> Deleted </span>";
                         }else{
-                            if($d== "In progress"){
-                                $Status="<span class='badge  block badge-warning mr-2 ' > In progress </span>";
+                            if($d== "Order Confirmed"){
+                                $Status="<span class='badge  block badge-warning mr-2 ' > Order Confirmed </span>";
+                            }elseif($d=="Shipped"){
+                                $Status="<span class='badge  block badge-success mr-2 ' > Shipped </span>";
+                            }elseif($d=="Out To Delivery"){
+                                $Status="<span class='badge  block badge-success mr-2 ' > Out To Delivery </span>";
+                            }elseif($d=="Delivery Expected On"){
+                                $Status="<span class='badge  block badge-success mr-2 ' > Delivery Expected On </span>";
                             }elseif($d=="Delivered"){
                                 $Status="<span class='badge  block badge-success mr-2 ' > Delivered </span>";
                             }else {
-                                $Status="<span class='badge  block badge-info mr-2 ' > Unattended </span>";
+                                $Status="<span class='badge  block badge-info mr-2 ' > Payment Pending </span>";
                             }
                         }
                     }
@@ -463,12 +469,18 @@ class OrderController extends Controller{
         if($request->User!=""){
             $Where.=" and CreatedBy='".$request->User."'";
         }
-        if($request->Status=="In progress"){
-            $Where.=" and O.Status='In progress' and O.DFlag='0'";
-        }elseif($request->Status=="Delivered"){
-            $Where.=" and O.Status='Delivered' and O.DFlag='0'";
-        }elseif($request->Status=="deleted"){
-            $Where.=" and O.DFlag='1'";
+//        if($request->Status){
+//            $Where.=" and O.TrackStatus='". $request->Status ."' and O.DFlag='0'";
+//        } elseif($request->Status === "Payment Pending"){
+//            $Where.=" and O.PaymentID='' and O.DFlag='0'"; // check PaymentID == null here
+//        }
+
+        if ($request->Status) {
+            if ($request->Status === "Payment Pending") {
+                $Where .= " and O.PaymentID='' and O.DFlag='0'";
+            } else {
+                $Where .= " and O.TrackStatus='". $request->Status ."' and O.DFlag='0'";
+            }
         }
         $data=array();
         $data['POSTDATA']=$request;
