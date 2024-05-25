@@ -196,7 +196,7 @@ class dashboardController extends Controller
         $ServerSideProcess = new ServerSideProcess();
         $columns = array(
             array('db' => 'O.OrderID', 'dt' => '0'),
-            array('db' => 'O.CreatedBy', 'dt' => '1'),
+            array('db' => 'O.Email', 'dt' => '1'),
             array('db' => 'O.OrderDate', 'dt' => '2',),
             array('db' => 'O.MobileNo1', 'dt' => '3'),
             array('db' => 'O.TotalAmount', 'dt' => '4'),
@@ -206,12 +206,13 @@ class dashboardController extends Controller
         );
         $columns1 = array(
             array('db' => 'OrderID', 'dt' => '0'),
-            array('db' => 'CreatedBy', 'dt' => '1', 'formatter' => function ($d, $row) {
-                $customer = \Illuminate\Support\Facades\DB::Table("tbl_customer")->Where("CustomerID", $row['CreatedBy'])->first();
-                $html = $customer->CustomerName ?? $customer->nick_name;
-                return $html;
-
-            }),
+            array('db' => 'Email', 'dt' => '1'),
+//            array( 'db' => 'CreatedBy', 'dt' => '1','formatter' =>function($d,$row){
+//                $customer = DB::Table("tbl_customer")->Where("CustomerID", $row['CreatedBy'])->first();
+//                logger($customer);
+//                $html= $customer->CustomerName ?? $customer->nick_name ?? $customer->MobileNo1;
+//                return $html;
+//            } ),
             array('db' => 'OrderDate', 'dt' => '2', 'formatter' => function ($d, $row) {
                 return date("d - M - Y", strtotime($d));
             }),

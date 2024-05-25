@@ -156,7 +156,7 @@
                                         <tr class="valign-top">
                                             <th class="text-center">Order No</th>
                                             <th class="text-center">Order Date</th>
-                                            <th class="text-center">Receiver Name</th>
+                                            <th class="text-center">Contact Email</th>
                                             <th class="text-center">Contact Number</th>
                                             <th class="text-center">Order Amount</th>
                                             <th class="text-center">Order Status</th>
