@@ -105,16 +105,18 @@ class CustomerController extends Controller{
             $FormData['FileTypes']=$this->FileTypes;
             $FormData['EditData'] = DB::table('tbl_customer')->where('DFlag',0)->Where('CustomerID',$CID)->first();
             if($FormData['EditData']){
-                $FormData['EditData']->PostalCode = DB::table($this->generalDB.'tbl_postalcodes as P')->where('PID',$FormData['EditData']->PostalCodeID)->value('PostalCode');
-                $FormData['EditData']->SAddress = DB::table('tbl_customer_address as CA')->where('CustomerID',$CID)
-                    ->join($this->generalDB.'tbl_countries as C','C.CountryID','CA.CountryID')
-                    ->join($this->generalDB.'tbl_states as S', 'S.StateID', 'CA.StateID')
-                    ->join($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'CA.DistrictID')
+//                if(isset($FormData['EditData']->PostalCodeID)) {
+//                    $FormData['EditData']->PostalCode = DB::table($this->generalDB . 'tbl_postalcodes as P')->where('PID', $FormData['EditData']->PostalCodeID)->value('PostalCode');
+                    $FormData['EditData']->SAddress = DB::table('tbl_customer_address as CA')->where('CustomerID', $CID)
+                        ->join($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'CA.CountryID')
+                        ->join($this->generalDB . 'tbl_states as S', 'S.StateID', 'CA.StateID')
+                        ->join($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'CA.DistrictID')
 //				->join($this->generalDB.'tbl_taluks as T', 'T.TalukID', 'CA.TalukID')
-                    ->join($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
-                    ->join($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
-                    ->select('CA.SLNo as AID', 'CA.Address', 'CA.isDefault', 'CA.CountryID', 'C.CountryName', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode')
-                    ->get();
+                        ->join($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+                        ->join($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+                        ->select('CA.AID as AID', 'CA.Address', 'CA.isDefault', 'CA.CountryID', 'C.CountryName', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode')
+                        ->get();
+//                }
                 return view('app.users.manage-customer.customer',$FormData);
             }else{
                 return view('errors.403');
@@ -188,18 +190,20 @@ class CustomerController extends Controller{
                 $data=array(
                     "CustomerID"=>$CustomerID,
                     "CustomerName"=>$req->CustomerName,
+                    "nick_name"=>$req->nick_name,
                     'CustomerImage'=>$CustomerImage,
                     "MobileNo1"=>$req->MobileNo1,
-                    "MobileNo2"=>$req->MobileNo2,
+//                    "MobileNo2"=>$req->MobileNo2,
                     "Email"=>$req->Email,
-                    "CusTypeID"=>$req->CusTypeID,
-                    "Address"=>$req->Address,
-                    "PostalCodeID"=>$req->PostalCodeID,
-                    "CityID"=>$req->CityID,
-//					"TalukID"=>$req->TalukID,
-                    "DistrictID"=>$req->DistrictID,
-                    "StateID"=>$req->StateID,
-                    "CountryID"=>$req->CountryID,
+                    "otp"=>1234,
+//                    "CusTypeID"=>$req->CusTypeID,
+//                    "Address"=>$req->Address,
+//                    "PostalCodeID"=>$req->PostalCodeID,
+//                    "CityID"=>$req->CityID,
+////					"TalukID"=>$req->TalukID,
+//                    "DistrictID"=>$req->DistrictID,
+//                    "StateID"=>$req->StateID,
+//                    "CountryID"=>$req->CountryID,
                     "ActiveStatus"=>$req->ActiveStatus,
                     "CreatedBy"=>$this->UserID,
                     "CreatedOn"=>date("Y-m-d H:i:s")
@@ -209,7 +213,7 @@ class CustomerController extends Controller{
                     foreach($SAddress as $row){
                         $AID=DocNum::getDocNum(docTypes::CustomerAddress->value,"",Helper::getCurrentFY());
                         $tmp=array(
-                            "SLNO"=>$AID,
+                            "AID"=>$AID,
                             "CustomerID"=>$CustomerID,
                             "Address"=>$row['Address'],
                             "PostalCodeID"=>$row['PostalCodeID'],
@@ -289,31 +293,32 @@ class CustomerController extends Controller{
                     $images=Helper::ImageResize($CustomerImage,$dir);
                 }
                 if(($CustomerImage!="" || intval($req->removeCustomerImage)==1) && Count($OldData)>0){
-                    $currCustomerImage=$OldData[0]->Images!=""?unserialize($OldData[0]->Images):array();
+                    $currCustomerImage=$OldData[0]->CustomerImage!=""?unserialize($OldData[0]->CustomerImage):array();
                 }
                 $data=array(
                     "CustomerName"=>$req->CustomerName,
                     "MobileNo1"=>$req->MobileNo1,
-                    "MobileNo2"=>$req->MobileNo2,
+//                    "MobileNo2"=>$req->MobileNo2,
                     "Email"=>$req->Email,
-                    "CusTypeID"=>$req->CusTypeID,
-                    "Address"=>$req->Address,
-                    "PostalCodeID"=>$req->PostalCodeID,
-                    "CityID"=>$req->CityID,
-//					"TalukID"=>$req->TalukID,
-                    "DistrictID"=>$req->DistrictID,
-                    "StateID"=>$req->StateID,
-                    "CountryID"=>$req->CountryID,
+                    "nick_name"=>$req->nick_name,
+//                    "CusTypeID"=>$req->CusTypeID,
+//                    "Address"=>$req->Address,
+//                    "PostalCodeID"=>$req->PostalCodeID,
+//                    "CityID"=>$req->CityID,
+////					"TalukID"=>$req->TalukID,
+//                    "DistrictID"=>$req->DistrictID,
+//                    "StateID"=>$req->StateID,
+//                    "CountryID"=>$req->CountryID,
                     "ActiveStatus"=>$req->ActiveStatus,
                     "UpdatedBy"=>$this->UserID,
                     "UpdatedOn"=>date("Y-m-d H:i:s")
                 );
                 if($CustomerImage!=""){
                     $data['CustomerImage']=$CustomerImage;
-                    $data['Images']=serialize($images);
+//                    $data['CustomerImage']=serialize($images);
                 }else if(intval($req->removeCustomerImage)==1){
                     $data['CustomerImage']="";
-                    $data['Images']=serialize(array());
+//                    $data['CustomerImage']=serialize(array());
                 }
                 $status=DB::Table('tbl_customer')->where('CustomerID',$CustomerID)->update($data);
                 if($status){
@@ -332,12 +337,12 @@ class CustomerController extends Controller{
                                 "isDefault"=>$row['isDefault'],
                                 "UpdatedOn"=>date("Y-m-d H:i:s")
                             );
-                            $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('SLNO',$row['AID'])->update($data);
+                            $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$row['AID'])->update($data);
                         }else{
                             $AID=DocNum::getDocNum(docTypes::CustomerAddress->value,"",Helper::getCurrentFY());
                             $AIDs[] = $AID;
                             $tmp=array(
-                                "SLNO"=>$AID,
+                                "AID"=>$AID,
                                 "CustomerID"=>$CustomerID,
                                 "Address"=>$row['Address'],
                                 "PostalCodeID"=>$row['PostalCodeID'],
@@ -358,7 +363,7 @@ class CustomerController extends Controller{
                 }
 
                 if(count($AIDs)>0){
-                    DB::table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNotIn('SLNO',$AIDs)->delete();
+                    DB::table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNotIn('AID',$AIDs)->delete();
                 }
             }catch(Exception $e) {
                 $status=false;
@@ -377,7 +382,7 @@ class CustomerController extends Controller{
                 return array('status'=>false,'message'=>"Customer Update Failed");
             }
         }else{
-            return array('status'=>false,'message'=>'Access denined');
+            return array('status'=>false,'message'=>'Access denied');
         }
     }
 
@@ -434,8 +439,8 @@ class CustomerController extends Controller{
         if($this->general->isCrudAllow($this->CRUD, "view")){
             $columns = array(
                 array( 'db' => 'CustomerName', 'dt' => '0' ),
-                array( 'db' => 'MobileNo1', 'dt' => '1' ),
-                array( 'db' => 'MobileNo2', 'dt' => '2' ),
+                array( 'db' => 'nick_name', 'dt' => '1' ),
+                array( 'db' => 'MobileNo1', 'dt' => '2' ),
                 array( 'db' => 'Email', 'dt' => '3' ),
                 array( 'db' => 'ActiveStatus', 'dt' => '4',
                     'formatter' => function( $d, $row ) {
@@ -477,8 +482,8 @@ class CustomerController extends Controller{
         if($this->general->isCrudAllow($this->CRUD,"restore")==true){
             $columns = array(
                 array( 'db' => 'CustomerName', 'dt' => '0' ),
-                array( 'db' => 'MobileNo1', 'dt' => '1' ),
-                array( 'db' => 'MobileNo2', 'dt' => '2' ),
+                array( 'db' => 'nick_name', 'dt' => '1' ),
+                array( 'db' => 'MobileNo1', 'dt' => '2' ),
                 array( 'db' => 'Email', 'dt' => '3' ),
                 array( 'db' => 'ActiveStatus', 'dt' => '4',
                     'formatter' => function( $d, $row ) {

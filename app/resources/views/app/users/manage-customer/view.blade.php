@@ -40,9 +40,9 @@
                                 <thead>
                                     <tr>
                                         <th class="text-center">Customer Name</th>
+                                        <th class="text-center">Nick Name</th>
                                         <th class="text-center">Mobile Number</th>
-                                        <th class="text-center">Alternate Mobile Number</th>
-										<th class="text-center">E-Mail</th>
+                                        <th class="text-center">E-Mail</th>
 										<th class="text-center">Active Status</th>
 										<th class="text-center">Action</th>
                                     </tr>
@@ -74,15 +74,15 @@
 				"iDisplayLength": 10,
 				"lengthMenu": [[10, 25, 50,100,250,500, -1], [10, 25, 50,100,250,500, "All"]],
 				buttons: [
-					'pageLength' 
-					@if($crud['excel']==1) ,{extend: 'excel',footer: true,title: 'User Roles',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif 
+					'pageLength'
+					@if($crud['excel']==1) ,{extend: 'excel',footer: true,title: 'User Roles',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['copy']==1) ,{extend: 'copy',footer: true,title: 'User Roles',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['csv']==1) ,{extend: 'csv',footer: true,title: 'User Roles',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['print']==1) ,{extend: 'print',footer: true,title: 'User Roles',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 					@if($crud['pdf']==1) ,{extend: 'pdf',footer: true,title: 'User Roles',"action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif
 				],
 				columnDefs: [
-					{"className": "dt-center", "targets":[4,5]},
+					{"className": "dt-center", "targets": "_all"},
 				]
 			});
 			@endif
@@ -90,7 +90,7 @@
 		$(document).on('click','.btnEdit',function(){
 			window.location.replace("{{url('/')}}/admin/users-and-permissions/manage-customers/edit/"+ $(this).attr('data-id'));
 		});
-		
+
 		$(document).on('click','.btnDelete',function(){
 			let ID=$(this).attr('data-id');
 			swal({

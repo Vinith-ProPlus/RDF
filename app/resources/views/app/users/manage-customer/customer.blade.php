@@ -34,40 +34,40 @@
                                             <div class="col-sm-6">
                                                 <div class="form-group">
                                                     <label for="txtCustomerName">Customer Name <span class="required">*</span></label>
-                                                    <input type="text" id="txtCustomerName" class="form-control " placeholder="Customer Name" value="<?php if($isEdit==true){ echo $EditData->CustomerName;} ?>">
+                                                    <input type="text" id="txtCustomerName" class="form-control " placeholder="Customer Name" value="<?php if($isEdit==true){ echo $EditData->CustomerName ?? '';} ?>">
                                                     <span class="errors Customer err-sm" id="txtCustomerName-err"></span>
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
                                                 <div class="form-group">
                                                     <label for="txtEmail">Email <span class="required">*</span></label>
-                                                    <input type="text" id="txtEmail" class="form-control " placeholder="Email"  value="<?php if($isEdit==true){ echo $EditData->Email;} ?>">
+                                                    <input type="text" id="txtEmail" class="form-control " placeholder="Email"  value="<?php if($isEdit==true){ echo $EditData->Email ?? '';} ?>">
                                                     <span class="errors Customer err-sm" id="txtEmail-err"></span>
                                                 </div>
                                             </div>
                                             <div class="col-sm-6 mt-20">
                                                 <div class="form-group">
+                                                    <label for="txtNickName">Nick Name </label>
+                                                    <input type="text" id="txtNickName" class="form-control " placeholder="Nick Name"  value="<?php if($isEdit==true){ echo $EditData->nick_name ?? '';} ?>">
+                                                    <span class="errors Customer err-sm" id="txtNickName-err"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 mt-20">
+                                                <div class="form-group">
                                                     <label for="txtMobileNo1">Mobile Number <span class="required">*</span></label>
-                                                    <input type="text" id="txtMobileNo1" class="form-control " placeholder="Mobile Number"  value="<?php if($isEdit==true){ echo $EditData->MobileNo1;} ?>">
+                                                    <input type="text" id="txtMobileNo1" class="form-control " placeholder="Mobile Number"  value="<?php if($isEdit==true){ echo $EditData->MobileNo1 ?? '';} ?>">
                                                     <span class="errors Customer err-sm" id="txtMobileNo1-err"></span>
                                                 </div>
                                             </div>
-                                            <div class="col-sm-6 mt-20">
-                                                <div class="form-group">
-                                                    <label for="txtMobileNo2">Alternate Mobile Number </label>
-                                                    <input type="text" id="txtMobileNo2" class="form-control " placeholder="Alternate Mobile Number"  value="<?php if($isEdit==true){ echo $EditData->MobileNo2;} ?>">
-                                                    <span class="errors Customer err-sm" id="txtMobileNo2-err"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 mt-20">
-                                                <div class="form-group">
-                                                    <label for="lstCusType">Customer Type <span class="required">*</span></label>
-                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstCusType" data-selected="<?php if($isEdit){ echo $EditData->CusTypeID;} ?>">
-                                                        <option value="">Select a Customer Type</option>
-                                                    </select>
-                                                    <span class="errors Customer err-sm" id="lstCusType-err"></span>
-                                                </div>
-                                            </div>
+{{--                                            <div class="col-sm-6 mt-20">--}}
+{{--                                                <div class="form-group">--}}
+{{--                                                    <label for="lstCusType">Customer Type <span class="required">*</span></label>--}}
+{{--                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstCusType" data-selected="<?php if($isEdit){ echo $EditData->CusTypeID ?? '';} ?>">--}}
+{{--                                                        <option value="">Select a Customer Type</option>--}}
+{{--                                                    </select>--}}
+{{--                                                    <span class="errors Customer err-sm" id="lstCusType-err"></span>--}}
+{{--                                                </div>--}}
+{{--                                            </div>--}}
                                             <div class="col-sm-6 mt-20">
                                                 <label for="lstActiveStatus">Active Status</label>
                                                 <select class="form-control " id="lstActiveStatus">
@@ -78,70 +78,70 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="tab" data-page="Billing Address">
-                                        <div class="row">
-                                            <div class="col-sm-12 mt-20">
-                                                <label for="txtAddress">Billing Address <span class="required">*</span></label>
-                                                <textarea  id="txtAddress"  rows="3" class="form-control"><?php if($isEdit){ echo $EditData->Address;} ?></textarea>
-                                                <span class="errors BA err-sm" id="txtAddress-err"></span>
-                                            </div>
-                                            <div class="col-sm-6 mt-20">
-                                                <div class="form-group">
-                                                    <label for="txtPostalCode">Postal Code <span class="required">*</span></label>
-                                                    <div class="input-group">
-                                                        <input type="text" id="txtPostalCode" class="form-control" placeholder="Postal Code" value="<?php if($isEdit){ echo $EditData->PostalCode;} ?>">
-                                                        <button type="button" class="btn btn-outline-dark" id="btnGSearchPostalCode">Search <i class="fa fa-search"></i></button>
-                                                    </div>
-                                                    <div class="errors BA err-sm" id="txtPostalCode-err"></div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 mt-20">
-                                                <div class="form-group">
-                                                    <label for="lstCity">City <span class="required">*</span></label>
-                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstCity" data-selected="<?php if($isEdit){ echo $EditData->CityID;} ?>">
-                                                        <option value="">Select a City</option>
-                                                    </select>
-                                                    <div class="errors BA err-sm" id="lstCity-err"></div>
-                                                </div>
-                                            </div>
-                                            {{--                                        <div class="col-sm-6 mt-20">--}}
-                                            {{--                                            <div class="form-group">--}}
-                                            {{--                                                <label for="lstTaluk">Taluk <span class="required">*</span></label>--}}
-                                            {{--                                                <select class="form-control {{$Theme['input-size']}} select2" id="lstTaluk" data-selected="<?php if($isEdit){ echo $EditData->TalukID;} ?>">--}}
-                                            {{--                                                    <option value="">Select a Taluk</option>--}}
-                                            {{--                                                </select>--}}
-                                            {{--                                                <div class="errors BA err-sm" id="lstTaluk-err"></div>--}}
-                                            {{--                                            </div>--}}
-                                            {{--                                        </div>--}}
-                                            <div class="col-sm-6 mt-20">
-                                                <div class="form-group">
-                                                    <label for="lstDistrict">District <span class="required">*</span></label>
-                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstDistricts" data-selected="<?php if($isEdit){ echo $EditData->DistrictID;} ?>">
-                                                        <option value="">Select a District</option>
-                                                    </select>
-                                                    <div class="errors BA err-sm" id="lstDistricts-err"></div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 mt-20">
-                                                <div class="form-group">
-                                                    <label for="lstState">State <span class="required">*</span></label>
-                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstState"  data-selected="<?php if($isEdit){ echo $EditData->StateID;} ?>">
-                                                        <option value="">Select a State</option>
-                                                    </select>
-                                                    <div class="errors BA err-sm" id="lstState-err"></div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 mt-20">
-                                                <div class="form-group">
-                                                    <label for="lstCountry">Country <span class="required">*</span></label>
-                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstCountry" data-selected="<?php if($isEdit){ echo $EditData->CountryID;} ?>">
-                                                        <option value="">Select a Country</option>
-                                                    </select>
-                                                    <div class="errors BA err-sm" id="lstCountry-err"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+{{--                                    <div class="tab" data-page="Billing Address">--}}
+{{--                                        <div class="row">--}}
+{{--                                            <div class="col-sm-12 mt-20">--}}
+{{--                                                <label for="txtAddress">Billing Address <span class="required">*</span></label>--}}
+{{--                                                <textarea  id="txtAddress"  rows="3" class="form-control"><?php if($isEdit){ echo $EditData->Address ?? '';} ?></textarea>--}}
+{{--                                                <span class="errors BA err-sm" id="txtAddress-err"></span>--}}
+{{--                                            </div>--}}
+{{--                                            <div class="col-sm-6 mt-20">--}}
+{{--                                                <div class="form-group">--}}
+{{--                                                    <label for="txtPostalCode">Postal Code <span class="required">*</span></label>--}}
+{{--                                                    <div class="input-group">--}}
+{{--                                                        <input type="text" id="txtPostalCode" class="form-control" placeholder="Postal Code" value="<?php if($isEdit){ echo $EditData->PostalCode ?? '';} ?>">--}}
+{{--                                                        <button type="button" class="btn btn-outline-dark" id="btnGSearchPostalCode">Search <i class="fa fa-search"></i></button>--}}
+{{--                                                    </div>--}}
+{{--                                                    <div class="errors BA err-sm" id="txtPostalCode-err"></div>--}}
+{{--                                                </div>--}}
+{{--                                            </div>--}}
+{{--                                            <div class="col-sm-6 mt-20">--}}
+{{--                                                <div class="form-group">--}}
+{{--                                                    <label for="lstCity">City <span class="required">*</span></label>--}}
+{{--                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstCity" data-selected="<?php if($isEdit){ echo $EditData->CityID ?? '';} ?>">--}}
+{{--                                                        <option value="">Select a City</option>--}}
+{{--                                                    </select>--}}
+{{--                                                    <div class="errors BA err-sm" id="lstCity-err"></div>--}}
+{{--                                                </div>--}}
+{{--                                            </div>--}}
+{{--                                            --}}{{--                                        <div class="col-sm-6 mt-20">--}}
+{{--                                            --}}{{--                                            <div class="form-group">--}}
+{{--                                            --}}{{--                                                <label for="lstTaluk">Taluk <span class="required">*</span></label>--}}
+{{--                                            --}}{{--                                                <select class="form-control {{$Theme['input-size']}} select2" id="lstTaluk" data-selected="<?php if($isEdit){ echo $EditData->TalukID;} ?>">--}}
+{{--                                            --}}{{--                                                    <option value="">Select a Taluk</option>--}}
+{{--                                            --}}{{--                                                </select>--}}
+{{--                                            --}}{{--                                                <div class="errors BA err-sm" id="lstTaluk-err"></div>--}}
+{{--                                            --}}{{--                                            </div>--}}
+{{--                                            --}}{{--                                        </div>--}}
+{{--                                            <div class="col-sm-6 mt-20">--}}
+{{--                                                <div class="form-group">--}}
+{{--                                                    <label for="lstDistrict">District <span class="required">*</span></label>--}}
+{{--                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstDistricts" data-selected="<?php if($isEdit){ echo $EditData->DistrictID ?? '';} ?>">--}}
+{{--                                                        <option value="">Select a District</option>--}}
+{{--                                                    </select>--}}
+{{--                                                    <div class="errors BA err-sm" id="lstDistricts-err"></div>--}}
+{{--                                                </div>--}}
+{{--                                            </div>--}}
+{{--                                            <div class="col-sm-6 mt-20">--}}
+{{--                                                <div class="form-group">--}}
+{{--                                                    <label for="lstState">State <span class="required">*</span></label>--}}
+{{--                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstState"  data-selected="<?php if($isEdit){ echo $EditData->StateID ?? '';} ?>">--}}
+{{--                                                        <option value="">Select a State</option>--}}
+{{--                                                    </select>--}}
+{{--                                                    <div class="errors BA err-sm" id="lstState-err"></div>--}}
+{{--                                                </div>--}}
+{{--                                            </div>--}}
+{{--                                            <div class="col-sm-6 mt-20">--}}
+{{--                                                <div class="form-group">--}}
+{{--                                                    <label for="lstCountry">Country <span class="required">*</span></label>--}}
+{{--                                                    <select class="form-control {{$Theme['input-size']}} select2" id="lstCountry" data-selected="<?php if($isEdit){ echo $EditData->CountryID ?? '';} ?>">--}}
+{{--                                                        <option value="">Select a Country</option>--}}
+{{--                                                    </select>--}}
+{{--                                                    <div class="errors BA err-sm" id="lstCountry-err"></div>--}}
+{{--                                                </div>--}}
+{{--                                            </div>--}}
+{{--                                        </div>--}}
+{{--                                    </div>--}}
                                     <div class="tab" data-page="Shipping Address">
                                         <div class="row">
                                             <div class="col-sm-12 text-right">
@@ -152,7 +152,7 @@
                                             <div class="col-sm-12">
                                                 <table class="table" id="tblShippingAddress">
                                                     <tbody>
-                                                    @if($isEdit)
+                                                    @if($isEdit && isset($EditData->SAddress))
                                                         @foreach ($EditData->SAddress as $key => $item)
                                                             <tr id="{{ $key + 1 }}" data-aid="{{ $item->AID }}">
                                                                 <td class="text-right checkbox1">
@@ -162,11 +162,11 @@
                                                                     </div>
                                                                 </td>
                                                                 <td class="pointer">
-                                                                    <b>{{ $item->Address }}</b>,<br>
+                                                                    <b>{{ $item->Address ?? '' }}</b>,<br>
                                                                     {{--                                                                    {{ $item->CityName }}, {{ $item->TalukName }},<br>--}}
-                                                                    {{ $item->CityName }},<br>
-                                                                    {{ $item->DistrictName }}, {{ $item->StateName }},<br>
-                                                                    {{ $item->CountryName }} - {{ $item->PostalCode }}.
+                                                                    {{ $item->CityName ?? '' }},<br>
+                                                                    {{ $item->DistrictName ?? '' }}, {{ $item->StateName ?? '' }},<br>
+                                                                    {{ $item->CountryName ?? '' }} - {{ $item->PostalCode ?? '' }}.
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <button type="button" class="btn btn-sm btn-outline-success m-5 btnEditSAddress"><i class="fa fa-pencil"></i></button>
@@ -399,10 +399,10 @@
                 if((page=="Manage Customers")){
                     $('.errors.Customer').html('');
                     let CustomerName=$('#txtCustomerName').val();
+                    let nick_name=$('#txtNickName').val();
                     let MobileNo1=$('#txtMobileNo1').val();
-                    let MobileNo2=$('#txtMobileNo2').val();
                     let Email=$('#txtEmail').val();
-                    let CusTypeID=$('#lstCusType').val();
+                    // let CusTypeID=$('#lstCusType').val();
                     if(!CustomerName){
                         $('#txtCustomerName-err').html('Customer Name is required');status=false;
                     }else if(CustomerName.length<2){
@@ -410,60 +410,66 @@
                     }else if(CustomerName.length>100){
                         $('#txtCustomerName-err').html('The Customer Name is not greater than 100 characters.');status=false;
                     }
+                    if(!nick_name){
+                        $('#txtNickName-err').html('Nick Name is required');status=false;
+                    }else if(nick_name.length<2){
+                        $('#txtNickName-err').html('The Nick Name is must be greater than 2 characters.');status=false;
+                    }else if(nick_name.length>100){
+                        $('#txtNickName-err').html('The Nick Name is not greater than 100 characters.');status=false;
+                    }
                     let mobilePattern = /^\d{10}$/;
                     if(!MobileNo1){
                         $('#txtMobileNo1-err').html('Mobile Number is required.');status=false;
                     }else if (!mobilePattern.test(MobileNo1)){
                         $("#txtMobileNo1-err").html("Mobile Number must be 10 digit");
                     }
-                    if (MobileNo2.length > 0 && !mobilePattern.test(MobileNo2)){
-                        $("#txtMobileNo2-err").html("Alternate Mobile Number must be 10 digit");status=false;
-                    }
-                    let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    // let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-                    if(!Email){
-                        $('#txtEmail-err').html('Email is required.');status=false;
-                    }else if (!emailPattern.test(Email)) {
-                        $("#txtEmail-err").html("Enter a valid email address");status=false;
-                    }
-                    if(!CusTypeID){
-                        $('#lstCusType-err').html('Customer Type is required.');status=false;
-                    }
-                    if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
-                }else if(page=="Billing Address"){
-                    $('.errors.BA').html('');
-                    Address=$('#txtAddress').val();
-                    PostalCode=$('#lstCity option:selected').attr('data-postal');
-                    CityID=$('#lstCity').val();
-                    // TalukID=$('#lstTaluk').val();
-                    DistrictID=$('#lstDistricts').val();
-                    StateID=$('#lstState').val();
-                    CountryID=$('#lstCountry').val();
-                    if(!PostalCode){
-                        $('#txtPostalCode-err').html('Postal Code is required.');status=false;isAddress=true;
-                    }
-                    if(CityID==""){
-                        $('#lstCity-err').html('City is required.');status=false;isAddress=true;
-                    }
-                    // if(TalukID==""){
-                    //     $('#lstTaluk-err').html('Taluk is required.');status=false;isAddress=true;
+                    // if(Email !== ""){
+                    //     $('#txtEmail-err').html('Email is required.');status=false;
+                    // }else if (!emailPattern.test(Email)) {
+                    //     $("#txtEmail-err").html("Enter a valid email address");status=false;
                     // }
-                    if(DistrictID==""){
-                        $('#lstDistricts-err').html('District is required.');status=false;isAddress=true;
-                    }
-                    if(StateID==""){
-                        $('#lstState-err').html('State is required.');status=false;isAddress=true;
-                    }
-                    if(CountryID==""){
-                        $('#lstCountry-err').html('Country is required.');status=false;isAddress=true;
-                    }
-                    if(Address==""){
-                        $('#txtAddress-err').html('Address is required.');status=false;
-                    }else if(Address.length<10){
-                        $('#txtAddress-err').html('Address must be greater than 10 characters');status=false;isAddress=true;
-                    }
+                    // if(!CusTypeID){
+                    //     $('#lstCusType-err').html('Customer Type is required.');status=false;
+                    // }
                     if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
-                }else if(page=="Shipping Address"){
+                }
+                // else if(page=="Billing Address"){
+                //     $('.errors.BA').html('');
+                //     Address=$('#txtAddress').val();
+                //     PostalCode=$('#lstCity option:selected').attr('data-postal');
+                //     CityID=$('#lstCity').val();
+                //     // TalukID=$('#lstTaluk').val();
+                //     DistrictID=$('#lstDistricts').val();
+                //     StateID=$('#lstState').val();
+                //     CountryID=$('#lstCountry').val();
+                //     if(!PostalCode){
+                //         $('#txtPostalCode-err').html('Postal Code is required.');status=false;isAddress=true;
+                //     }
+                //     if(CityID==""){
+                //         $('#lstCity-err').html('City is required.');status=false;isAddress=true;
+                //     }
+                //     // if(TalukID==""){
+                //     //     $('#lstTaluk-err').html('Taluk is required.');status=false;isAddress=true;
+                //     // }
+                //     if(DistrictID==""){
+                //         $('#lstDistricts-err').html('District is required.');status=false;isAddress=true;
+                //     }
+                //     if(StateID==""){
+                //         $('#lstState-err').html('State is required.');status=false;isAddress=true;
+                //     }
+                //     if(CountryID==""){
+                //         $('#lstCountry-err').html('Country is required.');status=false;isAddress=true;
+                //     }
+                //     if(Address==""){
+                //         $('#txtAddress-err').html('Address is required.');status=false;
+                //     }else if(Address.length<10){
+                //         $('#txtAddress-err').html('Address must be greater than 10 characters');status=false;isAddress=true;
+                //     }
+                //     if(status==false){$("html, body").animate({ scrollTop: 0 }, "slow");}
+                // }
+                else if(page=="Shipping Address"){
                     let TotRows=$('#tblShippingAddress tbody tr').length;
                     let isSelectedDefaultShipping=$('input[type="radio"][name="SAddress"]:checked').length
                     if(TotRows<=0){
@@ -709,17 +715,17 @@
                 let formData=new FormData();
                 formData.append('CustomerName',$('#txtCustomerName').val());
                 formData.append('MobileNo1',$('#txtMobileNo1').val());
-                formData.append('MobileNo2',$('#txtMobileNo2').val());
+                formData.append('nick_name',$('#txtNickName').val());
                 formData.append('Email',$('#txtEmail').val());
-                formData.append('CusTypeID',$('#lstCusType').val());
+                // formData.append('CusTypeID',$('#lstCusType').val());
                 formData.append('ActiveStatus',$('#lstActiveStatus').val());
-                formData.append('Address',$('#txtAddress').val());
-                formData.append('PostalCodeID',$('#lstCity option:selected').attr('data-postal'));
-                formData.append('CityID',$('#lstCity').val());
-                // formData.append('TalukID',$('#lstTaluk').val());
-                formData.append('DistrictID',$('#lstDistricts').val());
-                formData.append('StateID',$('#lstState').val());
-                formData.append('CountryID',$('#lstCountry').val());
+                // formData.append('Address',$('#txtAddress').val());
+                // formData.append('PostalCodeID',$('#lstCity option:selected').attr('data-postal'));
+                // formData.append('CityID',$('#lstCity').val());
+                // // formData.append('TalukID',$('#lstTaluk').val());
+                // formData.append('DistrictID',$('#lstDistricts').val());
+                // formData.append('StateID',$('#lstState').val());
+                // formData.append('CountryID',$('#lstCountry').val());
                 formData.append('removeCustomerImage', $('#txtCustomerImage').attr('data-remove'));
                 if(tmp.coverImage.uploadPath!=""){
                     formData.append('CustomerImage', JSON.stringify(tmp.coverImage));
@@ -953,7 +959,7 @@
                 $('#'+id).select2();
             }
             getCountry({},'lstCountry');
-            getCustomerType();
+            // getCustomerType();
             @if($isEdit)
             $('#btnGSearchPostalCode').trigger('click');
             @endif
