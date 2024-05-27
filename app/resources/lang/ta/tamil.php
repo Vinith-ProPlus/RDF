@@ -1,5 +1,5 @@
 <?php
-return $r = [
+return $translations = [
     "Choose The Dry Fruits which you love most..." => "நீங்கள் மிகவும் விரும்பும் உலர் பழங்களை தேர்வு செய்யவும்...",
     "Wholesale & Retail DryFruits | Spices | Confectionaries" => "மொத்த விற்பனை மற்றும் சில்லறை வியாபாரம் உலர் பழங்கள் | மசாலா | மிட்டாய்கள்",
     "Enter Your 10 Digit Mobile Number" => "உங்கள் 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்",
@@ -218,12 +218,46 @@ return $r = [
     "Ticket details" => "டிக்கெட் விவரங்கள்",
     "Customer name" => "வாடிக்கையாளர் பெயர்",
     "Reply" => "பதில்",
-    "Upload Attachment" => "இணைப்பு பதிவேற்றவும்"
+    "Upload Attachment" => "இணைப்பு பதிவேற்றவும்",
+    "Move to delivered" => "விநியோகத்திற்கு நகர்த்து",
+    "No Data Found" => "தகவல் கிடைக்கவில்லை",
+    "No trending items to display" => "காட்சிக்கு முந்தைய உருப்படிகள் இல்லை",
+    "No categories to display" => "காட்சிக்கு வகைகள் இல்லை",
+    "No images to display" => "காட்சிக்கு படங்கள் இல்லை",
+    "Whoops" => "அடடா",
+    "No internet connection found." => "இணைய இணைப்பு கிடைக்கவில்லை.",
+    "Check your connection or Try again" => "உங்கள் இணைப்பைச் சரிபார்க்கவும் அல்லது மீண்டும் முயற்சிக்கவும்",
+    "Reviews" => "விமர்சனங்கள்",
+    "Thank you for sharing your valuable ratings & reviews ! Enjoy your shopping with us" => "உங்கள் மதிப்பீடுகள் மற்றும் விமர்சனங்களை பகிர்ந்ததற்கு நன்றி! எங்களுடன் உங்கள் ஷாப்பிங் அனுபவத்தை மகிழுங்கள்",
+    "Please fill the details and select rating" => "தகவல்களை பூர்த்தி செய்து மதிப்பீட்டைத் தேர்ந்தெடுக்கவும்",
+    "Please fill the details" => "தகவல்களை பூர்த்தி செய்யவும்",
+    "Address Type Cannot be Empty" => "முகவரி வகை காலியாக இருக்க முடியாது",
+    "Name Cannot be Empty" => "பெயர் காலியாக இருக்க முடியாது",
+    "Email Cannot be Empty" => "மின்னஞ்சல் காலியாக இருக்க முடியாது",
+    "Mobile number Cannot be Empty" => "மொபைல் எண் காலியாக இருக்க முடியாது",
+    "Provide a valid mobile number" => "சரியான மொபைல் எண்ணை வழங்கவும்",
+    "Address cannot be Empty" => "முகவரி காலியாக இருக்க முடியாது",
+    "Pincode cannot be Empty" => "அஞ்சல் குறியீடு காலியாக இருக்க முடியாது",
+    "City cannot be Empty" => "நகரம் காலியாக இருக்க முடியாது",
+    "Only maximum of 4 attachments can be added." => "அதிகபட்சம் 4 இணைப்புகள் மட்டுமே சேர்க்கப்படலாம்.",
+    "Search your product required." => "தேவையான தயாரிப்பைத் தேடவும்.",
+    "Coupon applied successfully" => "கூப்பன் வெற்றிகரமாக பயன்படுத்தப்பட்டது",
+    "Failed to delete account" => "கணக்கை நீக்க முடியவில்லை",
+    "Failed to update cart" => "வண்டியை புதுப்பிக்க முடியவில்லை",
+    "Failed to delete cart item" => "வண்டி உருப்படியை நீக்க முடியவில்லை",
+    "Failed to load data" => "தகவலை ஏற்ற முடியவில்லை",
+    "Updated Successfully" => "வெற்றிகரமாக புதுப்பிக்கப்பட்டது",
+    "Invalid response format" => "தவறான பதில் வடிவம்",
+    "Failed to upload Image" => "படத்தை பதிவேற்ற முடியவில்லை",
+    "Failed to update" => "புதுப்பிக்க முடியவில்லை",
+    "something went wrong" => "ஏதோ தவறாகப் போய்விட்டது",
+    "Wishlist item removed successfully" => "விருப்பப்பட்டியலிலிருந்து உருப்படி வெற்றிகரமாக நீக்கப்பட்டது",
+    "After payment you can't go back" => "பணம் செலுத்திய பிறகு நீங்கள் திரும்பிச் செல்ல முடியாது"
 ];
 
 App\Models\TranslationKey::truncate();
-foreach ($r as $key => $value){
+foreach ($translations as $key => $value){
     App\Models\TranslationKey::updateOrCreate(['key' => $key]);
 }
-App\Models\Translation::find(2)->update(['value' => json_encode($r)]);
+App\Models\Translation::find(2)->update(['value' => json_encode($translations)]);
 ?>
