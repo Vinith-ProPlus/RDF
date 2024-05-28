@@ -252,7 +252,13 @@ return $translations = [
     "Failed to update" => "புதுப்பிக்க முடியவில்லை",
     "something went wrong" => "ஏதோ தவறாகப் போய்விட்டது",
     "Wishlist item removed successfully" => "விருப்பப்பட்டியலிலிருந்து உருப்படி வெற்றிகரமாக நீக்கப்பட்டது",
-    "After payment you can't go back" => "பணம் செலுத்திய பிறகு நீங்கள் திரும்பிச் செல்ல முடியாது"
+    "After payment you can't go back" => "கட்டணம் செலுத்திய பிறகு நீங்கள் திரும்ப முடியாது",
+    "Are you sure?" => "நீங்கள் உறுதியாக இருக்கிறீர்களா?",
+    "Are you sure you want to leave this page?" => "இந்தப் பக்கத்தை விட்டு வெளியேற நீங்கள் உறுதியாக இருக்கிறீர்களா?",
+    "Alert" => "எச்சரிக்கை",
+    "After payment you, only back to Home." => "கட்டணம் செலுத்திய பிறகு, நீங்கள் மீண்டும் முகப்பிற்கு மட்டுமே செல்லலாம்.",
+    "Upload Attachments" => "இணைப்புகளைப் பதிவேற்றவும்",
+    "Image view" => "படக் காட்சி"
 ];
 
 App\Models\TranslationKey::truncate();
