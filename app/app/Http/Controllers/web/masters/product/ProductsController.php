@@ -176,7 +176,7 @@ class ProductsController extends Controller
 		ProductHelper::getSaveProcessStatus($this->UserID);
 	}
 	private function getProduct($ProductID){
-        $sql="SELECT P.ProductID, P.Slug, P.ProductName, P.ProductNameInTranslation, P.ProductType, P.Stages, P.RelatedProducts, P.HSNSAC, P.ProductCode, P.VideoURL, P.CTID, CT.PCTName, P.CID, C.PCName, P.SCID, SC.PSCName, P.UID, U.UName, U.UCode, P.TaxType, P.TaxID, P.PRate, P.SRate, P.Decimals, P.Description, ";
+        $sql="SELECT P.ProductID, P.Slug, P.ProductName, P.ProductNameInTranslation, P.ProductType, P.Stages, P.RelatedProducts, P.SKU, P.HSNSAC, P.ProductCode, P.VideoURL, P.CTID, CT.PCTName, P.CID, C.PCName, P.SCID, SC.PSCName, P.UID, U.UName, U.UCode, P.TaxType, P.TaxID, P.PRate, P.SRate, P.Decimals, P.Description, ";
         $sql.=" P.ShortDescription, P.Attributes, P.ProductImage, P.ProductBrochure, P.Images, P.ActiveStatus, P.DFlag FROM tbl_products as P LEFT JOIN tbl_product_category_type as CT ON CT.PCTID=P.CTID LEFT JOIN tbl_product_category as C ON C.PCID=P.CID ";
         $sql.=" LEFT JOIN tbl_product_subcategory as SC ON SC.PSCID=P.SCID LEFT JOIn tbl_uom as U ON U.UID=P.UID LEFT JOIN tbl_tax as T ON T.TaxID=P.TaxID Where P.ProductID='".$ProductID."'";
 

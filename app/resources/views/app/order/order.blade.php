@@ -73,6 +73,7 @@
                 <thead>
                     <tr>
                         <th class="text-center">ID</th>
+                        <th class="text-center">Order No</th>
                         <th class="text-center">Customer Name</th>
                         <th class="text-center">Amount</th>
                         <th class="text-center">Status</th>

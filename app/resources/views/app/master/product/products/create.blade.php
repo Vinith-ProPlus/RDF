@@ -425,6 +425,14 @@
                                     <div class="col-1 col-lg-2 d-flex align-items-center"></div>
                                 </div>
                                 <div class="row mt-20">
+                                    <div class="col-4 col-lg-2 d-flex align-items-center"><div>SKU<span class="required"> * </span></div></div>
+                                    <div class="col-6 col-lg-8">
+                                        <input type="text" id="txtSKU" class="form-control" placeholder="SKU" value="{{ $isEdit ? ($data->SKU ?? '') : '' }}">
+                                        <div class="errors err-sm" id="txtSKU-err"></div>
+                                    </div>
+                                    <div class="col-1 col-lg-2 d-flex align-items-center"></div>
+                                </div>
+                                <div class="row mt-20">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >HSN/SAC</div></div>
                                     <div class="col-6 col-lg-8">
                                         <input type="text" id="txtHSNSAC" class="form-control" placeholder="HSN / SAC" value="<?php if($isEdit){ echo $data->HSNSAC;} ?>">
@@ -1776,6 +1784,7 @@
             // formData.Stages=$('#lstStages').val();
             formData.RelatedProducts=$('#lstRProducts').val();
             formData.VideoURL=$('#txtVideoURL').val();
+            formData.SKU=$('#txtSKU').val();
             formData.HSNSAC=$('#txtHSNSAC').val();
             formData.CategoryType=$('#lstCategoryType').val();
             formData.Category=$('#lstCategory').val();
@@ -1810,6 +1819,10 @@
                 $('#txtProductName-err').html('The Product Name must be greater than 2 characters');status=false;
             }else if(data.ProductName.length>150){
                 $('#txtProductName-err').html('The Product Name may not be greater than 150 characters');status=false;
+            }
+
+            if(data.SKU === ""){
+                $('#txtSKU-err').html('SKU is required');status=false;
             }
 
             $('.PNameLanguageFieldsCheck').each(function() {
@@ -2061,6 +2074,7 @@
                                     if(key=="ProductName"){$('#txtProductName-err').html(KeyValue);}
                                     if(key=="ProductType"){$('#lstProductType-err').html(KeyValue);}
                                     if(key=="ProductCode"){$('#txtProductCode-err').html(KeyValue);}
+                                    if(key=="SKU"){$('#txtSKU-err').html(KeyValue);}
                                     if(key=="HSNSAC"){$('#txtHSNSAC-err').html(KeyValue);}
                                     if(key=="CategoryType"){$('#txtCategoryType-err').html(KeyValue);}
                                     if(key=="Category"){$('#txtCategory-err').html(KeyValue);}

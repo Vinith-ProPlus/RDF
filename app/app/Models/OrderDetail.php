@@ -29,6 +29,7 @@ class OrderDetail extends Model
         "ProductID",
         "ProductName",
         "ProductNameInTranslation",
+        "SKU",
         "ProductVariationID",
         "Qty",
         "PRate",

@@ -195,7 +195,7 @@ class dashboardController extends Controller
     {
         $ServerSideProcess = new ServerSideProcess();
         $columns = array(
-            array('db' => 'O.OrderID', 'dt' => '0'),
+            array('db' => 'O.OrderNo', 'dt' => '0'),
             array('db' => 'O.OrderDate', 'dt' => '1'),
             array('db' => 'O.CustomerName', 'dt' => '2',),
             array('db' => 'O.MobileNo1', 'dt' => '3'),
@@ -205,7 +205,7 @@ class dashboardController extends Controller
             array('db' => 'O.OrderID', 'dt' => '7')
         );
         $columns1 = array(
-            array('db' => 'OrderID', 'dt' => '0'),
+            array('db' => 'OrderNo', 'dt' => '0'),
             array('db' => 'OrderDate', 'dt' => '1', 'formatter' => function ($d, $row) {
                 return date("d - M - Y", strtotime($d));
             }),

@@ -406,23 +406,25 @@ class OrderController extends Controller{
 			$ServerSideProcess=new ServerSideProcess();
 			$columns = array(
 				array( 'db' => 'O.OrderID', 'dt' => '0' ),
-				array( 'db' => 'O.CustomerName', 'dt' => '1'),
-				array( 'db' => 'O.TotalAmount', 'dt' => '2'),
-				array( 'db' => 'O.TrackStatus', 'dt' => '3' ),
-				array( 'db' => 'O.OrderDate', 'dt' => '4'),
-				array( 'db' => 'O.OrderID', 'dt' => '5')
+				array( 'db' => 'O.OrderNo', 'dt' => '1' ),
+				array( 'db' => 'O.CustomerName', 'dt' => '2'),
+				array( 'db' => 'O.TotalAmount', 'dt' => '3'),
+				array( 'db' => 'O.TrackStatus', 'dt' => '4' ),
+				array( 'db' => 'O.OrderDate', 'dt' => '5'),
+				array( 'db' => 'O.OrderID', 'dt' => '6')
 			);
 			$columns1 = array(
 				array( 'db' => 'OrderID', 'dt' => '0'),
-				array( 'db' => 'CustomerName', 'dt' => '1'),
+				array( 'db' => 'OrderNo', 'dt' => '1'),
+				array( 'db' => 'CustomerName', 'dt' => '2'),
 //				array( 'db' => 'CreatedBy', 'dt' => '1','formatter' =>function($d,$row){
 //                    $customer =DB::Table("tbl_customer")->Where("CustomerID", $row['CreatedBy'])->first();
 //                    $html= $customer->CustomerName ?? $customer->nick_name;
 //                    return $html;
 //
 //                } ),
-				array( 'db' => 'TotalAmount', 'dt' => '2'),
-				array( 'db' => 'TrackStatus', 'dt' => '3' ,'formatter' => function( $d, $row ) {
+				array( 'db' => 'TotalAmount', 'dt' => '3'),
+				array( 'db' => 'TrackStatus', 'dt' => '4' ,'formatter' => function( $d, $row ) {
                     $Status="<span class='badge block  badge-secondary mr-2 '> Pending </span>";
                     $result=DB::Table("tbl_order")->Where("OrderID",$row['OrderID'])->get();
                     if(count($result)>0){
@@ -446,12 +448,12 @@ class OrderController extends Controller{
                     }
 					return $Status;
 				}),
-				array( 'db' => 'OrderDate', 'dt' => '4','formatter' => function( $d, $row ) {
+				array( 'db' => 'OrderDate', 'dt' => '5','formatter' => function( $d, $row ) {
                     return date("d - M - Y",strtotime($d));
                 } ),
                 array(
                     'db' => 'OrderID',
-                    'dt' => '5',
+                    'dt' => '6',
                     'formatter' => function ($d, $row) {
                         $html = '';
                         if ($this->general->isCrudAllow($this->CRUD, "edit")) {
