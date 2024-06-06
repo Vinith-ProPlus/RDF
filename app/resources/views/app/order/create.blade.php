@@ -1,7 +1,6 @@
 @extends('layouts.app')
 @section('content')
     <style>
-
         select.minimal {
             background-image:
                 linear-gradient(45deg, transparent 50%, gray 50%),
@@ -42,7 +41,6 @@
 			<div class="col-sm-12">
 				<ol class="breadcrumb">
 					<li class="breadcrumb-item"><a href="{{ url('/') }}" data-original-title="" title=""><i class="f-16 fa fa-home"></i></a></li>
-{{--					<li class="breadcrumb-item">Orders</li>--}}
 					<li class="breadcrumb-item"><a href="{{url('/')}}/admin/orders">{{$PageTitle}}</a></li>
                     <li class="breadcrumb-item">Update</li>
 				</ol>
@@ -59,38 +57,44 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="form-group">
+                                <label for="lstCOType"><b>Ordered No :</b></label>
+                                <label>{{ $EditData[0]->OrderNo ?? '' }}</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-12 mt-20">
+                            <div class="form-group">
                                 <label for="lstCOType"><b>Ordered Date :</b></label>
-                                <label>{{ $EditData[0]->OrderDate }}</label>
+                                <label>{{ $EditData[0]->OrderDate ?? '' }}</label>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstCOType"><b>Customer Name :</b></label>
-                                <label>{{ $EditData[0]->CustomerName }}</label>
+                                <label>{{ $EditData[0]->CustomerName ?? '' }}</label>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstCOType"><b>Customer Email :</b></label>
-                                <label>{{ $EditData[0]->Email }}</label>
+                                <label>{{ $EditData[0]->Email ?? '' }}</label>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstCOType"><b>Customer Mobile :</b></label>
-                                <label>{{ $EditData[0]->MobileNo1 }}</label>
+                                <label>{{ $EditData[0]->MobileNo1 ?? '' }}</label>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstCOType"><b>Address :</b></label>
-                                <label>{{ $EditData[0]->CompleteAddress }}</label>
+                                <label>{{ $EditData[0]->CompleteAddress ?? '' }}</label>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="form-group">
                                 <label for="lstCOType"><b>Status :</b></label>
-                                <label>{{ $EditData[0]->Status }}</label>
+                                <label>{{ $EditData[0]->Status ?? '' }}</label>
                             </div>
                         </div>
                         <div class="col-sm-12 mt-20">
@@ -105,30 +109,38 @@
                                 <label>{{ $EditData[0]->paymentStatus }}</label>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-md-4 mt-20 {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}">
-                            <div class="form-group">
-                                <label for="trackStatus"><b>Track status <span class="required"> * </span></b></label>
-                                <select class="form-control {{$Theme['input-size']}} minimal" id="trackStatus">
-                                    <option value="Order Confirmed" @if($isEdit==true) @if($EditData[0]->type=="Order Confirmed") selected @endif @endif @if(in_array($EditData[0]->TrackStatus, ["Shipped", "Out To Delivery", "Delivery Expected On", "Delivered"]))
-                                        disabled
-                                        @endif>Order Confirmed</option>
-                                    <option value="Shipped" @if($isEdit==true) @if($EditData[0]->TrackStatus=="Shipped") selected @endif @endif @if(in_array($EditData[0]->TrackStatus, ["Out To Delivery", "Delivery Expected On", "Delivered"]))
-                                        disabled
-                                        @endif>Shipped</option>
-                                    <option value="Out To Delivery" @if($isEdit==true) @if($EditData[0]->TrackStatus=="Out To Delivery") selected @endif @endif @if(in_array($EditData[0]->TrackStatus, ["Delivery Expected On", "Delivered"]))
-                                        disabled
-                                        @endif>Out To Delivery</option>
-                                    <option value="Delivery Expected On" @if($isEdit==true) @if($EditData[0]->TrackStatus=="Delivery Expected On") selected @endif @endif @if(in_array($EditData[0]->TrackStatus, ["Delivered"]))
-                                        disabled
-                                        @endif>Delivery Expected On</option>
-                                    <option value="Delivered" @if($isEdit==true) @if($EditData[0]->TrackStatus=="Delivered") selected @endif @endif>Delivered</option>
-                                </select>
-                                <div class="errors" id="trackStatus-err"></div>
+                        <div class="row col-12">
+                            <div class="col-sm-6 col-md-4 mt-20 {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}">
+                                <div class="form-group">
+                                    <label for="trackStatus"><b>Track status :</b></label>
+                                    <label>{{ $EditData[0]->TrackStatus }}</label>
+                                    <div class="errors" id="trackStatus-err"></div>
+                                </div>
                             </div>
+                        </div>
+{{--                        <div class="row col-12 {{ (!($EditData[0]->TrackStatus=="Shipped") || !($EditData[0]->TrackStatus=="Delivered")) ? 'd-none' : '' }}" id="courierDetailsDiv">--}}
+                        <div class="row col-12" id="courierDetailsDiv">
+                            <div class="col-sm-6 col-md-4">
+                                <div class="form-group mt-20">
+                                    <label for="courierName"><b>Courier Name :<span
+                                                class="required"> * </span></b></label>
+                                    <input type="text" class="form-control" id="courierName"
+                                           value="{{ $EditData[0]->courierName ?? '' }}" autocomplete="off">
+                                    <div class="errors" id="courierName-err"></div>
+                                </div>
+                                <div class="form-group mt-20">
+                                    <label for="courierTrackNo"><b>Courier Track No :<span
+                                                class="required"> * </span></b></label>
+                                    <input type="text" class="form-control" id="courierTrackNo"
+                                           value="{{ $EditData[0]->courierTrackNo ?? '' }}" autocomplete="off">
+                                    <div class="errors" id="courierTrackNo-err"></div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="hidden-barcode-input" style="position: absolute; top: -9999px;">
                         </div>
                         <div class="col-sm-12 mt-20">
                             <div class="table-responsive">
-                            <table class="table table-sm no-footer dtr-inline">
+                            <table class="table table-sm no-footer dtr-inline" id="orderDetailsTable">
                                 <thead>
                                 <tr>
                                     <td>S.No</td>
@@ -137,6 +149,7 @@
                                     <td>Qty</td>
                                     <td style="width: 140px !important;">Rate</td>
                                     <td style="width: 140px !important;">Total</td>
+                                    <td style="width: 140px !important;">Packing Status</td>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -148,22 +161,29 @@
                                         <td>{{ $product->Qty ?? '-' }}</td>
                                         <td>{{ $product->SRate ?? '-' }}</td>
                                         <td>{{ $product->Amount ?? '-' }}</td>
+                                        <td data-td-sku="{{ $product->SKU ?? '' }}">
+                                            <button type="button"
+                                                    class="btn btn-warning btn-sm-warning mr-10 addPacked"
+                                                    data-SKU="{{ $product->SKU ?? '' }}">Click to Add
+                                            </button>
+                                            <p class="text-danger" data-SKU="{{ $product->SKU ?? '' }}">Need to be packed</p>
+                                        </td>
                                     </tr>
                                 @endforeach
                                 <tr>
-                                    <td colspan="5" class="text-end">Sub-Total :</td>
+                                    <td colspan="6" class="text-end">Sub-Total :</td>
                                     <td>{{ $EditData[0]->SubTotal ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="5" class="text-end">Shipping Charge :</td>
+                                    <td colspan="6" class="text-end">Shipping Charge :</td>
                                     <td>{{ $EditData[0]->ShippingCharge ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="5" class="text-end">Discount :</td>
+                                    <td colspan="6" class="text-end">Discount :</td>
                                     <td>{{ $EditData[0]->DiscountAmount ?? '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="5" class="text-end">Grand-Total :</td>
+                                    <td colspan="6" class="text-end">Grand-Total :</td>
                                     <td>{{ $EditData[0]->TotalAmountInString ?? '-' }}</td>
                                 </tr>
                                 </tbody>
@@ -179,8 +199,8 @@
                             <a href="{{ URL::previous() }}" class="btn {{$Theme['button-size']}} btn-outline-dark mr-10" id="btnCancel">Back</a>
                             @endif
 
-                            @if(($crud['add'] && ($isEdit==false))||(($crud['edit']==true) && ($isEdit==true)))
-                                <button class="btn {{$Theme['button-size']}} btn-outline-success btn-air-success {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}" id="btnSave">@if($isEdit==true) Update @endif</button>
+                            @if(($crud['add'] && ($isEdit==false))||(($crud['edit']==true) && ($isEdit)))
+                                <button class="btn {{$Theme['button-size']}} btn-outline-success btn-air-success {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}" id="btnSave">@if($isEdit) Update @endif</button>
                             @endif
                         </div>
                     </div>
@@ -193,20 +213,73 @@
 @section('scripts')
 <script>
     $(document).ready(function(){
-        const formValidation=async()=>{
+        var barcode = "";
+        var interval;
+
+
+        $(document).on('keydown', function(e) {
+            clearInterval(interval);
+            if (e.which === 13) {
+                if (barcode.length > 3) {
+                    $('#hidden-barcode-input').val(barcode).trigger('input');
+                }
+                barcode = "";
+            } else {
+                if (e.key.length === 1) {
+                    barcode += e.key;
+                }
+                interval = setTimeout(function() {
+                    barcode = "";
+                }, 200);
+            }
+        });
+
+        $('#hidden-barcode-input').on('input', function() {
+            var inputSKU = $(this).val().trim();
+            var packedButton = $("button.addPacked[data-SKU='" + inputSKU + "']");
+            if (packedButton.length) {
+                if (packedButton.hasClass('btn-warning')) {
+                    packedButton.removeClass('btn-warning').addClass('btn-success').text('Click to Remove').removeClass('addPacked').addClass('removePacked');
+                } else {
+                    packedButton.removeClass('btn-success').addClass('btn-warning').text('Click to Add').removeClass('removePacked').addClass('addPacked');
+                }
+            }
+            $(this).val('');
+        });
+        const formValidation = async () => {
             $('.errors').html('');
-            let status=true;
-            let trackStatus=$('#trackStatus').val();
+            let status = true;
+            let courierName = $('#courierName').val();
+            let courierTrackNo = $('#courierTrackNo').val();
+            if (courierName === "") {
+                $('#courierName-err').html('The Courier name field is required.');
+                status = false;
+            }
+            if (courierTrackNo === "") {
+                $('#courierTrackNo-err').html('The Courier track no field is required.');
+                status = false;
+            }
+
+            $('.addPacked').each(function() {
+                $("p.text-danger[data-SKU='" + $(this).attr('data-SKU')  + "']").removeClass('d-none');
+                status = false;
+            });
+
+            $('.removePacked').each(function() {
+                $("p.text-danger[data-SKU='" + $(this).attr('data-SKU')  + "']").addClass('d-none');
+            });
 
             if (status === false) {
-                $("html, body").animate({ scrollTop: 0 }, "slow");
+                $('#btnSave').blur();
+                $("html, body").animate({scrollTop: 0}, "slow");
             }
-            if(status===false){$("html, body").animate({ scrollTop: 0 }, "slow");}
             return status;
         }
         const GetData = async () => {
             let formData = new FormData();
-            formData.append('TrackStatus', $('#trackStatus').val());
+            formData.append('courierName', $('#courierName').val());
+            formData.append('courierTrackNo', $('#courierTrackNo').val());
+
             return formData;
         }
         $('#btnSave').click(async function(){
@@ -265,7 +338,7 @@
                                     confirmButtonText: "Okay",
                                     closeOnConfirm: false
                                 },function(){
-                                    @if($isEdit==true)
+                                    @if($isEdit)
                                         window.location.replace("{{url('/')}}/admin/orders");
                                     @else
                                         window.location.reload();
@@ -292,6 +365,16 @@
                         }
                     });
                 });
+            }
+        });
+
+        $(document).on('click', 'button.addPacked, button.removePacked', function() {
+            var $btn = $(this);
+            if ($btn.hasClass('btn-warning')) {
+                $btn.removeClass('btn-warning').addClass('btn-success').text('Click to Remove').removeClass('addPacked').addClass('removePacked').blur();
+                $("p.text-danger[data-SKU='" + $btn.attr('data-SKU')  + "']").addClass('d-none');
+            } else {
+                $btn.removeClass('btn-success').addClass('btn-warning').text('Click to Add').removeClass('removePacked').addClass('addPacked').blur();
             }
         });
     });
