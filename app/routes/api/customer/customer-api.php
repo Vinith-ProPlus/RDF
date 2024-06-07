@@ -61,6 +61,7 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/order/create/buy-now/preview', [CustomerAuthController::class, 'buyNowOrderPreview']);
     Route::post('/get/OrderList', [CustomerAuthController::class, 'customerOrderList']);
     Route::post('/order/update/payment-success', [CustomerAuthController::class, 'paymentSuccessStatus']);
+    Route::post('/order/update/delivered-status', [CustomerAuthController::class, 'updateDeliveredStatus']);
 
 //    Review
     Route::post('/review/create', [CustomerAuthController::class, 'createReview']);

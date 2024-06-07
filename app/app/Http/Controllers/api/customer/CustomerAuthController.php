@@ -1486,24 +1486,6 @@ class CustomerAuthController extends Controller{
                         "StatusDate" => null,
                         "orderBy" => 2,
                         "UpdatedBy" => $CustomerID
-                    ],
-                    [
-                        "CustomerID" => $CustomerID,
-                        "OrderID" => $OrderID,
-                        "Status" => "Out To Delivery",
-                        "Description" => "Will Be Updated Once Shipping Is Completed",
-                        "StatusDate" => null,
-                        "orderBy" => 3,
-                        "UpdatedBy" => $CustomerID
-                    ],
-                    [
-                        "CustomerID" => $CustomerID,
-                        "OrderID" => $OrderID,
-                        "Status" => "Delivery Expected On",
-                        "Description" => "",
-                        "StatusDate" => Carbon::now()->addDays(5),
-                        "orderBy" => 4,
-                        "UpdatedBy" => $CustomerID
                     ]
                 ];
 
@@ -1531,6 +1513,51 @@ class CustomerAuthController extends Controller{
             logger($e);
             DB::rollBack();
             return $this->errorResponse($e, "Failed to update Payment status", 500);
+        }
+    }
+
+    public function updateDeliveredStatus(Request $request): JsonResponse
+    {
+        $customer = $request->auth_customer;
+        $CustomerID = $customer->CustomerID;
+        $validatedData = Validator::make($request->all(), [
+            'OrderID' => 'required|string|exists:tbl_order,OrderID'
+        ]);
+
+        if ($validatedData->fails()) {
+            return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $OrderID = $request->OrderID;
+            $orderDetails = Order::where('CreatedBy', $CustomerID)
+                ->where('OrderID', $OrderID)->first();
+            $shippedStatus = CustomerOrderTrack::where('OrderID', $OrderID)->whereStatus('Shipped')->whereNotNull('StatusDate')->exists();
+            if (($orderDetails->PaymentID !== null) && ($orderDetails->TrackStatus === "Shipped") && $shippedStatus) {
+                $orderDetails->update(['Status' => 'Delivered', 'TrackStatus' => 'Delivered']);
+                CustomerOrderTrack::firstOrCreate([
+                    "CustomerID" => $CustomerID,
+                    "OrderID" => $OrderID,
+                    "Status" => "Delivered",
+                    "Description" => "Your Order delivered successfully",
+                    "StatusDate" => Carbon::now(),
+                    "orderBy" => 3,
+                    "UpdatedBy" => $CustomerID
+                ]);
+
+                $Title = "Order Delivered";
+                $Message = "Your Order delivered successfully";
+                Helper::saveNotification($CustomerID, $Title, $Message, 'Order', $OrderID);
+                DB::commit();
+                return $this->successResponse([], "Your Order marked as delivered successfully");
+            } else {
+                return $this->errorResponse([], "Can't process your request", 500);
+            }
+        } catch (Exception $e) {
+            logger($e);
+            DB::rollBack();
+            return $this->errorResponse($e, "Failed to update Delivery status", 500);
         }
     }
 

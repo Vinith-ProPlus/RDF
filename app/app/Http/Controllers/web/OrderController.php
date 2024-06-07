@@ -424,25 +424,21 @@ class OrderController extends Controller{
 //
 //                } ),
 				array( 'db' => 'TotalAmount', 'dt' => '3'),
-				array( 'db' => 'TrackStatus', 'dt' => '4' ,'formatter' => function( $d, $row ) {
-                    $Status="<span class='badge block  badge-secondary mr-2 '> Pending </span>";
+				array( 'db' => 'TrackStatus', 'dt' => '4', 'formatter' => function( $d, $row ) {
+                    $Status="<span class='badge block badge-secondary mr-2'> Pending </span>";
                     $result=DB::Table("tbl_order")->Where("OrderID",$row['OrderID'])->get();
                     if(count($result)>0){
                         if($result[0]->DFlag==1){
-                            $Status="<span class='badge  block badge-danger mr-2'> Deleted </span>";
+                            $Status="<span class='badge block badge-danger mr-2'> Deleted </span>";
                         }else{
                             if($d== "Order Confirmed"){
-                                $Status="<span class='badge  block badge-warning mr-2 ' > Order Confirmed </span>";
+                                $Status="<span class='badge block badge-warning mr-2'> Order Confirmed </span>";
                             }elseif($d=="Shipped"){
-                                $Status="<span class='badge  block badge-success mr-2 ' > Shipped </span>";
-                            }elseif($d=="Out To Delivery"){
-                                $Status="<span class='badge  block badge-success mr-2 ' > Out To Delivery </span>";
-                            }elseif($d=="Delivery Expected On"){
-                                $Status="<span class='badge  block badge-success mr-2 ' > Delivery Expected On </span>";
+                                $Status="<span class='badge block badge-secondary mr-2'> Shipped </span>";
                             }elseif($d=="Delivered"){
-                                $Status="<span class='badge  block badge-success mr-2 ' > Delivered </span>";
+                                $Status="<span class='badge block badge-success mr-2'> Delivered </span>";
                             }else {
-                                $Status="<span class='badge  block badge-info mr-2 ' > Payment Pending </span>";
+                                $Status="<span class='badge block badge-info mr-2'> Payment Pending </span>";
                             }
                         }
                     }
@@ -457,7 +453,11 @@ class OrderController extends Controller{
                     'formatter' => function ($d, $row) {
                         $html = '';
                         if ($this->general->isCrudAllow($this->CRUD, "edit")) {
-                            $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="Edit"><i class="fa fa-pencil"></i></button>';
+                            if($row['TrackStatus'] === "Order Confirmed"){
+                                $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="Edit"><i class="fa fa-pencil"></i></button>';
+                            } else {
+                                $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="View"><i class="fa fa-eye"></i></button>';
+                            }
                         }
 //                        if ($this->general->isCrudAllow($this->CRUD, "delete")) {
 //                            $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-danger ' . $this->general->UserInfo['Theme']['button-size'] . ' btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
@@ -545,61 +545,37 @@ class OrderController extends Controller{
     public function update(Request $req, $OrderID)
     {
         if ($this->general->isCrudAllow($this->CRUD, "edit")) {
-            $OldData = array();
             $req->validate([
-                'TrackStatus' => ['required', Rule::in(["Shipped", "Out To Delivery", "Delivery Expected On", "Delivered"])]
+                'courierName' => ['required'],
+                'courierTrackNo' => ['required']
             ]);
             DB::beginTransaction();
             try {
                 $OldData = Order::where('OrderID', $OrderID)->first();
-                if(!$OldData->PaymentID){
+                if (!$OldData->PaymentID) {
                     return array('status' => false, 'message' => "Payment not completed. So, This Request can't be processed!");
                 }
                 $data = array(
-                    "TrackStatus" => $req->TrackStatus,
+                    "TrackStatus" => "Shipped",
+                    "courierName" => $req->courierName,
+                    "courierTrackNo" => $req->courierTrackNo,
                     "UpdatedBy" => $this->UserID,
                     "UpdatedOn" => date("Y-m-d H:i:s")
                 );
-                if($req->TrackStatus === "Delivered"){
-                    $data['Status'] = "Delivered";
-                }
-                $status = Order::where('OrderID', $OrderID)->update($data);
-
-                if ($req->TrackStatus === "Shipped") {
-                    $Description = "Your Order Has Been Shipped , You Will Receive Shipped Within 2 To 3  Days";
-                    $Title = "Shipment update";
-                    $Message = "Your Order shipped successfully";
-                } else if ($req->TrackStatus === "Out To Delivery") {
-                    $Description = "Your Order Is Out For Delivery, Our Delivery Person Will Reach You AnyTime";
-                    $Title = "Shipment update";
-                    $Message = "Your Order in Out of delivery stage";
-                } else if ($req->TrackStatus === "Delivery Expected On") {
-                    $Description = null;
-                    $Title = "Delivery Expected Today";
-                    $Message = "Your Order may delivered today..";
-                } else if ($req->TrackStatus === "Delivered") {
-                    $Description = "Your Order Has Been Delivered";
-                    $Title = "Order Delivered";
-                    $Message = "Your Order delivered successfully";
-                }
-                $TrackStatus = ($req->TrackStatus == "Delivered") ? "Delivery Expected On" : $req->TrackStatus;
-                CustomerOrderTrack::where('OrderID', $OrderID)->where('Status', $TrackStatus)
-                    ->update(["Status" => $req->TrackStatus, "Description"=> $Description, "StatusDate" => Carbon::now(), "UpdatedBy" => $this->UserID]);
-
-                Helper::saveNotification($OldData->CreatedBy,$Title,$Message,'Order',$OrderID);
+                Order::where('OrderID', $OrderID)->update($data);
+                $Description = "Your Order Has Been Shipped, You Will Receive Shipped Within 2 To 3 Days";
+                $Title = "Shipment update";
+                $Message = "Your Order shipped successfully";
+                CustomerOrderTrack::where('OrderID', $OrderID)->where('Status', "Shipped")
+                    ->update(["Description" => $Description, "StatusDate" => Carbon::now(), "UpdatedBy" => $this->UserID]);
+                Helper::saveNotification($OldData->CreatedBy, $Title, $Message, 'Order', $OrderID);
+                $NewData = Order::where('OrderID', $OrderID)->get();
+                $logData = array("Description" => "Order Track Status Updated", "ModuleName" => $this->ActiveMenuName, "Action" => cruds::UPDATE->value, "ReferID" => $OrderID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $this->UserID, "IP" => $req->ip());
+                logController::Store($logData);
                 DB::commit();
+                return array('status' => true, 'message' => "Track Status Updated Successfully");
             } catch (Exception $e) {
                 logger($e);
-                $status = false;
-            }
-
-            if ($status) {
-                DB::commit();
-                $NewData = Order::where('OrderID', $OrderID)->get();
-                $logData = array("Description" => "Order Track Status Updated ", "ModuleName" => $this->ActiveMenuName, "Action" => cruds::UPDATE->value, "ReferID" => $OrderID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $this->UserID, "IP" => $req->ip());
-                logController::Store($logData);
-                return array('status' => true, 'message' => "Track Status Updated Successfully");
-            } else {
                 DB::rollback();
                 return array('status' => false, 'message' => "Track Status Update Failed");
             }
@@ -607,7 +583,8 @@ class OrderController extends Controller{
             return array('status' => false, 'message' => 'Access denied');
         }
     }
-    private function sendMail($SupportID){
+
+    private function sendMail($SupportID) {
         try{
             $tdata=$this->getSupportDetails(array("SupportID"=>$SupportID));
             if(count($tdata)>0){

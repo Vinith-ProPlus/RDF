@@ -200,7 +200,7 @@ class dashboardController extends Controller
             array('db' => 'O.CustomerName', 'dt' => '2',),
             array('db' => 'O.MobileNo1', 'dt' => '3'),
             array('db' => 'O.TotalAmount', 'dt' => '4'),
-            array('db' => 'O.Status', 'dt' => '5'),
+            array('db' => 'O.TrackStatus', 'dt' => '5'),
             array('db' => 'O.PaymentID', 'dt' => '6'),
             array('db' => 'O.OrderID', 'dt' => '7')
         );
@@ -219,24 +219,28 @@ class dashboardController extends Controller
             array(
                 'db' => 'MobileNo1', 'dt' => '3'),
             array('db' => 'TotalAmount', 'dt' => '4'),
-            array('db' => 'Status', 'dt' => '5', 'formatter' => function ($d, $row) {
-                $Status = "<span class='badge block  badge-secondary mr-2 '> Pending </span>";
-                $result = DB::Table("tbl_order")->Where("OrderID", $row['OrderID'])->get();
-                if (count($result) > 0) {
-                    if ($result[0]->DFlag == 1) {
-                        $Status = "<span class='badge block badge-danger mr-2'> Deleted </span>";
-                    } else {
-                        if ($d == "In progress") {
-                            $Status = "<span class='badge block badge-warning mr-2'> In progress </span>";
-                        } elseif ($d == "Delivered") {
-                            $Status = "<span class='badge block badge-success mr-2'> Delivered </span>";
+            array('db' => 'TrackStatus',
+                'dt' => '5',
+                'formatter' => function ($d, $row) {
+                    $Status = "<span class='badge block badge-secondary mr-2'> Pending </span>";
+                    $result = DB::Table("tbl_order")->Where("OrderID", $row['OrderID'])->get();
+                    if (count($result) > 0) {
+                        if ($result[0]->DFlag == 1) {
+                            $Status = "<span class='badge block badge-danger mr-2'> Deleted </span>";
                         } else {
-                            $Status = "<span class='badge block badge-info mr-2'> Error </span>";
+                            if ($d == "Order Confirmed") {
+                                $Status = "<span class='badge block badge-warning mr-2'> Order Confirmed </span>";
+                            } elseif ($d == "Shipped") {
+                                $Status = "<span class='badge block badge-secondary mr-2'> Shipped </span>";
+                            } elseif ($d == "Delivered") {
+                                $Status = "<span class='badge block badge-success mr-2'> Delivered </span>";
+                            } else {
+                                $Status = "<span class='badge block badge-info mr-2'> Payment Pending </span>";
+                            }
                         }
                     }
-                }
-                return $Status;
-            }),
+                    return $Status;
+                }),
             array(
                 'db' => 'PaymentID',
                 'dt' => '6',
@@ -251,9 +255,10 @@ class dashboardController extends Controller
             array(
                 'db' => 'OrderID',
                 'dt' => '7',
-                'formatter' => function ($d) {
-                    return '<a href="' . route('admin.order.edit', $d) . '"><button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="Edit"><i class="fa fa-pencil"></i></button></a>';
+                'formatter' => function ($d, $row) {
+                    return '<a href="' . route('admin.order.edit', $d) . '"><button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="Edit"><i class="fa '. (($row['TrackStatus'] === "Order Confirmed") ? "fa-pencil" : "fa-eye") .'"></i></button></a>';
                 }
+
             )
         );
         $Where = "";

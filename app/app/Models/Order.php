@@ -35,6 +35,8 @@ class Order extends Model
         "CompleteAddress",
         "Status",
         "TrackStatus",
+        "courierName",
+        "courierTrackNo",
         "OrderDate",
         "ExpectedDelivery",
         "SubTotal",
