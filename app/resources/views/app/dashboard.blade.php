@@ -105,24 +105,21 @@
                     <div class="card investments">
                         <div class="card-header p-10">
                             <div class="row">
-                                <div class="col-12 col-md-8"><div class="card-title fw-600 fs-15">Delivery</div> </div>
+                                <div class="col-12 col-md-8"><div class="card-title fw-600 fs-15">Pending Shipments</div> </div>
                                 <div class="col-12 col-md-4 d-flex justify-content-end align-items-center pr-10"><span class="full-right fs-14 fw-600"><a href="{{ route('admin.order.index') }}">View</a></span></div>
                             </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="row">
-                                <div class="col-sm-12 col-12 col-md-12 col-lg-12 pb-20 d-flex justify-content-center align-items-center mh-350"  id="divDeliveryCircleChart">
+                                <div class="col-sm-12 col-12 col-md-12 col-lg-12 pb-20 d-flex justify-content-center align-items-center mh-350"  id="divShipmentCircleChart">
                                     <div id="DeliveryCircleChart"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-footer p-0"  id="divDeliveryCircleChartStats">
+                        <div class="card-footer p-0"  id="divShipmentCircleChartStats">
                             <ul>
                                 <li class="text-center"><span class="f-12">Today</span>
                                     <h6 class="f-w-600 mb-0 today">0</h6>
-                                </li>
-                                <li class="text-center"><span class="f-12">Tomorrow</span>
-                                    <h6 class="f-w-600 mb-0 tomorrow">0</h6>
                                 </li>
                                 <li class="text-center"><span class="f-12">This Week</span>
                                     <h6 class="f-w-600 mb-0 this-week">0</h6>
@@ -130,8 +127,8 @@
                                 <li class="text-center"><span class="f-12">This Month</span>
                                     <h6 class="f-w-600 mb-0 this-month">0</h6>
                                 </li>
-                                <li class="text-center"><span class="f-12">Next Month</span>
-                                    <h6 class="f-w-600 mb-0 next-month">0</h6>
+                                <li class="text-center"><span class="f-12">This Year</span>
+                                    <h6 class="f-w-600 mb-0 this-year">0</h6>
                                 </li>
                             </ul>
                         </div>
@@ -205,7 +202,7 @@
                 getRecentOrders();
                 loadCustomerCircleChart();
                 loadOrdersCircleChart();
-                loadDeliveryCircleChart();
+                loadShipmentCircleChart();
             }
             const loadCustomerCircleChart=async()=>{
                 const getData=async()=>{
@@ -225,8 +222,6 @@
                 }
                 $('#divCustomerCircleChart').append('<div class="load-animation">'+animationLoaders.svgRipples+'</div>');
                 let jsonData=await getData();
-                console.log("jsonData");
-                console.log(jsonData);
                 $('#divCustomerCircleChartStats .last-month').html(jsonData.lastMonth)
                 $('#divCustomerCircleChartStats .today').html(jsonData.today)
                 $('#divCustomerCircleChartStats .this-week').html(jsonData.thisWeek)
@@ -245,6 +240,12 @@
                                 },
                                 value: {
                                     fontSize: '14px',
+                                    formatter: function (val, opts) {
+                                        if (opts && opts.seriesIndex !== undefined) {
+                                            return opts.w.config.series[opts.seriesIndex];
+                                        }
+                                        return val;
+                                    }
                                 },
                                 total: {
                                     show: true,
@@ -286,7 +287,7 @@
                 }
                 $('#divOrdersCircleChart').append('<div class="load-animation">'+animationLoaders.svgRipples+'</div>');
                 let jsonData=await getData();
-                $('#divOrdersCircleChartStats .lastmonth').html(jsonData.lastMonth)
+                $('#divOrdersCircleChartStats .last-month').html(jsonData.lastMonth)
                 $('#divOrdersCircleChartStats .today').html(jsonData.today)
                 $('#divOrdersCircleChartStats .this-week').html(jsonData.thisWeek)
                 $('#divOrdersCircleChartStats .this-month').html(jsonData.thisMonth)
@@ -303,6 +304,12 @@
                                 },
                                 value: {
                                     fontSize: '14px',
+                                    formatter: function (val, opts) {
+                                        if (opts && opts.seriesIndex !== undefined) {
+                                            return opts.w.config.series[opts.seriesIndex];
+                                        }
+                                        return val;
+                                    }
                                 },
                                 total: {
                                     show: true,
@@ -317,8 +324,6 @@
                     series: [jsonData.lastMonth, jsonData.today, jsonData.thisWeek, jsonData.thisMonth],
                     labels: ['Last Month', 'Today', 'This Week', 'This Month'],
                     colors:['#655af3', '#fd2e64', '#51bb25', '#7a15f7']
-
-
                 }
 
                 var OrderCircleChart = new ApexCharts(
@@ -328,12 +333,12 @@
                 $('#divOrdersCircleChart .load-animation').remove();
                 OrderCircleChart.render();
             }
-            const loadDeliveryCircleChart=async()=>{
+            const loadShipmentCircleChart=async()=>{
                 const getData=async()=>{
                     return new Promise(async(resolve,reject)=>{
                         $.ajax({
                             type:"post",
-                            url:"{{route('admin.dashboard.get.circle.stats.delivery')}}",
+                            url:"{{route('admin.dashboard.get.circle.stats.shipment')}}",
                             headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
                             dataType:"json",
                             async:true,
@@ -344,13 +349,12 @@
                         });
                     });
                 }
-                $('#divDeliveryCircleChart').append('<div class="load-animation">'+animationLoaders.svgRipples+'</div>');
+                $('#divShipmentCircleChart').append('<div class="load-animation">'+animationLoaders.svgRipples+'</div>');
                 let jsonData=await getData();
-                $('#divDeliveryCircleChartStats .nextMonth').html(jsonData.nextMonth)
-                $('#divDeliveryCircleChartStats .today').html(jsonData.today)
-                $('#divDeliveryCircleChartStats .tomorrow').html(jsonData.tomorrow)
-                $('#divDeliveryCircleChartStats .this-week').html(jsonData.thisWeek)
-                $('#divDeliveryCircleChartStats .this-month').html(jsonData.thisMonth)
+                $('#divShipmentCircleChartStats .this-year').html(jsonData.thisYear)
+                $('#divShipmentCircleChartStats .today').html(jsonData.today)
+                $('#divShipmentCircleChartStats .this-week').html(jsonData.thisWeek)
+                $('#divShipmentCircleChartStats .this-month').html(jsonData.thisMonth)
                 var options = {
                     chart: {
                         height: 350,
@@ -364,6 +368,12 @@
                                 },
                                 value: {
                                     fontSize: '14px',
+                                    formatter: function (val, opts) {
+                                        if (opts && opts.seriesIndex !== undefined) {
+                                            return opts.w.config.series[opts.seriesIndex];
+                                        }
+                                        return val;
+                                    }
                                 },
                                 total: {
                                     show: true,
@@ -375,18 +385,16 @@
                             }
                         }
                     },
-                    series: [jsonData.today, jsonData.tomorrow, jsonData.thisWeek, jsonData.thisMonth,jsonData.nextMonth],
-                    labels: [ 'Today', 'Tomorrow', 'This Week','This Month','Next Month'],
-                    colors:['#655af3', '#fd2e64', '#51bb25', '#7a15f7', "#ff5f24"]
-
-
+                    series: [jsonData.today, jsonData.thisWeek, jsonData.thisMonth,jsonData.thisYear],
+                    labels: ['Today', 'This Week','This Month','This Year'],
+                    colors:['#655af3', '#51bb25', '#7a15f7', "#ff5f24"]
                 }
 
                 var DeliveryCircleChart = new ApexCharts(
                     document.querySelector("#DeliveryCircleChart"),
                     options
                 );
-                $('#divDeliveryCircleChart .load-animation').remove();
+                $('#divShipmentCircleChart .load-animation').remove();
                 DeliveryCircleChart.render();
             }
             const getDashboardStats=async()=>{

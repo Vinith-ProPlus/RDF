@@ -146,7 +146,7 @@ Route::group(['prefix'=>'admin'],function (){
         Route::get('/dashboard/get/upcoming/payments', [dashboardController::class, 'getUpcomingPayments'])->name('admin.dashboard.get.upcoming.payments');
         Route::POST('/dashboard/get/circle/stats/customer', [dashboardController::class, 'getCustomerCircleStats'])->name('admin.dashboard.get.circle.stats.customer');
         Route::POST('/dashboard/get/circle/stats/orders', [dashboardController::class, 'getOrdersCircleStats'])->name('admin.dashboard.get.circle.stats.orders');
-        Route::POST('/dashboard/get/circle/stats/delivery', [dashboardController::class, 'getDeliveryCircleStats'])->name('admin.dashboard.get.circle.stats.delivery');
+        Route::POST('/dashboard/get/circle/stats/shipment', [dashboardController::class, 'getShipmentCircleStats'])->name('admin.dashboard.get.circle.stats.shipment');
         Route::group(['prefix'=>'settings'],function (){
             require __DIR__.'/web/settings.php';
         });

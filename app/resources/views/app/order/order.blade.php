@@ -59,8 +59,6 @@
 {{--                    <option value="Payment Pending">Payment Pending</option>--}}
                     <option value="Order Confirmed">Order Confirmed</option>
                     <option value="Shipped">Shipped</option>
-                    <option value="Out To Delivery">Out To Delivery</option>
-                    <option value="Delivery Expected On">Delivery Expected On</option>
                     <option value="Delivered">Delivered</option>
                 </select>
             </div>

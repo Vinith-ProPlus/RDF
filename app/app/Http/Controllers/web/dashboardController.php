@@ -458,34 +458,29 @@ class dashboardController extends Controller
         return $return;
     }
 
-    public function getDeliveryCircleStats(Request $req)
+    public function getShipmentCircleStats(Request $req)
     {
         $currentDate = Carbon::now();
 
         $startDate = $currentDate->startOfWeek()->format('Y-m-d');
 
         $endDate = $currentDate->endOfWeek()->format('Y-m-d');
-        $return = json_decode(
-            json_encode(
-                [
-                    "nextMonth" => 0,
-                    "today" => 0,
-                    "tomorrow" => 0,
-                    "thisWeek" => 0,
-                    "thisMonth" => 0
-                ]
-            )
-        );
-        $return->nextMonth = DB::Table("tbl_order")->where('ExpectedDelivery', '>=', date("Y-m-01", strtotime('+1 Month')))->where('ExpectedDelivery', '<=', date("Y-m-t", strtotime('+1 Month')))->count();
+        $return = (object)[
+            "thisYear" => 0,
+            "today" => 0,
+            "thisWeek" => 0,
+            "thisMonth" => 0
+        ];
 
-        $return->today = DB::Table("tbl_order")->where('ExpectedDelivery', '=', date("Y-m-d"))->count();
-        $return->tomorrow = DB::Table("tbl_order")->where('ExpectedDelivery', '=', date("Y-m-d", strtotime('+1 days')))->count();
-        $return->thisWeek = DB::Table("tbl_order")->where('ExpectedDelivery', '>=', date("Y-m-01", strtotime($startDate)))->where('ExpectedDelivery', '<=', date("Y-m-t", strtotime($endDate)))->count();
-        $return->thisMonth = DB::Table("tbl_order")->where('ExpectedDelivery', '>=', date("Y-m-01"))->where('ExpectedDelivery', '<=', date("Y-m-t"))->count();
+        $oneYearAgo = Carbon::now()->subYear()->startOfDay();
+        $today = Carbon::now()->endOfDay();
+        $return->thisYear = DB::table('tbl_order')->where('TrackStatus', 'Order Confirmed')->whereBetween('OrderDate', [$oneYearAgo, $today])->count();
+        $return->today = DB::Table("tbl_order")->where('TrackStatus', 'Order Confirmed')->where('OrderDate', '=', date("Y-m-d"))->count();
+        $return->thisWeek = DB::Table("tbl_order")->where('TrackStatus', 'Order Confirmed')->where('OrderDate', '>=', date("Y-m-01", strtotime($startDate)))->where('OrderDate', '<=', date("Y-m-t", strtotime($endDate)))->count();
+        $return->thisMonth = DB::Table("tbl_order")->where('TrackStatus', 'Order Confirmed')->where('OrderDate', '>=', date("Y-m-01"))->where('OrderDate', '<=', date("Y-m-t"))->count();
 
-        $return->nextMonth = floatval($return->nextMonth) > 1000 ? Helper::shortenValue($return->nextMonth) : $return->nextMonth;
+        $return->thisYear = floatval($return->thisYear) > 1000 ? Helper::shortenValue($return->thisYear) : $return->thisYear;
         $return->today = floatval($return->today) > 1000 ? Helper::shortenValue($return->today) : $return->today;
-        $return->tomorrow = floatval($return->tomorrow) > 1000 ? Helper::shortenValue($return->tomorrow) : $return->tomorrow;
         $return->thisWeek = floatval($return->thisWeek) > 1000 ? Helper::shortenValue($return->thisWeek) : $return->thisWeek;
         $return->thisMonth = floatval($return->thisMonth) > 1000 ? Helper::shortenValue($return->thisMonth) : $return->thisMonth;
         return $return;
