@@ -417,6 +417,7 @@ class ProductHelper {
                             $tdata=array(
                                 "Slug"=>$Variation->Slug,
                                 "Title"=>$Variation->Title,
+                                "SKU"=>$Variation->SKU,
                                 "PRate"=>$Variation->PRate,
                                 "SRate"=>$Variation->SRate,
                                 "Attributes"=>serialize($Variation->Attributes),
@@ -440,6 +441,7 @@ class ProductHelper {
                                 "UUID"=>$Variation->UUID,
                                 "Slug"=>$Variation->Slug,
                                 "Title"=>$Variation->Title,
+                                "SKU"=>$Variation->SKU,
                                 "PRate"=>$Variation->PRate,
                                 "SRate"=>$Variation->SRate,
                                 "VImage"=>$Images->Cover->Cover,
@@ -628,7 +630,7 @@ class ProductHelper {
 //		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
         $rules = array(
             'ProductName' => ['required', 'min:2', 'max:150', new ValidUnique(array("TABLE" => "tbl_products", "WHERE" => " ProductName='" . $req->ProductName . "'  and ProductID<>'" . $req->ProductID . "' "), "This Product Name is already taken.")],
-            'SKU' => ['required', 'min:2', 'max:50', new ValidUnique(array("TABLE" => "tbl_products", "WHERE" => " SKU='" . $req->SKU . "'  and ProductID<>'" . $req->ProductID . "' "), "This HSN is already taken.")],
+            'SKU' => ['required', 'min:2', 'max:50', new ValidUnique(array("TABLE" => "tbl_products", "WHERE" => " SKU='" . $req->SKU . "'  and ProductID<>'" . $req->ProductID . "' "), "This SKU is already taken.")],
             'ProductNameInTranslation' => 'required',
             'CategoryType' => ['required', new ValidDB($ValidDB['CategoryType'])],
             'Category' => ['required', new ValidDB($ValidDB['Category'])],
@@ -745,8 +747,6 @@ class ProductHelper {
 		$Image="";
 		$galleryImages=array();
 		try {
-			$variationID=date("YmdHis")."-".Helper::RandomString(20);
-
 			$tmpImage=json_decode($req->images,true);
             $Attributes=array();
             $Attributes["data"]=json_decode($req->data,true);
@@ -757,6 +757,7 @@ class ProductHelper {
                 "ProductID"=>$req->ProductID,
 				"Slug"=>Helper::generateSlug($req->title),
                 "Title"=>$req->title,
+                "SKU"=>$req->SKU,
                 "PRate"=>$req->PurchasePrice,
                 "SRate"=>$req->SalesPrice,
                 "Images"=>serialize($tmpImage),

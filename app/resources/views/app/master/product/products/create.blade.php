@@ -1071,6 +1071,7 @@
                             pImages.variation[uuid]={cover:{url:"",isDeleted:0,data:tmp},gallery:{}};
                         }
                         $('#txtVTtitle-'+uuid).val(variation.Title);
+                        $('#txtVSKU-'+uuid).val(variation.SKU);
                         $('#txtVRegularPrice-'+uuid).val(NumberFormat(variation.PRate,'price'));
                         $('#txtVSalesPrice-'+uuid).val(NumberFormat(variation.SRate,'price'));
 
@@ -1455,6 +1456,13 @@
                                             html+='</div>';
                                             html+='<div class="col-12">';
                                                 html+='<div class="form-group">';
+                                                    html+='<label for="">SKU <span class="required"> * </span></label>';
+                                                    html+='<input type="text" class="form-control txtVSKU" data-uuid="'+uuid+'" id="txtVSKU-'+uuid+'" value="">';
+                                                    html+='<div class="errors err-sm" id="txtVSKU-'+uuid+'-err"></div>';
+                                                html+='</div>';
+                                            html+='</div>';
+                                            html+='<div class="col-12 mt-15">';
+                                                html+='<div class="form-group">';
                                                     html+='<label for="">Regular Price <span class="required"> * </span></label>';
                                                     html+='<input type="number" min=0 step="{{Helper::NumberSteps($Settings["PRICE-DECIMALS"])}}" class="form-control txtVRegularPrice" data-uuid="'+uuid+'" id="txtVRegularPrice-'+uuid+'" value="'+PurchasePrice+'">';
                                                     html+='<div class="errors err-sm" id="txtVRegularPrice-'+uuid+'-err"></div>';
@@ -1763,6 +1771,7 @@
                     }
                     data.images=images;
                     data.title=$('#txtVTtitle-'+uuid).val();
+                    data.SKU=$('#txtVSKU-'+uuid).val();
                     data.PurchasePrice=$('#txtVRegularPrice-'+uuid).val();
                     data.SalesPrice=$('#txtVSalesPrice-'+uuid).val();
                     vData[uuid]=data;
@@ -1897,6 +1906,9 @@
                         $('#txtVTtitle-'+uuid+'-err').html('The Variation Title must be greater than 2 characters');status1=false;
                     }else if(attributes.title.length>150){
                         $('#txtVTtitle-'+uuid+'-err').html('The Variation Title may not be greater than 150 characters');status1=false;
+                    }
+                    if(attributes.SKU==""){
+                        $('#txtVSKU-'+uuid+'-err').html('SKU is required');status1=false;
                     }
                     if(attributes.PurchasePrice==""){
                         $('#txtVRegularPrice-'+uuid+'-err').html('Regular Price is required');status1=false;
