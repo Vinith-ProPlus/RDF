@@ -29,7 +29,7 @@
                                 <div class="tab-pane fade active show" id="pills-general" role="tabpanel" aria-labelledby="pills-general-tab">
 
 									<div class="form-row">
-										<div class="col-sm-6"><b>Date Format :</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Date Format :</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<select class="form-control" id="lstDateFormat"  @if($crud['edit']==false) disabled @endif>
@@ -42,7 +42,7 @@
 										</div>
 									</div>
 									<div class="form-row mt-20">
-										<div class="col-sm-6"><b>Time Format :</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Time Format :</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<select class="form-control" id="lstTimeFormat"  @if($crud['edit']==false) disabled @endif>
@@ -55,7 +55,7 @@
 										</div>
 									</div>
 									<div class="form-row mt-20">
-										<div class="col-sm-6"><b>Price Decimals :</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Price Decimals :</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<select class="form-control" id="lstPrice"  @if($crud['edit']==false) disabled @endif>
@@ -69,7 +69,7 @@
 										</div>
 									</div>
 									<div class="form-row mt-20">
-										<div class="col-sm-6"><b>Percentage Decimals :</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Percentage Decimals :</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<select class="form-control" id="lstPercentage"  @if($crud['edit']==false) disabled @endif>
@@ -83,7 +83,7 @@
 										</div>
 									</div>
 									<div class="form-row mt-20">
-										<div class="col-sm-6"><b>Upload Size / per :</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Upload Size / per :</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<div class="input-group">
@@ -103,13 +103,24 @@
 										</div>
 									</div>
 									<div class="form-row mt-20">
-										<div class="col-sm-6"><b>Delivery Charge :</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Delivery Charge :</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<div class="form-group">
-													<input type="number" step=1 class="form-control" min=1 id="txtDeliveryCharge" value="{{ $Settings['delivery_charge'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
+													<input type="number" step="1" class="form-control" min="0" id="txtDeliveryCharge" value="{{ $Settings['delivery_charge'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
 												</div>
 												<div class="errors" id="txtDeliveryCharge-err"></div>
+											</div>
+										</div>
+									</div>
+									<div class="form-row mt-20">
+										<div class="col-sm-6 d-flex align-items-center"><b>Delivery Charge for Coimbatore:</b></div>
+										<div class="col-sm-6">
+											<div class="form-group">
+												<div class="form-group">
+													<input type="number" step="1" class="form-control" min="0" id="txtDeliveryChargeForCoimbatore" value="{{ $Settings['delivery_charge_for_coimbatore'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
+												</div>
+												<div class="errors" id="txtDeliveryChargeForCoimbatore-err"></div>
 											</div>
 										</div>
 									</div>
@@ -224,6 +235,7 @@
 				formData.append('PERCENTAGE-DECIMALS',$('#lstPercentage').val());
 				formData.append('upload-limit',$('#txtImgUploadSize').val()+$('#lstImgUploadSizeType').val());
 				formData.append('delivery_charge',$('#txtDeliveryCharge').val());
+				formData.append('delivery_charge_for_coimbatore',$('#txtDeliveryChargeForCoimbatore').val());
 				// formData.append('home-page-loading-text',$('#txtLoadingText').val());
 				// formData.append('home-page-loading-text-font-size',$('#lstLoadingTextSize').val());
             }

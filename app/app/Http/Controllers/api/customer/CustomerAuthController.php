@@ -40,47 +40,49 @@ class CustomerAuthController extends Controller{
     private $ActiveMenuName;
     private $FileTypes;
 
-    public function __construct(){
-		$this->generalDB=Helper::getGeneralDB();
-		$this->tmpDB=Helper::getTmpDB();
-        $this->ActiveMenuName=activeMenuNames::ManageCustomers->value;
-		$this->FileTypes=Helper::getFileTypes(array("category"=>array("Images","Documents")));
+    public function __construct()
+    {
+        $this->generalDB = Helper::getGeneralDB();
+        $this->tmpDB = Helper::getTmpDB();
+        $this->ActiveMenuName = activeMenuNames::ManageCustomers->value;
+        $this->FileTypes = Helper::getFileTypes(array("category" => array("Images", "Documents")));
     }
 
-    public function RegisteredDetails(request $req){
-
-        $Data = DB::Table('tbl_customer')->where('ActiveStatus','Active')->where('CustomerID',$this->ReferID)->where('DFlag',0)
-        ->select('CustomerID','CustomerName','DOB','MobileNo1','Email','CustomerImage','CusTypeID','ConTypeIDs','GenderID','Address','CityID','TalukID','DistrictID','StateID','CountryID','PostalCodeID')
-        ->first();
+    public function RegisteredDetails(request $req)
+    {
+        $Data = DB::Table('tbl_customer')->where('ActiveStatus', 'Active')->where('CustomerID', $this->ReferID)->where('DFlag', 0)
+            ->select('CustomerID', 'CustomerName', 'DOB', 'MobileNo1', 'Email', 'CustomerImage', 'CusTypeID', 'ConTypeIDs', 'GenderID', 'Address', 'CityID', 'TalukID', 'DistrictID', 'StateID', 'CountryID', 'PostalCodeID')
+            ->first();
         $CustomerImagePath = $Data->CustomerImage;
         $CustomerImageURL = file_exists($CustomerImagePath) ? url('/') . '/' . $Data->CustomerImage : url('/') . '/assets/images/no-image-b.png';
         $Data->CustomerImage = $CustomerImageURL;
         $Data->ConTypeIDs = unserialize($Data->ConTypeIDs);
         $return = [
-			'status' => true,
-			'data' => $Data,
-		];
+            'status' => true,
+            'data' => $Data,
+        ];
         return response()->json($return);
-	}
+    }
 
     public function getConstructionType(request $req){
-		$return = [
+		return [
 			'status' => true,
 			'data' => DB::Table('tbl_construction_type')->where('ActiveStatus','Active')->where('DFlag',0)
             ->select('ConTypeID', 'ConTypeName', DB::raw('IF(ConTypeLogo IS NOT NULL AND ConTypeLogo != "", CONCAT("' . url('/') . '/", ConTypeLogo), "") AS ConTypeLogo'))
-
             ->get(),
 		];
-        return $return;
 	}
-    public function getCustomerType(request $req){
-		$return = [
-			'status' => true,
-			'data' => DB::Table('tbl_customer_type')->where('ActiveStatus','Active')->where('DFlag',0)->select('CusTypeID', 'CusTypeName')->get(),
-		];
-        return $return;
-	}
-    public function GetCategory(Request $req){
+
+    public function getCustomerType()
+    {
+        return [
+            'status' => true,
+            'data' => DB::Table('tbl_customer_type')->where('ActiveStatus', 'Active')->where('DFlag', 0)->select('CusTypeID', 'CusTypeName')->get(),
+        ];
+    }
+
+    public function GetCategory(Request $req)
+    {
         $pageNo = $req->PageNo ?? 1;
         $perPage = 15;
 
@@ -99,28 +101,32 @@ class CustomerAuthController extends Controller{
             'LastPage' => $result->lastPage(),
         ]);
     }
-	public function GetSubCategory(request $req){
-		$PCID = $req->PCID;
+
+    public function GetSubCategory(request $req)
+    {
+        $PCID = $req->PCID;
         $PCIDs = is_array($PCID) ? $PCID : [$PCID];
 
         $pageNo = $req->PageNo ?? 1;
         $perPage = 15;
 
-		$SubCategory = DB::table('tbl_product_subcategory as PSC')->join('tbl_product_category as PC','PC.PCID','PSC.PCID')
-        ->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)->whereIn('PSC.PCID', $PCIDs);
+        $SubCategory = DB::table('tbl_product_subcategory as PSC')->join('tbl_product_category as PC', 'PC.PCID', 'PSC.PCID')
+            ->where('PSC.ActiveStatus', 'Active')->where('PSC.DFlag', 0)->where('PC.ActiveStatus', 'Active')->where('PC.DFlag', 0)->whereIn('PSC.PCID', $PCIDs);
         if ($req->has('SearchText') && !empty($req->SearchText)) {
             $SubCategory->where('PSC.PSCName', 'like', '%' . $req->SearchText . '%');
         }
-        $result = $SubCategory->select('PSC.PSCName', 'PSC.PSCID','PC.PCID','PC.PCName', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(PSC.PSCImage, ""), "assets/images/no-image-b.png")) AS SubCategoryImage'))->paginate($perPage, ['*'], 'page', $pageNo);
+        $result = $SubCategory->select('PSC.PSCName', 'PSC.PSCID', 'PC.PCID', 'PC.PCName', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(PSC.PSCImage, ""), "assets/images/no-image-b.png")) AS SubCategoryImage'))->paginate($perPage, ['*'], 'page', $pageNo);
 
-		return response()->json([
+        return response()->json([
             'status' => true,
             'data' => $result->items(),
             'CurrentPage' => $result->currentPage(),
             'LastPage' => $result->lastPage(),
         ]);
-	}
-    public function GetProducts(Request $req){
+    }
+
+    public function GetProducts(Request $req)
+    {
         $PCID = $req->PCID;
         $PSCID = $req->PSCID;
         $PCIDs = is_array($PCID) ? $PCID : [$PCID];
@@ -137,7 +143,7 @@ class CustomerAuthController extends Controller{
             $products->where('P.ProductName', 'like', '%' . $req->SearchText . '%');
         }
 
-        $products = $products->select('P.ProductName', 'P.ProductID', 'PC.PCName', 'PC.PCID', 'PSC.PSCName', 'PSC.PSCID','U.UName','U.UCode','U.UID', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage'))
+        $products = $products->select('P.ProductName', 'P.ProductID', 'PC.PCName', 'PC.PCID', 'PSC.PSCName', 'PSC.PSCID', 'U.UName', 'U.UCode', 'U.UID', DB::raw('CONCAT("' . url('/') . '/", COALESCE(NULLIF(P.ProductImage, ""), "assets/images/no-image-b.png")) AS ProductImage'))
             ->paginate($perPage, ['*'], 'page', $pageNo);
 
         foreach ($products as $row) {
@@ -154,6 +160,7 @@ class CustomerAuthController extends Controller{
             'LastPage' => $products->lastPage(),
         ]);
     }
+
     public function getCart(Request $req)
     {
         $lang = optional($req->auth_customer)->language ?? 'en';
@@ -162,6 +169,7 @@ class CustomerAuthController extends Controller{
         $coupon_value = 0;
         $subTotalAmount = 0;
         $grandTotalAmount = 0;
+        $shipping_charge = 0;
         $Cart = DB::table('tbl_customer_cart as C')
             ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
             ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
@@ -258,10 +266,9 @@ class CustomerAuthController extends Controller{
                 $item->PSCNameInTranslation, $item->ProductNameInTranslation, $item->UNameInTranslation, $item->UName);
         }
 
-        if($coupon_code) {
+        if ($coupon_code) {
             $coupon = Coupon::where('coupon_code', $coupon_code)
-                ->where('DFlag', 0)
-                ->where('ActiveStatus', 'Active')
+                ->where('DFlag', 0)->where('ActiveStatus', 'Active')
                 ->first(['COID', 'type', 'value']);
             if ($coupon->type === 'Percentage') {
                 $coupon_value = ($subTotalAmount / 100) * $coupon->value;
@@ -270,39 +277,47 @@ class CustomerAuthController extends Controller{
             }
         }
 
-        $shipping_charge = ($subTotalAmount > 0) ? 120 : 0;
-        if($coupon_value > $subTotalAmount){
-            $coupon_value = $subTotalAmount;
-        }
-        $grandTotalAmount = ($subTotalAmount + $shipping_charge) - $coupon_value;
-
-        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$customer->CustomerID)
-            ->where('CA.DFlag',0)->where('CA.isDefault',1)
-            ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
-            ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
-            ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
-            ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
-            ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
-            ->orderBy('CA.CreatedOn','desc')
+        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $customer->CustomerID)
+            ->where('CA.DFlag', 0)->where('CA.isDefault', 1)
+            ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+            ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+            ->leftJoin($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+            ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
+            ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
+            ->orderBy('CA.CreatedOn', 'desc')
             ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID',
                 'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation', 'CA.CityID',
-                'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+                'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
             ->first();
 
-        $SAddress->StateName = json_decode($SAddress->StateNameInTranslation)->$lang ?? $SAddress->StateName;
-        $SAddress->DistrictName = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? $SAddress->DistrictName;
-        $SAddress->CityName = json_decode($SAddress->CityNameInTranslation)->$lang ?? $SAddress->CityName;
-        $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
-        $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
-        unset($SAddress->StateNameInTranslation, $SAddress->DistrictNameInTranslation, $SAddress->CityNameInTranslation);
+        if (($subTotalAmount > 0)) {
+            if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
+                $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+            } else {
+                $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+            }
+        }
+        if ($coupon_value > $subTotalAmount) {
+            $coupon_value = $subTotalAmount;
+        }
+        $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value, 2);
 
+        if ($SAddress) {
+            $SAddress->StateName = json_decode($SAddress->StateNameInTranslation)->$lang ?? Helper::translate($SAddress->StateName, $lang);
+            $SAddress->DistrictName = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? Helper::translate($SAddress->DistrictName, $lang);
+            $SAddress->CityName = json_decode($SAddress->CityNameInTranslation)->$lang ?? Helper::translate($SAddress->CityName, $lang);
+            $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
+            $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
+            unset($SAddress->StateNameInTranslation, $SAddress->DistrictNameInTranslation, $SAddress->CityNameInTranslation);
+        }
         return response()->json(['status' => true, 'sub_total_amount' => Helper::formatAmount($subTotalAmount),
             'coupon_value' => Helper::formatAmount($coupon_value), 'shipping_charge' => Helper::formatAmount($shipping_charge),
-            'grand_total_amount' => Helper::formatAmount($grandTotalAmount),'total_product_count' => $Cart->count(),
-            'shipping_address'=> $SAddress, 'data' => $Cart]);
+            'grand_total_amount' => Helper::formatAmount($grandTotalAmount), 'total_product_count' => $Cart->count(),
+            'shipping_address' => $SAddress, 'data' => $Cart]);
     }
 
-    public function AddCart(Request $request){
+    public function AddCart(Request $request)
+    {
         $customer = $request->auth_customer;
         DB::beginTransaction();
         try {
@@ -325,13 +340,15 @@ class CustomerAuthController extends Controller{
                 return $this->successResponse([], "Product added to Cart Successfully");
             }
             return $this->errorResponse([], "Product already exists!", 422);
-        }catch(Exception $e) {
+        } catch (Exception $e) {
             logger($e);
             DB::rollback();
-            return response()->json(['status' => false,'message' => "Product add to Cart Failed!"]);
+            return response()->json(['status' => false, 'message' => "Product add to Cart Failed!"]);
         }
     }
-    public function UpdateCart(Request $request){
+
+    public function UpdateCart(Request $request)
+    {
         $customer = $request->auth_customer;
         DB::beginTransaction();
         try {
@@ -352,7 +369,7 @@ class CustomerAuthController extends Controller{
 
             $cart = CustomerCart::where('CustomerID', $CustomerID)
                 ->where('ProductID', $ProductID);
-            if (isset($ProductVariationID)){
+            if (isset($ProductVariationID)) {
                 $updated = $cart->where('ProductVariationID', $ProductVariationID)->update(["Qty" => $Qty]);
             } else {
                 $updated = $cart->where('ProductVariationID', null)->update(["Qty" => $Qty]);
@@ -363,7 +380,7 @@ class CustomerAuthController extends Controller{
             } else {
                 return $this->errorResponse([], "Product not exists!", 422);
             }
-        }catch(Exception $e) {
+        } catch (Exception $e) {
             logger($e);
             DB::rollback();
             return response()->json([
@@ -411,20 +428,21 @@ class CustomerAuthController extends Controller{
         }
     }
 
-    public function getSAddress(Request $req){
+    public function getSAddress(Request $req)
+    {
         $lang = optional($req->auth_customer)->language ?? 'en';
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
-        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$CustomerID)->where('CA.DFlag',0)
-            ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
-            ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
-            ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
-            ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
-            ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
-            ->orderBy('CA.CreatedOn','desc')
+        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $CustomerID)->where('CA.DFlag', 0)
+            ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+            ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+            ->leftJoin($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+            ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
+            ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
+            ->orderBy('CA.CreatedOn', 'desc')
             ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault',
                 'CA.StateID', 'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation',
-                'CA.CityID', 'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+                'CA.CityID', 'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
             ->get();
 
         $SAddress->transform(function ($address) use ($lang) {
@@ -437,90 +455,87 @@ class CustomerAuthController extends Controller{
             unset($address->CityNameInTranslation, $address->StateNameInTranslation, $address->DistrictNameInTranslation);
             return $address;
         });
-
-        return response()->json(['status' => true,'data' => $SAddress]);
+        return response()->json(['status' => true, 'data' => $SAddress]);
     }
-    public function createSAddress(Request $req){
+
+    public function createSAddress(Request $req)
+    {
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
-        $OldData=$NewData=[];
-        $OldData=DB::table('tbl_customer_address')->where('CustomerID',$CustomerID)->get();
-        $status=false;
+        $OldData = $NewData = [];
+        $OldData = DB::table('tbl_customer_address')->where('CustomerID', $CustomerID)->get();
+        $status = false;
         try {
-            $ValidDB=[];
-            $ValidDB['City']['TABLE']=$this->generalDB."tbl_cities";
-            $ValidDB['City']['ErrMsg']="City name does  not exist";
-            $ValidDB['City']['WHERE'][]=array("COLUMN"=>"CityID","CONDITION"=>"=","VALUE"=>$req->CityID);
-            $ValidDB['City']['WHERE'][]=array("COLUMN"=>"StateID","CONDITION"=>"=","VALUE"=>$req->StateID);
+            $ValidDB = [];
+            $ValidDB['City']['TABLE'] = $this->generalDB . "tbl_cities";
+            $ValidDB['City']['ErrMsg'] = "City name does  not exist";
+            $ValidDB['City']['WHERE'][] = array("COLUMN" => "CityID", "CONDITION" => "=", "VALUE" => $req->CityID);
+            $ValidDB['City']['WHERE'][] = array("COLUMN" => "StateID", "CONDITION" => "=", "VALUE" => $req->StateID);
 
             //States
-            $ValidDB['State']['TABLE']=$this->generalDB."tbl_states";
-            $ValidDB['State']['ErrMsg']="State name does  not exist";
-            $ValidDB['State']['WHERE'][]=array("COLUMN"=>"StateID","CONDITION"=>"=","VALUE"=>$req->StateID);
+            $ValidDB['State']['TABLE'] = $this->generalDB . "tbl_states";
+            $ValidDB['State']['ErrMsg'] = "State name does  not exist";
+            $ValidDB['State']['WHERE'][] = array("COLUMN" => "StateID", "CONDITION" => "=", "VALUE" => $req->StateID);
 
             //District
-            $ValidDB['District']['TABLE']=$this->generalDB."tbl_districts";
-            $ValidDB['District']['ErrMsg']="District name does  not exist";
-            $ValidDB['District']['WHERE'][]=array("COLUMN"=>"DistrictID","CONDITION"=>"=","VALUE"=>$req->DistrictID);
+            $ValidDB['District']['TABLE'] = $this->generalDB . "tbl_districts";
+            $ValidDB['District']['ErrMsg'] = "District name does  not exist";
+            $ValidDB['District']['WHERE'][] = array("COLUMN" => "DistrictID", "CONDITION" => "=", "VALUE" => $req->DistrictID);
 
             //Postal Code
-            $ValidDB['PostalCode']['TABLE']=$this->generalDB."tbl_postalcodes";
-            $ValidDB['PostalCode']['ErrMsg']="Postal Code  does not exist";
-            $ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"PID","CONDITION"=>"=","VALUE"=>$req->PostalCodeID);
-            $ValidDB['PostalCode']['WHERE'][]=array("COLUMN"=>"StateID","CONDITION"=>"=","VALUE"=>$req->StateID);
+            $ValidDB['PostalCode']['TABLE'] = $this->generalDB . "tbl_postalcodes";
+            $ValidDB['PostalCode']['ErrMsg'] = "Postal Code  does not exist";
+            $ValidDB['PostalCode']['WHERE'][] = array("COLUMN" => "PID", "CONDITION" => "=", "VALUE" => $req->PostalCodeID);
+            $ValidDB['PostalCode']['WHERE'][] = array("COLUMN" => "StateID", "CONDITION" => "=", "VALUE" => $req->StateID);
 
             $validatedData = Validator::make($req->all(), [
                 'ReceiverName' => 'required|string',
                 'ReceiverEmail' => 'required|email',
                 'ReceiverMobile' => 'required|string',
                 'AddressType' => 'required|string',
-                'PostalCodeID' => ['required',new ValidDB($ValidDB['PostalCode'])],
-                'CityID' => ['required',new ValidDB($ValidDB['City'])],
-                'StateID' => ['required',new ValidDB($ValidDB['State'])],
-                'DistrictID' => ['required',new ValidDB($ValidDB['District'])]
+                'PostalCodeID' => ['required', new ValidDB($ValidDB['PostalCode'])],
+                'CityID' => ['required', new ValidDB($ValidDB['City'])],
+                'StateID' => ['required', new ValidDB($ValidDB['State'])],
+                'DistrictID' => ['required', new ValidDB($ValidDB['District'])]
             ]);
             if ($validatedData->fails()) {
                 return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
             }
 
             DB::beginTransaction();
-                $AID=DocNum::getDocNum(docTypes::CustomerAddress->value,"",Helper::getCurrentFY());
+            $AID = DocNum::getDocNum(docTypes::CustomerAddress->value, "", Helper::getCurrentFY());
             $completeAddress = $this->getCompleteAddress($req);
 
-            $data=array(
-                    "AID"=>$AID,
-                    "CustomerID"=>$CustomerID,
-                    "ReceiverName"=>$req->ReceiverName,
-                    "ReceiverEmail"=>$req->ReceiverEmail,
-                    "ReceiverMobile"=>$req->ReceiverMobile,
-                    "CompleteAddress"=> $completeAddress,
-                    "Address"=>$req->Address,
-                    "AddressType"=>$req->AddressType,
-                    "PostalCodeID"=>$req->PostalCodeID,
-                    "CityID"=>$req->CityID,
-                    "DistrictID"=>$req->DistrictID,
-                    "StateID"=>$req->StateID,
-                    "isDefault"=>1,
-                    "CreatedOn"=>date("Y-m-d H:i:s")
-                );
-                $status=DB::Table('tbl_customer_address')->insert($data);
-                if($status==true){
-                    DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNot('AID',$AID)->update(['isDefault' =>0]);
-                    DocNum::updateDocNum(docTypes::CustomerAddress->value);
-                }
-        }catch(Exception $e) {
-            logger($e);
-            $status=false;
-        }
-        if($status==true){
+            $data = array(
+                "AID" => $AID,
+                "CustomerID" => $CustomerID,
+                "ReceiverName" => $req->ReceiverName,
+                "ReceiverEmail" => $req->ReceiverEmail,
+                "ReceiverMobile" => $req->ReceiverMobile,
+                "CompleteAddress" => $completeAddress,
+                "Address" => $req->Address,
+                "AddressType" => $req->AddressType,
+                "PostalCodeID" => $req->PostalCodeID,
+                "CityID" => $req->CityID,
+                "DistrictID" => $req->DistrictID,
+                "StateID" => $req->StateID,
+                "isDefault" => 1,
+                "CreatedOn" => date("Y-m-d H:i:s")
+            );
+            $status = DB::Table('tbl_customer_address')->insert($data);
+            if ($status == true) {
+                DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->whereNot('AID', $AID)->update(['isDefault' => 0]);
+                DocNum::updateDocNum(docTypes::CustomerAddress->value);
+            }
             DB::commit();
-            $NewData=DB::table('tbl_customer_address')->where('CustomerID',$CustomerID)->get();
-            $logData=array("Description"=>"Shipping Address Created","ModuleName"=>"Customer","Action"=>"Update","ReferID"=>$AID,"OldData"=>$OldData,"NewData"=>$NewData,"UserID"=>$CustomerID,"IP"=>$req->ip());
+            $NewData = DB::table('tbl_customer_address')->where('CustomerID', $CustomerID)->get();
+            $logData = array("Description" => "Shipping Address Created", "ModuleName" => "Customer", "Action" => "Update", "ReferID" => $AID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $CustomerID, "IP" => $req->ip());
             logs::Store($logData);
-            return response()->json(['status' => true,'message' => "Shipping Address Created Successfully"]);
-        }else{
+            return response()->json(['status' => true, 'message' => "Shipping Address Created Successfully"]);
+        } catch (Exception $e) {
+            logger($e);
             DB::rollback();
-            return response()->json(['status' => false,'message' => "Shipping Address Creation Failed"]);
+            return response()->json(['status' => false, 'message' => "Shipping Address Creation Failed"]);
         }
     }
 
@@ -528,9 +543,7 @@ class CustomerAuthController extends Controller{
     {
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
-        $OldData = $NewData = [];
         $OldData = DB::table('tbl_customer_address')->where('CustomerID', $CustomerID)->get();
-        $status = false;
         try {
 
             $ValidDB = [];
@@ -561,10 +574,10 @@ class CustomerAuthController extends Controller{
                 'ReceiverEmail' => 'required|email',
                 'ReceiverMobile' => 'required|string',
                 'AddressType' => 'required|string',
-                'PostalCodeID' => ['required',new ValidDB($ValidDB['PostalCode'])],
-                'CityID' => ['required',new ValidDB($ValidDB['City'])],
-                'DistrictID' => ['required',new ValidDB($ValidDB['District'])],
-                'StateID' => ['required',new ValidDB($ValidDB['State'])]
+                'PostalCodeID' => ['required', new ValidDB($ValidDB['PostalCode'])],
+                'CityID' => ['required', new ValidDB($ValidDB['City'])],
+                'DistrictID' => ['required', new ValidDB($ValidDB['District'])],
+                'StateID' => ['required', new ValidDB($ValidDB['State'])]
             ]);
 
             if ($validatedData->fails()) {
@@ -606,7 +619,6 @@ class CustomerAuthController extends Controller{
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
         DB::beginTransaction();
-        $status=false;
         try {
             $validatedData = Validator::make($req->all(), [
                 'AID' => [
@@ -620,46 +632,45 @@ class CustomerAuthController extends Controller{
             if ($validatedData->fails()) {
                 return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
             }
-            $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNot('AID',$req->AID)->update(['isDefault' =>0]);
-            $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->update(['isDefault' =>1,'UpdatedBy'=>$CustomerID,'UpdatedOn'=>date("Y-m-d H:i:s")]);
-        }catch(Exception $e) {
-            $status=false;
-        }
-        if($status==true){
+            DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->whereNot('AID',$req->AID)->update(['isDefault' =>0]);
+            DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->update(['isDefault' =>1,'UpdatedBy'=>$CustomerID,'UpdatedOn'=>date("Y-m-d H:i:s")]);
             DB::commit();
             return response()->json(['status' => true,'message' => "Default Address Set Successfully"]);
-        }else{
+        }catch(Exception $e) {
+            logger($e);
             DB::rollback();
             return response()->json(['status' => false,'message' => "Default Address Set Failed!"]);
         }
     }
 
-    public function DeleteSAddress(Request $req){
+    public function DeleteSAddress(Request $req)
+    {
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
         DB::beginTransaction();
-        $status=false;
+        $status = false;
         try {
-            $isDefault=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->where('isDefault',1)->exists();
-            if($isDefault){
-                return response()->json(['status' => false,'message' => "Default Address cannot be deleted!"]);
-            }else{
-                $status=DB::Table('tbl_customer_address')->where('CustomerID',$CustomerID)->where('AID',$req->AID)->update(['DFlag'=>1,'UpdatedBy'=>$CustomerID,'UpdatedOn'=>date('Y-m-d H:i:s')]);
+            $isDefault = DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->where('AID', $req->AID)->where('isDefault', 1)->exists();
+            if ($isDefault) {
+                return response()->json(['status' => false, 'message' => "Default Address cannot be deleted!"]);
+            } else {
+                $status = DB::Table('tbl_customer_address')->where('CustomerID', $CustomerID)->where('AID', $req->AID)->update(['DFlag' => 1, 'UpdatedBy' => $CustomerID, 'UpdatedOn' => date('Y-m-d H:i:s')]);
             }
-        }catch(Exception $e) {
-            $status=false;
+        } catch (Exception $e) {
+            $status = false;
         }
-        if($status==true){
+        if ($status == true) {
             DB::commit();
-            return response()->json(['status' => true,'message' => "Shipping Address Deleted Successfully"]);
-        }else{
+            return response()->json(['status' => true, 'message' => "Shipping Address Deleted Successfully"]);
+        } else {
             DB::rollback();
-            return response()->json(['status' => false,'message' => "Shipping Address Deleted Failed!"]);
+            return response()->json(['status' => false, 'message' => "Shipping Address Deleted Failed!"]);
         }
     }
 
 //    Notifications
-    public function getNotifications(Request $req){
+    public function getNotifications(Request $req)
+    {
         $lang = optional($req->auth_customer)->language ?? 'en';
         $language = Language::with('translations')->where('code', $lang)->first();
         $translation = $language->translations ? json_decode($language->translations->value) : new \stdClass();
@@ -668,9 +679,9 @@ class CustomerAuthController extends Controller{
         $pageNo = $req->PageNo ?? 1;
         $perPage = 10;
 
-        $Notifications = DB::Table('tbl_notifications as N')->leftJoin('tbl_order as O','O.OrderID','N.RouteID')
+        $Notifications = DB::Table('tbl_notifications as N')->leftJoin('tbl_order as O', 'O.OrderID', 'N.RouteID')
             ->where('N.CustomerID', $CustomerID)
-            ->orderBy('N.CreatedOn','desc')
+            ->orderBy('N.CreatedOn', 'desc')
             ->select('N.*')
 //            ->select('N.*','O.isCustomerRated')
             ->paginate($perPage, ['*'], 'page', $pageNo);
@@ -689,36 +700,39 @@ class CustomerAuthController extends Controller{
             'LastPage' => $Notifications->lastPage(),
         ]);
     }
-    public function getNotificationsCount(Request $req){
+
+    public function getNotificationsCount(Request $req)
+    {
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
-        $NotificationsCount = DB::table('tbl_notifications')->where('CustomerID', $CustomerID)->where('ReadStatus',0)->count();
+        $NotificationsCount = DB::table('tbl_notifications')->where('CustomerID', $CustomerID)
+            ->where('ReadStatus', 0)->count();
         return response()->json([
             'status' => true,
             'data' => $NotificationsCount,
         ]);
     }
-    public function NotificationRead(Request $req){
+
+    public function NotificationRead(Request $req)
+    {
         $customer = $req->auth_customer;
         $CustomerID = $customer->CustomerID;
         DB::beginTransaction();
         try {
             $validatedData = Validator::make($req->all(), [
-            'NID' => 'required|exists:tbl_notifications,NID'
+                'NID' => 'required|exists:tbl_notifications,NID'
             ]);
-
             if ($validatedData->fails()) {
                 return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
             }
-            $status = DB::Table('tbl_notifications')
-                ->where('CustomerID', $CustomerID)
-                ->where('NID', $req->NID)->update(['ReadStatus' => 1,'ReadOn'=>date('Y-m-d H:i:s')]);
-                DB::commit();
-                return response()->json(['status' => true ,'message' => "Notification Read Successfully!"]);
-        }catch(Exception $e) {
+            DB::Table('tbl_notifications')->where('CustomerID', $CustomerID)
+                ->where('NID', $req->NID)->update(['ReadStatus' => 1, 'ReadOn' => date('Y-m-d H:i:s')]);
+            DB::commit();
+            return response()->json(['status' => true, 'message' => "Notification Read Successfully!"]);
+        } catch (Exception $e) {
             logger($e);
             DB::rollback();
-            return response()->json(['status' => false,'message' => "Notification Read Failed!"]);
+            return response()->json(['status' => false, 'message' => "Notification Read Failed!"]);
         }
     }
 
@@ -734,7 +748,7 @@ class CustomerAuthController extends Controller{
             $coupon_value = 0;
             $subTotalAmount = 0;
             $grandTotalAmount = 0;
-            $deliveryCharge = DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0;
+            $shipping_charge = 0;
 
             $Cart = DB::table('tbl_customer_cart as C')
                 ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
@@ -768,6 +782,7 @@ class CustomerAuthController extends Controller{
                     'U.UCode',
                     'U.UID',
                     'PSC.PSCID',
+                    'PV.SKU as variation_SKU',
                     'PV.PRate as variation_PRate',
                     'PV.SRate as variation_SRate'
                 )
@@ -775,21 +790,22 @@ class CustomerAuthController extends Controller{
 
             foreach ($Cart as $item) {
                 if ($item->product_variation_id) {
+                    $item->SKU = $item->variation_SKU;
                     $item->PRate = $item->variation_PRate;
                     $item->SRate = $item->variation_SRate;
                 }
-                $item->PRate = round($item->PRate,2);
-                $item->SRate = round($item->SRate,2);
+                $item->PRate = round($item->PRate, 2);
+                $item->SRate = round($item->SRate, 2);
                 $product_rate = $item->SRate * $item->Qty;
-                $item->PTotalRate = round($product_rate,2);
+                $item->PTotalRate = round($product_rate, 2);
                 $subTotalAmount += $product_rate;
-                unset($item->variation_PRate, $item->variation_SRate);
+                unset($item->variation_SKU, $item->variation_PRate, $item->variation_SRate);
             }
 
             if ($coupon_code) {
                 $coupon = Coupon::where('coupon_code', $coupon_code)->where('DFlag', 0)->where('ActiveStatus', 'Active')
                     ->first(['COID', 'type', 'value']);
-                if($coupon) {
+                if ($coupon) {
                     if ($coupon->type === 'Percentage') {
                         $coupon_value = round(($subTotalAmount / 100) * $coupon->value, 2);
                     } else {
@@ -806,10 +822,7 @@ class CustomerAuthController extends Controller{
                 }
             }
 
-            $shipping_charge = round((($subTotalAmount > 0) ? $deliveryCharge : 0),2);
-            $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
-
-            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $CustomerID)
+            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $customer->CustomerID)
                 ->where('CA.DFlag', 0)->where('CA.isDefault', 1)
                 ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
                 ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
@@ -817,7 +830,31 @@ class CustomerAuthController extends Controller{
                 ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
                 ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
                 ->orderBy('CA.CreatedOn', 'desc')
-                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
+                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID',
+                    'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation', 'CA.CityID',
+                    'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
+                ->first();
+
+            if (($subTotalAmount > 0)) {
+                if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
+                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+                } else {
+                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                }
+            }
+            $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value, 2);
+
+            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $customer->CustomerID)
+                ->where('CA.DFlag', 0)->where('CA.isDefault', 1)
+                ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+                ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+                ->leftJoin($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+                ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
+                ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
+                ->orderBy('CA.CreatedOn', 'desc')
+                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID',
+                    'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation', 'CA.CityID',
+                    'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
                 ->first();
 
             if ($SAddress && ($grandTotalAmount > 0)) {
@@ -835,7 +872,7 @@ class CustomerAuthController extends Controller{
                     "PostalCode" => $SAddress->PostalCode,
                     "CompleteAddress" => $SAddress->CompleteAddress,
                     "OrderDate" => date('Y-m-d'),
-                    "SubTotal" => round($subTotalAmount,2),
+                    "SubTotal" => round($subTotalAmount, 2),
                     "DiscountType" => isset($coupon) ? $coupon->type . " Coupon" : "",
                     "DiscountPer" => $DiscountPer,
                     "DiscountAmount" => $coupon_value,
@@ -881,9 +918,9 @@ class CustomerAuthController extends Controller{
                 $orderDetail->Status = Helper::translate($orderDetail->Status, $lang);
                 $orderDetail->DiscountType = Helper::translate($orderDetail->DiscountType, $lang);
                 $orderDetail->TrackStatus = Helper::translate($orderDetail->TrackStatus, $lang);
-                $orderDetail->City = Helper::translate($orderDetail->City, $lang);
-                $orderDetail->District = Helper::translate($orderDetail->District, $lang);
-                $orderDetail->State = Helper::translate($orderDetail->State, $lang);
+                $orderDetail->State = json_decode($SAddress->StateNameInTranslation)->$lang ?? Helper::translate($SAddress->StateName, $lang);
+                $orderDetail->District = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? Helper::translate($SAddress->DistrictName, $lang);
+                $orderDetail->City = json_decode($SAddress->CityNameInTranslation)->$lang ?? Helper::translate($SAddress->CityName, $lang);
                 $orderDetail->DiscountAmount = Helper::formatAmount($orderDetail->DiscountAmount);
                 $orderDetail->TotalAmount = Helper::formatAmount($orderDetail->TotalAmount);
                 $orderDetail->ShippingCharge = Helper::formatAmount($orderDetail->ShippingCharge);
@@ -893,7 +930,7 @@ class CustomerAuthController extends Controller{
             } else {
                 return $this->errorResponse([], "Cart is Empty, Can't create Order", 422);
             }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             logger($e);
             DB::rollback();
             return $this->errorResponse($e, "Cart Order Creation Failed!", 422);
@@ -912,7 +949,7 @@ class CustomerAuthController extends Controller{
             $coupon_value = 0;
             $subTotalAmount = 0;
             $grandTotalAmount = 0;
-            $deliveryCharge = DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0;
+            $shipping_charge = 0;
 
             $validatedData = Validator::make($request->all(), [
                 'ProductID' => 'required|string|exists:tbl_products,ProductID',
@@ -933,149 +970,160 @@ class CustomerAuthController extends Controller{
 
             $Cart = DB::table('tbl_temp_customer_cart as C')
                 ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
-            ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
-            ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
-            ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
-            ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
-            ->join('tbl_uom as U', 'U.UID', '=', 'P.UID')
-            ->where('C.CustomerID', $customer->CustomerID)
-            ->where('P.ActiveStatus', 'Active')
-            ->where('P.DFlag', 0)
-            ->where('PC.ActiveStatus', 'Active')
-            ->where('PC.DFlag', 0)
-            ->where('PSC.ActiveStatus', 'Active')
-            ->where('PSC.DFlag', 0)
-            ->select(
-                'P.ProductName',
-                'P.ProductNameInTranslation',
-                'P.ProductID',
-                'P.ProductImage',
-                'P.PRate as PRate',
-                'P.SRate as SRate',
-                'PV.VariationID as product_variation_id',
-                'C.Qty',
-                'PCT.PCTName',
-                'PCT.PCTNameInTranslation',
-                'PCT.PCTID',
-                'PC.PCName',
-                'PC.PCNameInTranslation',
-                'PC.PCID',
-                'PSC.PSCName',
-                'PSC.PSCNameInTranslation',
-                'U.UName',
-                'U.UNameInTranslation',
-                'PSC.PSCID',
-                'PV.PRate as variation_PRate',
-                'PV.SRate as variation_SRate')
-            ->get();
+                ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
+                ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
+                ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
+                ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
+                ->join('tbl_uom as U', 'U.UID', '=', 'P.UID')
+                ->where('C.CustomerID', $customer->CustomerID)
+                ->where('P.ActiveStatus', 'Active')
+                ->where('P.DFlag', 0)
+                ->where('PC.ActiveStatus', 'Active')
+                ->where('PC.DFlag', 0)
+                ->where('PSC.ActiveStatus', 'Active')
+                ->where('PSC.DFlag', 0)
+                ->select(
+                    'P.ProductName',
+                    'P.ProductNameInTranslation',
+                    'P.ProductID',
+                    'P.ProductImage',
+                    'P.PRate as PRate',
+                    'P.SRate as SRate',
+                    'PV.VariationID as product_variation_id',
+                    'C.Qty',
+                    'PCT.PCTName',
+                    'PCT.PCTNameInTranslation',
+                    'PCT.PCTID',
+                    'PC.PCName',
+                    'PC.PCNameInTranslation',
+                    'PC.PCID',
+                    'PSC.PSCName',
+                    'PSC.PSCNameInTranslation',
+                    'U.UName',
+                    'U.UNameInTranslation',
+                    'PSC.PSCID',
+                    'PV.SKU as variation_SKU',
+                    'PV.PRate as variation_PRate',
+                    'PV.SRate as variation_SRate')
+                ->get();
 
-        foreach ($Cart as $item) {
-            if ($item->product_variation_id) {
-                $item->PRate = $item->variation_PRate;
-                $item->SRate = $item->variation_SRate;
-                $productUnit = DB::table('tbl_products_variation')
-                    ->where('tbl_products_variation.ProductID', $item->ProductID)
-                    ->where('tbl_products_variation.VariationID', $item->product_variation_id)
-                    ->leftJoin('tbl_products_variation_details as D', function ($join) {
-                        $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
-                    })
-                    ->leftJoin('tbl_attributes_details as AD', function ($join) {
-                        $join->on('AD.ValueID', '=', 'D.AttributeValueID')
-                            ->on('AD.AttrID', '=', 'D.AttributeID');
-                    })
-                    ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
-                    ->select('AD.Values', 'AD.valuesInTranslation')
-                    ->first();
-            } else {
-                $productUnit = DB::table('tbl_products')
-                    ->where('tbl_products.ProductID', $item->ProductID)
-                    ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
-                    ->select('U.UName', 'U.UNameInTranslation')
-                    ->first();
-            }
-
-            if (isset($productUnit->valuesInTranslation)) {
-                $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
-                if (isset($valuesInTranslation[$lang])) {
-                    $productUnit = $valuesInTranslation[$lang];
+            foreach ($Cart as $item) {
+                if ($item->product_variation_id) {
+                    $item->SKU = $item->variation_SKU;
+                    $item->PRate = $item->variation_PRate;
+                    $item->SRate = $item->variation_SRate;
+                    $productUnit = DB::table('tbl_products_variation')
+                        ->where('tbl_products_variation.ProductID', $item->ProductID)
+                        ->where('tbl_products_variation.VariationID', $item->product_variation_id)
+                        ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                            $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                        })
+                        ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                            $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                                ->on('AD.AttrID', '=', 'D.AttributeID');
+                        })
+                        ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                        ->select('AD.Values', 'AD.valuesInTranslation')
+                        ->first();
                 } else {
-                    $productUnit = $productUnit->Values ?? $productUnit->UName ?? '-';
+                    $productUnit = DB::table('tbl_products')
+                        ->where('tbl_products.ProductID', $item->ProductID)
+                        ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
+                        ->select('U.UName', 'U.UNameInTranslation')
+                        ->first();
                 }
-            } elseif (isset($productUnit->UNameInTranslation)) {
-                $UNameInTranslation = json_decode($productUnit->UNameInTranslation, true);
-                if (isset($UNameInTranslation[$lang])) {
-                    $productUnit = $UNameInTranslation[$lang];
+
+                if (isset($productUnit->valuesInTranslation)) {
+                    $valuesInTranslation = json_decode($productUnit->valuesInTranslation, true);
+                    if (isset($valuesInTranslation[$lang])) {
+                        $productUnit = $valuesInTranslation[$lang];
+                    } else {
+                        $productUnit = $productUnit->Values ?? $productUnit->UName ?? '-';
+                    }
+                } elseif (isset($productUnit->UNameInTranslation)) {
+                    $UNameInTranslation = json_decode($productUnit->UNameInTranslation, true);
+                    if (isset($UNameInTranslation[$lang])) {
+                        $productUnit = $UNameInTranslation[$lang];
+                    } else {
+                        $productUnit = $productUnit->UName ?? '-';
+                    }
                 } else {
                     $productUnit = $productUnit->UName ?? '-';
                 }
-            } else {
-                $productUnit = $productUnit->UName ?? '-';
+
+                $item->unit = $productUnit;
+                $item->product_name = json_decode($item->ProductNameInTranslation)->$lang ?? $item->ProductName;
+                $item->PCTName = json_decode($item->PCTNameInTranslation)->$lang ?? $item->PCTName;
+                $item->PCName = json_decode($item->PCNameInTranslation)->$lang ?? $item->PCName;
+                $item->PSCName = json_decode($item->PSCNameInTranslation)->$lang ?? $item->PSCName;
+
+                $item->ProductImage = file_exists($item->ProductImage) ? url($item->ProductImage) : url("assets/images/no-image-b.png");
+                $product_rate = $item->SRate * $item->Qty;
+                $item->PTotalRate = Helper::formatAmount($product_rate);
+                $item->PRate = Helper::formatAmount($item->PRate);
+                $item->SRate = Helper::formatAmount($item->SRate);
+                $subTotalAmount += $product_rate;
+                unset($item->variation_SKU, $item->variation_PRate, $item->variation_SRate, $item->ProductName, $item->PCTNameInTranslation,
+                    $item->PCNameInTranslation, $item->PSCNameInTranslation, $item->ProductNameInTranslation, $item->UNameInTranslation, $item->UName);
             }
 
-            $item->unit = $productUnit;
-            $item->product_name = json_decode($item->ProductNameInTranslation)->$lang ?? $item->ProductName;
-            $item->PCTName = json_decode($item->PCTNameInTranslation)->$lang ?? $item->PCTName;
-            $item->PCName = json_decode($item->PCNameInTranslation)->$lang ?? $item->PCName;
-            $item->PSCName = json_decode($item->PSCNameInTranslation)->$lang ?? $item->PSCName;
-
-            $item->ProductImage = file_exists($item->ProductImage) ? url($item->ProductImage) : url("assets/images/no-image-b.png");
-            $product_rate = $item->SRate * $item->Qty;
-            $item->PTotalRate = Helper::formatAmount($product_rate);
-            $item->PRate = Helper::formatAmount($item->PRate);
-            $item->SRate = Helper::formatAmount($item->SRate);
-            $subTotalAmount += $product_rate;
-            unset($item->variation_PRate, $item->variation_SRate, $item->ProductName, $item->PCTNameInTranslation, $item->PCNameInTranslation,
-                $item->PSCNameInTranslation, $item->ProductNameInTranslation, $item->UNameInTranslation, $item->UName);
-        }
-
-        if($coupon_code) {
-            $coupon = Coupon::where('coupon_code', $coupon_code)
-                ->where('DFlag', 0)
-                ->where('ActiveStatus', 'Active')
-                ->first(['COID', 'type', 'value']);
-            if ($coupon->type === 'Percentage') {
-                $coupon_value = ($subTotalAmount / 100) * $coupon->value;
-            } else {
-                $coupon_value = $coupon->value;
+            if ($coupon_code) {
+                $coupon = Coupon::where('coupon_code', $coupon_code)
+                    ->where('DFlag', 0)
+                    ->where('ActiveStatus', 'Active')
+                    ->first(['COID', 'type', 'value']);
+                if ($coupon->type === 'Percentage') {
+                    $coupon_value = ($subTotalAmount / 100) * $coupon->value;
+                } else {
+                    $coupon_value = $coupon->value;
+                }
             }
-        }
+            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$customer->CustomerID)
+                ->where('CA.DFlag',0)->where('CA.isDefault',1)
+                ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+                ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+                ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+                ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
+                ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
+                ->orderBy('CA.CreatedOn','desc')
+                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID',
+                    'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation', 'CA.CityID',
+                    'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+                ->first();
 
-        $shipping_charge = ($subTotalAmount > 0) ? ($deliveryCharge) : 0;
-        if($coupon_value > $subTotalAmount){
-            $coupon_value = $subTotalAmount;
-        }
-        $grandTotalAmount = ($subTotalAmount + $shipping_charge) - $coupon_value;
+            if(($subTotalAmount > 0)){
+                if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
+                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+                } else {
+                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                }
+            }
 
-        $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$customer->CustomerID)
-            ->where('CA.DFlag',0)->where('CA.isDefault',1)
-            ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
-            ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
-            ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
-            ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
-            ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
-            ->orderBy('CA.CreatedOn','desc')
-            ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
-            ->first();
+            if ($coupon_value > $subTotalAmount) {
+                $coupon_value = $subTotalAmount;
+            }
+            $grandTotalAmount = ($subTotalAmount + $shipping_charge) - $coupon_value;
             if ($SAddress) {
                 $SAddress->ReceiverName = Helper::translate($SAddress->ReceiverName, $lang);
-                $SAddress->CityName = Helper::translate($SAddress->CityName, $lang);
-                $SAddress->StateName = Helper::translate($SAddress->StateName, $lang);
-                $SAddress->DistrictName = Helper::translate($SAddress->DistrictName, $lang);
+                $SAddress->StateName = json_decode($SAddress->StateNameInTranslation)->$lang ?? Helper::translate($SAddress->StateName, $lang);
+                $SAddress->DistrictName = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? Helper::translate($SAddress->DistrictName, $lang);
+                $SAddress->CityName = json_decode($SAddress->CityNameInTranslation)->$lang ?? Helper::translate($SAddress->CityName, $lang);
                 $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
                 $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
+                unset($SAddress->StateNameInTranslation, $SAddress->DistrictNameInTranslation, $SAddress->CityNameInTranslation);
             }
 
             DB::commit();
             return response()->json(['status' => true, 'sub_total_amount' => Helper::formatAmount($subTotalAmount),
-            'coupon_value' => Helper::formatAmount($coupon_value), 'shipping_charge' => Helper::formatAmount($shipping_charge),
-            'grand_total_amount' => Helper::formatAmount($grandTotalAmount),'total_product_count' => $Cart->count(),
-            'shipping_address'=> $SAddress, 'data' => $Cart]);
-    } catch(Exception $e) {
-        logger($e);
-        DB::rollback();
-        return $this->errorResponse($e, "Buy Now Order Preview Creation Failed!", 422);
+                'coupon_value' => Helper::formatAmount($coupon_value), 'shipping_charge' => Helper::formatAmount($shipping_charge),
+                'grand_total_amount' => Helper::formatAmount($grandTotalAmount), 'total_product_count' => $Cart->count(),
+                'shipping_address' => $SAddress, 'data' => $Cart]);
+        } catch (Exception $e) {
+            logger($e);
+            DB::rollback();
+            return $this->errorResponse($e, "Buy Now Order Preview Creation Failed!", 422);
+        }
     }
-}
 
     public function buyNowOrder(Request $request)
     {
@@ -1089,8 +1137,7 @@ class CustomerAuthController extends Controller{
             $coupon_value = 0;
             $subTotalAmount = 0;
             $grandTotalAmount = 0;
-            $deliveryCharge = DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0;
-
+            $shipping_charge = 0;
             $validatedData = Validator::make($request->all(), [
                 'ProductID' => 'required|string|exists:tbl_products,ProductID',
                 'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
@@ -1143,20 +1190,23 @@ class CustomerAuthController extends Controller{
                     'U.UCode',
                     'U.UID',
                     'PSC.PSCID',
+                    'PV.SKU as variation_SKU',
                     'PV.PRate as variation_PRate',
                     'PV.SRate as variation_SRate')
                 ->get();
 
             foreach ($Cart as $item) {
                 if ($item->product_variation_id) {
+                    $item->SKU = $item->variation_SKU;
                     $item->PRate = $item->variation_PRate;
-                    $item->SRate = $item->variation_SRate;}
+                    $item->SRate = $item->variation_SRate;
+                }
                 $item->PRate = round($item->PRate,2);
                 $item->SRate = round($item->SRate,2);
                 $product_rate = $item->SRate * $item->Qty;
                 $item->PTotalRate = round($product_rate,2);
                 $subTotalAmount += $product_rate;
-                unset($item->variation_PRate, $item->variation_SRate);
+                unset($item->variation_SKU, $item->variation_PRate, $item->variation_SRate);
             }
 
             if ($coupon_code) {
@@ -1177,19 +1227,37 @@ class CustomerAuthController extends Controller{
                 }
             }
 
-            $shipping_charge = round((($subTotalAmount > 0) ? $deliveryCharge : 0),2);
-            $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
-
-            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $CustomerID)
-                ->where('CA.DFlag', 0)->where('CA.isDefault', 1)
-                ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
-                ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
-                ->leftJoin($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
-                ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
-                ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
-                ->orderBy('CA.CreatedOn', 'desc')
-                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID', 'S.StateName', 'CA.DistrictID', 'D.DistrictName', 'CA.CityID', 'CI.CityName', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
+            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$customer->CustomerID)
+                ->where('CA.DFlag',0)->where('CA.isDefault',1)
+                ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+                ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+                ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+                ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
+                ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
+                ->orderBy('CA.CreatedOn','desc')
+                ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID',
+                    'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation', 'CA.CityID',
+                    'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
                 ->first();
+
+            if(($subTotalAmount > 0)){
+                if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
+                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+                } else {
+                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                }
+            }
+
+            if ($SAddress) {
+                $SAddress->ReceiverName = Helper::translate($SAddress->ReceiverName, $lang);
+                $SAddress->StateName = json_decode($SAddress->StateNameInTranslation)->$lang ?? Helper::translate($SAddress->StateName, $lang);
+                $SAddress->DistrictName = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? Helper::translate($SAddress->DistrictName, $lang);
+                $SAddress->CityName = json_decode($SAddress->CityNameInTranslation)->$lang ?? Helper::translate($SAddress->CityName, $lang);
+                $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
+                $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
+                unset($SAddress->StateNameInTranslation, $SAddress->DistrictNameInTranslation, $SAddress->CityNameInTranslation);
+            }
+            $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
 
             if ($SAddress && ($grandTotalAmount > 0)) {
                 $OrderID = DocNum::getDocNum(docTypes::Order->value);

@@ -740,46 +740,49 @@ class ProductHelper {
             return array('status' => false, 'message' => "Product Create Failed");
         }
     }
-	private static function variationSave($req,$UserID){
-        $tmpDBName=Helper::getTmpDB();
+
+    private static function variationSave($req, $UserID)
+    {
+        $tmpDBName = Helper::getTmpDB();
         DB::beginTransaction();
-		$images=array();
-		$Image="";
-		$galleryImages=array();
-		try {
-			$tmpImage=json_decode($req->images,true);
-            $Attributes=array();
-            $Attributes["data"]=json_decode($req->data,true);
-            $Attributes["ValueIDs"]=json_decode($req->ValueIDs,true);
-			$data=array(
-                "VariationID"=>$variationID,
-                "UUID"=>$req->UUID,
-                "ProductID"=>$req->ProductID,
-				"Slug"=>Helper::generateSlug($req->title),
-                "Title"=>$req->title,
-                "SKU"=>$req->SKU,
-                "PRate"=>$req->PurchasePrice,
-                "SRate"=>$req->SalesPrice,
-                "Images"=>serialize($tmpImage),
-                "Attributes"=>serialize($Attributes),
-                "CombinationID"=>implode("-",json_decode($req->ValueIDs,true)),
-                "DFlag"=>0,
-				"CreatedBy"=>$UserID,
-				"CreatedOn"=>date("Y-m-d H:i:s")
-			);
-			DB::Table($tmpDBName.'tbl_products_variation')->insert($data);
+        $images = array();
+        $Image = "";
+        $galleryImages = array();
+        try {
+            $variationID = date("YmdHis") . "-" . Helper::RandomString(20);
+            $tmpImage = json_decode($req->images, true);
+            $Attributes = array();
+            $Attributes["data"] = json_decode($req->data, true);
+            $Attributes["ValueIDs"] = json_decode($req->ValueIDs, true);
+            $data = [
+                "VariationID" => $variationID,
+                "UUID" => $req->UUID,
+                "ProductID" => $req->ProductID,
+                "Slug" => Helper::generateSlug($req->title),
+                "Title" => $req->title,
+                "SKU" => $req->SKU,
+                "PRate" => $req->PurchasePrice,
+                "SRate" => $req->SalesPrice,
+                "Images" => serialize($tmpImage),
+                "Attributes" => serialize($Attributes),
+                "CombinationID" => implode("-", json_decode($req->ValueIDs, true)),
+                "DFlag" => 0,
+                "CreatedBy" => $UserID,
+                "CreatedOn" => date("Y-m-d H:i:s")
+            ];
+            DB::Table($tmpDBName . 'tbl_products_variation')->insert($data);
             DB::commit();
-            return array('status'=>true,'message'=>"variation Saved Successfully");
-		}catch(Exception $e) {
+            return array('status' => true, 'message' => "variation Saved Successfully");
+        } catch (Exception $e) {
             logger($e);
             DB::rollback();
             //Helper::removeFile($BrandLogo);
-            foreach($images as $KeyName=>$Img){
+            foreach ($images as $KeyName => $Img) {
                 Helper::removeFile($Img['url']);
             }
-            return array('status'=>false,'message'=>"Product Create Failed");
-		}
-	}
+            return array('status' => false, 'message' => "Product Create Failed");
+        }
+    }
 	private static function checkTmpProductTables(){
 		$tmpDBName=Helper::getTmpDB();
 		if(!Helper::checkTableExists($tmpDBName, "tbl_products")){
