@@ -7,6 +7,7 @@ use App\enums\cruds;
 use App\enums\docTypes;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
+use App\Mail\OrderMail;
 use App\Models\CustomerOrderTrack;
 use App\Models\DocNum;
 use App\Models\Order;
@@ -15,6 +16,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Redirect;
 use App\Models\general;
@@ -24,7 +26,6 @@ use Illuminate\Support\Facades\Auth;
 use App\Rules\ValidUnique;
 use Illuminate\Validation\Rule;
 use logs;
-use Mail;
 use App\enums\activeMenuNames;
 
 class OrderController extends Controller{
@@ -562,12 +563,15 @@ class OrderController extends Controller{
                     "UpdatedBy" => $this->UserID,
                     "UpdatedOn" => date("Y-m-d H:i:s")
                 );
-                Order::where('OrderID', $OrderID)->update($data);
+                $Order = Order::where('OrderID', $OrderID)->update($data);
                 $Description = "Your Order Has Been Shipped, You Will Receive Shipped Within 2 To 3 Days";
                 $Title = "Shipment update";
                 $Message = "Your Order shipped successfully";
                 CustomerOrderTrack::where('OrderID', $OrderID)->where('Status', "Shipped")
                     ->update(["Description" => $Description, "StatusDate" => Carbon::now(), "UpdatedBy" => $this->UserID]);
+//                [$orderDetails, $logo, $companyDetails, $locationDetails] = $this->generateMailData($OrderID);
+//                Mail::to($Order->Email)->send(new OrderMail("Shipment", 'orderDetails', 'companyDetails', 'locationDetails', 'logo'));
+
                 Helper::saveNotification($OldData->CreatedBy, $Title, $Message, 'Order', $OrderID);
                 $NewData = Order::where('OrderID', $OrderID)->get();
                 $logData = array("Description" => "Order Track Status Updated", "ModuleName" => $this->ActiveMenuName, "Action" => cruds::UPDATE->value, "ReferID" => $OrderID, "OldData" => $OldData, "NewData" => $NewData, "UserID" => $this->UserID, "IP" => $req->ip());
@@ -583,22 +587,56 @@ class OrderController extends Controller{
             return array('status' => false, 'message' => 'Access denied');
         }
     }
-
-    private function sendMail($SupportID) {
-        try{
-            $tdata=$this->getSupportDetails(array("SupportID"=>$SupportID));
-            if(count($tdata)>0){
-                $email=$tdata[0]->Email;
-                if($email!=""){
-                    $emailContent=DB::table('tbl_email_contents')->where('type','customers-support-notifications')->first();
-                    $messageData = ['SupportID'=>$SupportID,'Name'=>$tdata[0]->name,'emailContent'=>$emailContent,'LoginType'=>$this->LoginType,'email'=>$email];
-                    Mail::send('emails.support',$messageData,function($message) use($email,$emailContent){$message->to($email)->subject($emailContent->Subject);});
-                }
+    public function generateMailData($OrderID)
+    {
+        $generalDB = Helper::getGeneralDB();
+        $orderDetails = Order::with('orderDetails')->where('OrderID', $OrderID)->get();
+        $orderDetails->transform(function ($order) {
+            if ($order->orderDetails) {
+                $order->orderDetails->transform(function ($detail) {
+                    $detail->PRate = Helper::formatAmount($detail->PRate);
+                    $detail->SRate = Helper::formatAmount($detail->SRate);
+                    $detail->Amount = Helper::formatAmount($detail->Amount);
+                    return $detail;
+                });
             }
+            $order->SubTotal = Helper::formatAmount(($order->SubTotal));
+            $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
+            $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
+            $order->TotalAmountInString = Helper::formatAmount($order->TotalAmount);
+            $order->OrderDate = Carbon::parse($order->OrderDate)->format('d/m/Y');
+            return $order;
+        });
+        if(count($orderDetails) > 0){
+            $orderDetails = $orderDetails[0];
         }
-        catch(Exception $e){
-            return array('status'=>false,'message'=>'E-Mail has been not sent due to SMTP configuration !!!');
+        $companyDetails = collect(DB::Table('tbl_company_settings')->pluck( 'KeyValue', 'KeyName'));
+        if (empty($companyDetails['Logo'])) {
+            $logo = config('app.url') . '/' . 'assets/images/no-image-b.png';
+        } else {
+            $logo = config('app.url') . '/' . $companyDetails['Logo'];
         }
-        return array('status'=>true,'message'=>'');
+
+        $stateID = $companyDetails->get('StateID');
+        $cityID = $companyDetails->get('CityID');
+        $districtID = $companyDetails->get('DistrictID');
+        $postalCodeID = $companyDetails->get('PostalCodeID');
+
+        $locationDetails = DB::table($generalDB.'tbl_states as S')
+            ->join($generalDB.'tbl_cities as CI', 'CI.StateID', '=', 'S.StateID')
+            ->join($generalDB.'tbl_districts as D', 'D.StateID', '=', 'S.StateID')
+            ->join($generalDB.'tbl_postalcodes as PC', 'PC.PID', '=', 'CI.PostalID')
+            ->select(
+                'S.StateName',
+                'CI.CityName',
+                'D.DistrictName',
+                'PC.PostalCode'
+            )
+            ->where('S.StateID', $stateID)
+            ->where('CI.CityID', $cityID)
+            ->where('D.DistrictID', $districtID)
+            ->where('PC.PID', $postalCodeID)
+            ->first();
+        return [$orderDetails, $logo, $companyDetails, $locationDetails];
     }
 }

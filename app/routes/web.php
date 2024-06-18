@@ -187,3 +187,6 @@ Route::group(['prefix'=>'admin'],function (){
     });
 });
 require __DIR__.'/auth.php';
+
+Route::get('/cmail', [\App\Http\Controllers\Controller::class, 'order_confirmation_mail']);
+Route::get('/smail', [\App\Http\Controllers\Controller::class, 'order_shipment_mail']);

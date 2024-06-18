@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
+use App\Mail\OrderMail;
 use App\Models\Coupon;
 use App\Models\CustomerCart;
 use App\Models\CustomerOrderTrack;
@@ -23,6 +24,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -1568,7 +1570,8 @@ class CustomerAuthController extends Controller{
                         CustomerOrderTrack::create($orderTrack);
                     }
                 }
-
+//                [$orderDetails, $logo, $companyDetails, $locationDetails] = $this->generateMailData($OrderID);
+//                Mail::to($orderDetails->Email)->send(new OrderMail("Confirmation", 'orderDetails', 'companyDetails', 'locationDetails', 'logo'));
                 $Title = "Order Place Successfully";
                 $Message = "Your Order placed successfully";
                 Helper::saveNotification($CustomerID, $Title, $Message, 'Order', $OrderID);
@@ -1709,5 +1712,58 @@ class CustomerAuthController extends Controller{
 
         $completeAddress = $req->Address . ', ' . $city . ', ' . $district . ', ' . $state . ', ' . $postalCode;
         return $completeAddress;
+    }
+
+    public function generateMailData($OrderID)
+    {
+        $generalDB = Helper::getGeneralDB();
+        $orderDetails = Order::with('orderDetails')->where('OrderID', $OrderID)->get();
+        $orderDetails->transform(function ($order) {
+            if ($order->orderDetails) {
+                $order->orderDetails->transform(function ($detail) {
+                    $detail->PRate = Helper::formatAmount($detail->PRate);
+                    $detail->SRate = Helper::formatAmount($detail->SRate);
+                    $detail->Amount = Helper::formatAmount($detail->Amount);
+                    return $detail;
+                });
+            }
+            $order->SubTotal = Helper::formatAmount(($order->SubTotal));
+            $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
+            $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
+            $order->TotalAmountInString = Helper::formatAmount($order->TotalAmount);
+            $order->OrderDate = Carbon::parse($order->OrderDate)->format('d/m/Y');
+            return $order;
+        });
+        if(count($orderDetails) > 0){
+            $orderDetails = $orderDetails[0];
+        }
+        $companyDetails = collect(DB::Table('tbl_company_settings')->pluck( 'KeyValue', 'KeyName'));
+        if (empty($companyDetails['Logo'])) {
+            $logo = config('app.url') . '/' . 'assets/images/no-image-b.png';
+        } else {
+            $logo = config('app.url') . '/' . $companyDetails['Logo'];
+        }
+
+        $stateID = $companyDetails->get('StateID');
+        $cityID = $companyDetails->get('CityID');
+        $districtID = $companyDetails->get('DistrictID');
+        $postalCodeID = $companyDetails->get('PostalCodeID');
+
+        $locationDetails = DB::table($generalDB.'tbl_states as S')
+            ->join($generalDB.'tbl_cities as CI', 'CI.StateID', '=', 'S.StateID')
+            ->join($generalDB.'tbl_districts as D', 'D.StateID', '=', 'S.StateID')
+            ->join($generalDB.'tbl_postalcodes as PC', 'PC.PID', '=', 'CI.PostalID')
+            ->select(
+                'S.StateName',
+                'CI.CityName',
+                'D.DistrictName',
+                'PC.PostalCode'
+            )
+            ->where('S.StateID', $stateID)
+            ->where('CI.CityID', $cityID)
+            ->where('D.DistrictID', $districtID)
+            ->where('PC.PID', $postalCodeID)
+            ->first();
+        return [$orderDetails, $logo, $companyDetails, $locationDetails];
     }
 }
