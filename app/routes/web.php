@@ -190,3 +190,4 @@ require __DIR__.'/auth.php';
 
 Route::get('/cmail', [\App\Http\Controllers\Controller::class, 'order_confirmation_mail']);
 Route::get('/smail', [\App\Http\Controllers\Controller::class, 'order_shipment_mail']);
+Route::get('/generate-packing-label/{OrderID}', [OrderController::class, 'generatePackingLabel'])->name('generatePackingLabel');

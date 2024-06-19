@@ -12,6 +12,7 @@ use App\Models\CustomerOrderTrack;
 use App\Models\DocNum;
 use App\Models\Order;
 use App\Rules\ValidDB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -460,9 +461,9 @@ class OrderController extends Controller{
                                 $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="View"><i class="fa fa-eye"></i></button>';
                             }
                         }
-//                        if ($this->general->isCrudAllow($this->CRUD, "delete")) {
-//                            $html .= '<button type="button" data-id="' . $d . '" class="btn  btn-outline-danger ' . $this->general->UserInfo['Theme']['button-size'] . ' btnDelete" data-original-title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></button>';
-//                        }
+                        if($row['TrackStatus']) {
+                            $html .= '<a href="' . route('generatePackingLabel', $d) . '" target="_blank"><button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10" data-original-title="Packing Slip"><i class="fa fa-paper-plane"></i></button></a>';
+                        }
                         return $html;
                     }
                 )
@@ -638,5 +639,49 @@ class OrderController extends Controller{
             ->where('PC.PID', $postalCodeID)
             ->first();
         return [$orderDetails, $logo, $companyDetails, $locationDetails];
+    }
+
+    public function generatePackingLabel($OrderID)
+    {
+        $order = Order::with('orderDetails')
+            ->where('OrderID', $OrderID)
+            ->first();
+        if ($order) {
+            $order->OrderDate = Carbon::parse($order->OrderDate)->format('M d, Y');
+            $order->CustomerName = Helper::translate($order->CustomerName, 'en');
+            $order->CompleteAddress = Helper::translate($order->CompleteAddress, 'en');
+            if ($order->orderDetails) {
+                $order->orderDetails->transform(function ($detail) {
+                    if ($detail->ProductVariationID) {
+                        $productUnit = DB::table('tbl_products_variation')
+                            ->where('tbl_products_variation.ProductID', $detail->ProductID)
+                            ->where('tbl_products_variation.VariationID', $detail->ProductVariationID)
+                            ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                                $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                            })
+                            ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                                $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                                    ->on('AD.AttrID', '=', 'D.AttributeID');
+                            })
+                            ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                            ->select('AD.Values')
+                            ->first();
+                    } else {
+                        $productUnit = DB::table('tbl_products')
+                            ->where('tbl_products.ProductID', $detail->ProductID)
+                            ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
+                            ->select('U.UName')
+                            ->first();
+                    }
+
+                    $detail->weight = $productUnit->Values ?? $productUnit->UName ?? '-';
+                    return $detail;
+                });
+            }
+        }
+
+        $pdf = PDF::loadView('packing_label', compact('order'));
+        $pdf->setPaper([0, 0, 283.46, 425.20]); // 100mm x 150mm in points (1mm = 2.8346 points)
+        return $pdf->stream("Packing slip " . $OrderID . ".pdf");
     }
 }

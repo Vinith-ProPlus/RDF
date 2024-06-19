@@ -256,9 +256,12 @@ class dashboardController extends Controller
                 'db' => 'OrderID',
                 'dt' => '7',
                 'formatter' => function ($d, $row) {
-                    return '<a href="' . route('admin.order.edit', $d) . '"><button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="Edit"><i class="fa '. (($row['TrackStatus'] === "Order Confirmed") ? "fa-pencil" : "fa-eye") .'"></i></button></a>';
+                    $html = '<a href="' . route('admin.order.edit', $d) . '"><button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10 btnEdit" data-original-title="Edit"><i class="fa ' . (($row['TrackStatus'] === "Order Confirmed") ? "fa-pencil" : "fa-eye") . '"></i></button></a>';
+                    if ($row['TrackStatus']) {
+                        $html .= '<a href="' . route('generatePackingLabel', $d) . '" target="_blank"><button type="button" data-id="' . $d . '" class="btn  btn-outline-success ' . $this->general->UserInfo['Theme']['button-size'] . ' mr-10" data-original-title="Packing Slip"><i class="fa fa-paper-plane"></i></button></a>';
+                    }
+                    return $html;
                 }
-
             )
         );
         $Where = "";
