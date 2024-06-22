@@ -112,7 +112,7 @@
                     "info": false,
                     "order": [[ 0, "desc" ]],
                     "iDisplayLength": 10,
-                    "lengthMenu": [[20,  50,100,250], [10, 25, 50,100,250]],
+                    "lengthMenu": [[10, 25, 50,100,250, 500, -1], [10, 25, 50,100,250, 500, "All"]],
                     "bServerSide": true,
                     createdRow: function (row, data, index) {
                         $(row).addClass('btnDetails');
