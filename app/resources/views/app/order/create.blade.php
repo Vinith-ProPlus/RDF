@@ -104,12 +104,20 @@
                             </div>
                         </div>
 
-                        <div class="col-sm-12 mt-20 {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}">
-                            <div class="form-group">
-                                <label for="lstCOType"><b>Payment ID :</b></label>
-                                <label>{{ $EditData[0]->PaymentID ?? '-' }}</label>
+                        @if(($EditData[0]->PaymentID))
+                            <div class="col-sm-12 mt-20">
+                                <div class="form-group">
+                                    <label for="lstCOType"><b>Payment ID :</b></label>
+                                    <label>{{ $EditData[0]->PaymentID ?? '-' }}</label>
+                                </div>
                             </div>
-                        </div>
+                            <div class="col-sm-12 mt-20">
+                                <div class="form-group">
+                                    <label for="lstCOType"><b>Busy Sale ID :</b></label>
+                                    <label>{{ $EditData[0]->BusySaleID ?? '-' }}</label>
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="row col-12">
                             <div class="col-sm-6 col-md-4 mt-20 {{ (!$EditData[0]->PaymentID) ? 'd-none' : '' }}">

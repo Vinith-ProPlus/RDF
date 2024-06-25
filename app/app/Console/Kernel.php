@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\PushPendingSalesToBusyCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -14,6 +15,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('create-yearly-log-table')->yearly();
+        $schedule->command('push-pending-sales-to-busy-command')->hourly();
     }
 
     /**
@@ -25,4 +27,8 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+    protected $commands = [
+        PushPendingSalesToBusyCommand::class,
+    ];
 }

@@ -85,7 +85,6 @@ class BusyIntegration extends Model
 
     function composeOrderXml($order)
     {
-        logger(" compose xml try");
         if ($order) {
             // Start composing the XML
             $xml = '<Sale>';
@@ -176,7 +175,6 @@ class BusyIntegration extends Model
     // select top 1 vchCode, vchno from tran1 where vchtype=9 order by vchCode desc
     function pushSaleVoucher($OrderID)
     {
-        logger("push voucher try");
         if ($this->isBusyHostActive()) {
             $order = Order::with('orderDetails')->where('OrderID', $OrderID)->first();
             $order->CustomerName = Helper::translate($order->CustomerName, 'en');
