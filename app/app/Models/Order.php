@@ -46,6 +46,7 @@ class Order extends Model
         "ShippingCharge",
         "TotalAmount",
         "PaymentID",
+        "BusySaleID",
         "DFlag",
         "CreatedOn",
         "CreatedBy",

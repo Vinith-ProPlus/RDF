@@ -7,8 +7,10 @@
     "require": {
         "php": "^8.1",
         "ext-curl": "*",
+        "ext-dom": "*",
         "barryvdh/laravel-dompdf": "^2.2",
         "guzzlehttp/guzzle": "^7.2",
+        "imtigger/laravel-job-status": "^1.2",
         "kreait/laravel-firebase": "^5.6",
         "laravel/framework": "^10.10",
         "laravel/passport": "^11.10",

@@ -1,0 +1,40 @@
+<Sale>
+    <VchSeriesName>Main</VchSeriesName>
+    <Date>01-04-2024</Date>
+    <VchType>9</VchType>
+    <StockUpdationDate>01-04-2024</StockUpdationDate>
+    <STPTName>Local-Exempt</STPTName>
+    <MasterName1>Vignesh - 9876543210</MasterName1>
+    <MasterName2>Main Store</MasterName2>
+    <TranCurName>Rs.</TranCurName>
+    <InputType>1</InputType>
+    <ItemEntries>
+        <ItemDetail>
+            <Date>01-04-2024</Date>
+            <VchType>9</VchType>
+            <SrNo>1</SrNo>
+            <ItemName>Water Bottle</ItemName>
+            <UnitName>Dozen</UnitName>
+            <AltUnitName>Dozen</AltUnitName>
+            <ConFactor>1</ConFactor>
+            <Qty>12</Qty>
+            <QtyMainUnit>12</QtyMainUnit>
+            <QtyAltUnit>12</QtyAltUnit>
+            <ItemTaxCategory>&lt;&lt;---None---&gt;&gt;</ItemTaxCategory>
+            <ItemDescInfo/>
+            <Price>120</Price>
+            <PriceAltUnit>120</PriceAltUnit>
+            <ListPrice>120</ListPrice>
+            <Amt>1440</Amt>
+            <NettAmount>1440</NettAmount>
+            <MC>Main Store</MC>
+            <ItemSerialNoEntries/>
+            <ParamStockEntries/>
+            <BatchEntries/>
+            <RecType>2</RecType>
+        </ItemDetail>
+    </ItemEntries>
+    <POSVchData>
+        <CarrySettlement>True</CarrySettlement>
+    </POSVchData>
+</Sale>

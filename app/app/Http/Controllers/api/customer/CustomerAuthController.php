@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\customer;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
+use App\Jobs\SaleRegisterInBusyJob;
 use App\Mail\OrderMail;
 use App\Models\Coupon;
 use App\Models\CustomerCart;
@@ -1575,6 +1576,7 @@ class CustomerAuthController extends Controller{
                 $Title = "Order Place Successfully";
                 $Message = "Your Order placed successfully";
                 Helper::saveNotification($CustomerID, $Title, $Message, 'Order', $OrderID);
+                SaleRegisterInBusyJob::dispatchSync($OrderID);
                 DB::commit();
                 return $this->successResponse([], "Payment Status Successfully Updated");
             } else {
