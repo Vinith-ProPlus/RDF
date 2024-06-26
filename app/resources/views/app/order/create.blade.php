@@ -114,7 +114,7 @@
                             <div class="col-sm-12 mt-20">
                                 <div class="form-group">
                                     <label for="lstCOType"><b>Busy Sale ID :</b></label>
-                                    <label>{{ $EditData[0]->BusySaleID ?? '-' }}</label>
+                                    <label>{{ $EditData[0]->BusySaleID ?? 'Not Updated' }}</label>
                                 </div>
                             </div>
                         @endif
