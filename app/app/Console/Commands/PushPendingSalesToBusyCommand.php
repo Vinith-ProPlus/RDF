@@ -28,11 +28,13 @@ class PushPendingSalesToBusyCommand extends Command
      */
     public function handle()
     {
-        $busyIntegration = new BusyIntegration();
-        if($busyIntegration->isBusyHostActive()){
-            $pendingOrderIDs = Order::where('BusySaleID', null)->pluck('OrderID');
+        logger("12wdnncx Connection active");
+        logger('wlxk ');
+        if(BusyIntegration::isBusyHostActive()){
+            logger("Connection active in handle");
+            $pendingOrderIDs = Order::whereNull('BusySaleID')->pluck('OrderID');
             foreach ($pendingOrderIDs as $pendingOrderID){
-                $busyIntegration->pushSaleVoucher($pendingOrderID);
+                BusyIntegration::pushSaleVoucher($pendingOrderID);
             }
         }
     }

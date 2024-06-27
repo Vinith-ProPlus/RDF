@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Controller;
 use App\Http\Controllers\Home\HomeAuthController;
 use App\Http\Controllers\web\loginController;
 use App\Http\Controllers\web\dashboardController;
@@ -170,6 +171,13 @@ Route::group(['prefix'=>'admin'],function (){
                 Route::get('/edit/{ID}', [OrderController::class, 'Edit'])->name('admin.order.edit');
                 Route::POST('/edit/{ID}', [OrderController::class, 'Update']);
                 Route::post('/get/order', [OrderController::class, 'getDetails']);
+        });
+
+        Route::group(['prefix'=>'busy'],function () {
+                Route::get('/', [OrderController::class, 'BusyOrderView'])->name('admin.busy.index');
+                Route::get('/data', [Controller::class, 'BusyTableView'])->name('admin.busy.view');
+                Route::get('/show/{ID}', [OrderController::class, 'busyShow'])->name('admin.busy.show');
+//                Route::post('/get/order', [OrderController::class, 'getDetails']);
         });
         Route::group(['prefix'=>'master'],function (){
             require __DIR__.'/web/masters/master.php';

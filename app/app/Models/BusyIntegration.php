@@ -12,28 +12,35 @@ class BusyIntegration extends Model
 {
     use HasFactory;
 
-    function isBusyHostActive()
+    public static function isBusyHostActive()
     {
+        logger("CHeck active");
         $ch = curl_init(getenv("BUSY_URL"));
-        curl_setopt_array($ch, [CURLOPT_NOBODY => true, CURLOPT_TIMEOUT => 5]);
-        if(curl_exec($ch) && ($code = curl_getinfo($ch, CURLINFO_HTTP_CODE)) >= 200 && $code < 400) {
-            $q = "SELECT TOP 1 vchno FROM tran1 WHERE vchtype = 9;";
-            $response = $this->runCustomQuery($q);
-            return (($response !== "") && ($response !== false));
-        } else {
-            return false;
-        }
+        curl_setopt_array($ch, [
+            CURLOPT_NOBODY => true,
+            CURLOPT_TIMEOUT => 5,
+            CURLOPT_RETURNTRANSFER => true,
+        ]);
+        $response = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        logger(($response !== false && $code >= 200 && $code < 400));
+        return ($response !== false && $code >= 200 && $code < 400);
     }
 
-    function runCustomQuery($query): bool|string
+
+    public static function runCustomQuery($query): bool|string
     {
+        logger("run query init");
+        if (self::isBusyHostActive()){
         $curl = curl_init();
         curl_setopt_array($curl, [
             CURLOPT_URL => getenv("BUSY_URL"),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
+            CURLOPT_TIMEOUT => 5,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
@@ -46,10 +53,46 @@ class BusyIntegration extends Model
         ]);
         $response = curl_exec($curl);
         curl_close($curl);
+
+            logger("response");
+            logger($response);
         return $response;
+        } else {
+            return "";
+        }
     }
 
-    function getVouchersList()
+    public static function getSingleSale($BusyID)
+    {
+        if (self::isBusyHostActive()) {
+            $curl = curl_init();
+
+            curl_setopt_array($curl, [
+                CURLOPT_URL => getenv("BUSY_URL"),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_HTTPHEADER => [
+                    "SC: 8",
+                    "UserName: a",
+                    "Pwd: a",
+                    "vchCode: $BusyID"
+                ],
+            ]);
+            $response = curl_exec($curl);
+            curl_close($curl);
+            logger("get sing response");
+            logger($response);
+            return $response;
+        } else {
+            return '';
+        }
+    }
+    public static function getVouchersList()
     {
         $curl = curl_init();
 
@@ -75,7 +118,7 @@ class BusyIntegration extends Model
         return $response;
     }
 
-    function minifyXml($xml) {
+    public static function minifyXml($xml) {
         $dom = new DOMDocument();
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = false;
@@ -83,7 +126,7 @@ class BusyIntegration extends Model
         return $dom->saveXML($dom->documentElement);
     }
 
-    function composeOrderXml($order)
+    public static function composeOrderXml($order)
     {
         if ($order) {
             // Start composing the XML
@@ -134,13 +177,13 @@ class BusyIntegration extends Model
             $xml .= '<VchType>9</VchType></BSDetail></BillSundries>';
 
             $xml .= '<POSVchData><CarrySettlement>True</CarrySettlement></POSVchData></Sale>';
-            return $this->minifyXml($xml);
+            return self::minifyXml($xml);
         } else {
             return "";
         }
     }
 
-    function createAccountXml($order)
+    public static function createAccountXml($order)
     {
         if ($order) {
             $xml = '<Account><Name>' . $order->CustomerName . ' - ' . $order->MobileNo1 . '</Name><PrintName>' . $order->CustomerName . ' - ' . $order->MobileNo1 . '</PrintName>';
@@ -173,9 +216,10 @@ class BusyIntegration extends Model
 
     // select top 1 vchno from tran1 where vchtype=9 order by date desc
     // select top 1 vchCode, vchno from tran1 where vchtype=9 order by vchCode desc
-    function pushSaleVoucher($OrderID)
+    public static function pushSaleVoucher($OrderID)
     {
-        if ($this->isBusyHostActive()) {
+        if (self::isBusyHostActive()) {
+            logger("Push voucher");
             $order = Order::with('orderDetails')->where('OrderID', $OrderID)->first();
             $order->CustomerName = Helper::translate($order->CustomerName, 'en');
             $order->City = Helper::translate($order->City, 'en');
@@ -209,9 +253,9 @@ class BusyIntegration extends Model
                     return $detail;
                 });
             }
-            $this->createAccountXml($order);
-            $xml = $this->composeOrderXml($order);
-            $minified_xml = $this->minifyXml($xml);
+            self::createAccountXml($order);
+            $xml = self::composeOrderXml($order);
+            $minified_xml = self::minifyXml($xml);
             $curl = curl_init();
             curl_setopt_array($curl, [
                 CURLOPT_URL => getenv("BUSY_URL"),

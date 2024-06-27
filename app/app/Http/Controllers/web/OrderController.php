@@ -8,6 +8,7 @@ use App\enums\docTypes;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderMail;
+use App\Models\BusyIntegration;
 use App\Models\CustomerOrderTrack;
 use App\Models\DocNum;
 use App\Models\Order;
@@ -28,6 +29,9 @@ use App\Rules\ValidUnique;
 use Illuminate\Validation\Rule;
 use logs;
 use App\enums\activeMenuNames;
+use Saloon\XmlWrangler\XmlReader;
+use SimpleXMLElement;
+use Yajra\DataTables\Facades\DataTables;
 
 class OrderController extends Controller{
 	private $general;
@@ -71,6 +75,23 @@ class OrderController extends Controller{
             $FormData['users']=DB::table("users")->where("DFlag",0)->where("ActiveStatus",1)->get();
             $FormData['customers']=DB::table("tbl_customer")->where("DFlag",0)->where("ActiveStatus",1)->get();
             return view('app.order.order',$FormData);
+        }else{
+            return view('errors.403');
+        }
+    }
+
+    public function BusyOrderView(Request $req){
+        if($this->general->isCrudAllow($this->CRUD,"view")==true){
+            $FormData=$this->general->UserInfo;
+            $FormData['menus']=$this->Menus;
+            $FormData['crud']=$this->CRUD;
+            $FormData['ActiveMenuName']=$this->ActiveMenuName;
+            $FormData['PageTitle']=$this->PageTitle;
+            $FormData['PageName']="Busy Orders";
+            $FormData['crud']=$this->CRUD;
+//            $FormData['users']=DB::table("users")->where("DFlag",0)->where("ActiveStatus",1)->get();
+//            $FormData['customers']=DB::table("tbl_customer")->where("DFlag",0)->where("ActiveStatus",1)->get();
+            return view('app.order.busy',$FormData);
         }else{
             return view('errors.403');
         }
@@ -498,6 +519,11 @@ class OrderController extends Controller{
         $data['WHEREALL']=$Where;
         return $ServerSideProcess->SSP( $data);
 	}
+
+    /**
+     * @throws Exception
+     */
+
     public function Edit($OrderID)
     {
         if ($this->general->isCrudAllow($this->CRUD, "edit")) {
@@ -537,6 +563,88 @@ class OrderController extends Controller{
             } else {
                 return view('errors.403');
             }
+        } elseif ($this->general->isCrudAllow($this->CRUD, "view")) {
+            return Redirect::to('/admin/master/product/coupon');
+        } else {
+            return view('errors.403');
+        }
+    }
+    public function busyShow($BusyID)
+    {
+        if ($this->general->isCrudAllow($this->CRUD, "edit")) {
+            $FormData = $this->general->UserInfo;
+            $FormData['menus'] = $this->Menus;
+            $FormData['crud'] = $this->CRUD;
+            $FormData['ActiveMenuName'] = $this->ActiveMenuName;
+            $FormData['PageTitle'] = $this->PageTitle;
+            $FormData['isEdit'] = true;
+            libxml_use_internal_errors(true);
+            $orderDetails = BusyIntegration::getSingleSale($BusyID);
+            if (!mb_check_encoding($orderDetails, 'UTF-8')) {
+                $orderDetails = mb_convert_encoding($orderDetails, 'UTF-8');
+            }
+            $reader = XmlReader::fromString($orderDetails);
+            $orderNo = $reader->value('Sale.VchNo')->first();
+            $partyName = $reader->value('Sale.BillingDetails.PartyName')->first();
+            $address1 = $reader->value('Sale.BillingDetails.Address1')->first();
+            $address2 = $reader->value('Sale.BillingDetails.Address2')->first();
+            $address3 = ''; // Initialize with empty string to handle potential encoding errors
+            try {
+                $address3 = $reader->value('Sale.BillingDetails.Address3')->first();
+            } catch (\VeeWee\Xml\Exception\RuntimeException $e) {
+                $address3 = ''; // Set a default or empty value
+            }
+            $date = $reader->value('Sale.Date')->first();
+            $subTotal = $reader->value('Sale.ItemEntries.ItemDetail.Amt')->first();
+            $discountAmount = $reader->xpathValue('//BSDetail[BSName="Discount"]/Amt')->first();
+            $shippingCharge = $reader->xpathValue('//BSDetail[BSName="Shipping Charge"]/Amt')->first() ?? 0;
+            $totalAmount = $reader->value('Sale.tmpTotalAmt')->first();
+            $completeAddress = "{$address1}, {$address2}, {$address3}";
+
+            $itemDetails = [];
+            $items = $reader->value('Sale.ItemEntries.ItemDetail')->get();
+            for ($i = 0; $i < count($items); $i++) {
+                $item = $items[$i];
+                $itemName = $item['ItemName'];
+                $qty = $item['Qty'];
+                $price = $item['Price'];
+
+                // Create an object for each item and add it to the array
+                $itemDetail = new \stdClass();
+                $itemDetail->ProductName = $itemName;
+                $itemDetail->Qty = $qty;
+                $itemDetail->SRate = $price;
+                $itemDetail->Amount = $qty * $price;
+
+                $itemDetails[] = $itemDetail;
+            }
+
+            $order = (object)[
+                'OrderNo' => $orderNo,
+                'CustomerName' => $partyName,
+                'CompleteAddress' => $completeAddress,
+                'OrderDate' => date('Y-m-d', strtotime($date)),
+                'SubTotal' => $subTotal,
+                'DiscountAmount' => $discountAmount,
+                'ShippingCharge' => $shippingCharge,
+                'TotalAmount' => $totalAmount,
+                'BusySaleID' => $BusyID, // Static value as per provided example
+                'productCount' => count($itemDetails),
+                'orderDetails' => $itemDetails,
+            ];
+            if ($order->orderDetails) {
+                foreach($order->orderDetails as $detail) {
+                    $detail->SRate = Helper::addRupeesSymbol($detail->SRate);
+                    $detail->Amount = Helper::addRupeesSymbol($detail->Amount);
+                }
+            }
+            $order->SubTotal = Helper::addRupeesSymbol($order->SubTotal);
+            $order->DiscountAmount = Helper::addRupeesSymbol($order->DiscountAmount);
+            $order->ShippingCharge = Helper::addRupeesSymbol($order->ShippingCharge);
+            $order->TotalAmountInString = Helper::addRupeesSymbol($order->TotalAmount);
+            $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
+            $FormData['EditData'] = $order;
+                return view('app.order.busy_show', $FormData);
         } elseif ($this->general->isCrudAllow($this->CRUD, "view")) {
             return Redirect::to('/admin/master/product/coupon');
         } else {
