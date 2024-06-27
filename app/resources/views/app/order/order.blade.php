@@ -63,12 +63,8 @@
                 </select>
             </div>
         </div>
-        <div class="col-sm-2 d-flex align-items-center justify-content-center">
-            <a href="{{ route('admin.busy.index') }}" class="btn btn-primary buttons-html5 btn-sm">Busy Bills</a>
-        </div>
     </div>
     <div class="row" style="margin-bottom:80px;">
-
         <div class="col-sm-12">
             <table class="table {{$Theme['table-size']}}" id="tblorders">
                 <thead>

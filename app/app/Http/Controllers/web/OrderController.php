@@ -542,6 +542,30 @@ class OrderController extends Controller{
                         $detail->PRate = Helper::addRupeesSymbol($detail->PRate);
                         $detail->SRate = Helper::addRupeesSymbol($detail->SRate);
                         $detail->Amount = Helper::addRupeesSymbol($detail->Amount);
+
+                        if ($detail->ProductVariationID) {
+                            $productUnit = DB::table('tbl_products_variation')
+                                ->where('tbl_products_variation.ProductID', $detail->ProductID)
+                                ->where('tbl_products_variation.VariationID', $detail->ProductVariationID)
+                                ->leftJoin('tbl_products_variation_details as D', function ($join) {
+                                    $join->on('tbl_products_variation.VariationID', '=', 'D.VariationID');
+                                })
+                                ->leftJoin('tbl_attributes_details as AD', function ($join) {
+                                    $join->on('AD.ValueID', '=', 'D.AttributeValueID')
+                                        ->on('AD.AttrID', '=', 'D.AttributeID');
+                                })
+                                ->leftJoin('tbl_attributes as A', 'A.AttrID', '=', 'AD.AttrID')
+                                ->select('AD.Values')
+                                ->first();
+                        } else {
+                            $productUnit = DB::table('tbl_products')
+                                ->where('tbl_products.ProductID', $detail->ProductID)
+                                ->leftJoin('tbl_uom as U', 'U.UID', '=', 'tbl_products.UID')
+                                ->select('U.UName')
+                                ->first();
+                        }
+
+                        $detail->Unit = $productUnit->Values ?? $productUnit->UName ?? '-';
                         return $detail;
                     });
                 }

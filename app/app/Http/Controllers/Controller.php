@@ -138,68 +138,35 @@ class Controller extends BaseController
     }
 
     public function BusyTableView(Request $request){
-        logger($request);
-        logger("request->length");
-        logger($request->length);
-        $data = "";
-//            $data = BusyIntegration::runCustomQuery("select top 10 vchCode, vchno, Date, VchSalePurcAmt from tran1 where vchtype=9 order by vchCode desc");
-
         libxml_use_internal_errors(true);
-//        $data = BusyIntegration::runCustomQuery("SELECT TOP ". $request->length ." t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt FROM tran1 as t WHERE t.vchtype=9 ORDER BY t.vchCode DESC");
-//            along with the above query, Select Name from master1 where code=??, the ?? want to replace the MasterCode1 from the tran1
-//        $data = BusyIntegration::runCustomQuery("SELECT TOP 10 t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt FROM tran1 as t WHERE t.vchtype=9 ORDER BY t.vchCode DESC");
-//
-//        if($data == ""){
-//            $data = BusyIntegration::runCustomQuery("SELECT TOP 10 t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt FROM tran1 as t WHERE t.vchtype=9 ORDER BY t.vchCode DESC");
-//        }
-
+        $data = BusyIntegration::runCustomQuery("SELECT TOP $request->length t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt, m.name FROM tran1 AS t INNER JOIN master1 AS m ON t.MasterCode1 = m.code WHERE t.vchtype = 9 ORDER BY t.vchCode DESC");
         while (empty($data)) {
-            $data = BusyIntegration::runCustomQuery("SELECT TOP $request->length t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt FROM tran1 as t WHERE t.vchtype=9 ORDER BY t.vchCode DESC");
-
-            // If $data is still empty, retry after a short delay
+            $data = BusyIntegration::runCustomQuery("SELECT TOP $request->length t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt, m.name FROM tran1 AS t INNER JOIN master1 AS m ON t.MasterCode1 = m.code WHERE t.vchtype = 9 ORDER BY t.vchCode DESC");
             if (empty($data)) {
-                // Optionally, you can log or handle the retry attempt here
-                usleep(500000); // Sleep for 500ms (0.5 seconds) before retrying
+                usleep(5000);
             }
         }
         if (!mb_check_encoding($data, 'UTF-8')) {
             $data = mb_convert_encoding($data, 'UTF-8');
-            logger("$data");
-            logger($data);
         }
         $reader = XmlReader::fromString($data);
         $elements = $reader->element('z:row')->get();
-
-        // Prepare the data array
-//        $data = [];
-//        foreach ($rows as $row) {
-//            $object = new \stdClass();
-//            $object->id = (int) $row['vchCode'];
-//            $object->vchno = trim((string) $row['vchno']);
-//            $object->Date = Carbon::parse($row['Date'])->format('d-M-Y');
-//            $object->VchSalePurcAmt = (float) $row['VchSalePurcAmt'];
-//
-//            $data[] = $object;
-//        }
-
         $data = [];
         foreach ($elements as $element) {
             $object = new \stdClass();
             $object->id = (int) $element->getAttribute('vchCode');
             $object->vchno = trim((string) $element->getAttribute('vchno'));
+            $object->name = trim((string) $element->getAttribute('name'));
             $object->Date = Carbon::parse($element->getAttribute('Date'))->format('d-M-Y');
             $object->VchSalePurcAmt = (float) $element->getAttribute('VchSalePurcAmt');
-
             $data[] = $object;
         }
-
 
         return DataTables::of($data)
             ->addColumn('action', function ($data) {
                 $button = '<div class="d-flex justify-content-center">';
-                $button .= '<a href="'. route("admin.busy.show", $data->id) . '" class="">
-                                <i class="fa fa-edit"></i></i>
-                             </a></div>';
+                $button .= '<a href="'. route("admin.busy.show", $data->id) . '" class="btn btn-outline-primary btn-sm">
+                                <i class="fa fa-eye"></i></i></a></div>';
                 return $button;
             })
             ->rawColumns(['action'])

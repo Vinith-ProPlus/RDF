@@ -20,13 +20,13 @@
     }
 </style>
 <div class="card container-fluid mt-100 pt-40">
-    @if($crud['add']==1)
-        <div class="row" style="margin-bottom:80px;">
-            <div class="col-sm-12 text-right">
-{{--                <button type="button" id="btnNewTicket" class="btn btn-outline-success btn-min-width box-shadow-2 round">New Ticket</button>--}}
-            </div>
+    <div class="card-header text-center">
+        <div class="row">
+            <div class="col-12 col-sm-4"></div>
+            <div class="col-12 col-sm-4 my-2"><h5>Busy Bills</h5></div>
+            <div class="col-12 col-sm-4 my-2 text-right"></div>
         </div>
-    @endif
+    </div>
 {{--    <div class="row d-flex justify-content-center mb-10 d-none">--}}
 {{--        <div class="col-sm-1 text-center fw-700 fs-16 pt-30">--}}
 {{--            Filter--}}
@@ -67,13 +67,14 @@
 {{--            </div>--}}
 {{--        </div>--}}
 {{--    </div>--}}
-    <div class="row" style="margin-bottom:80px;">
-        <div class="col-sm-12">
+    <div class="row d-flex justify-content-center mt-10" style="margin-bottom:80px;">
+        <div class="col-sm-10">
             <table class="table {{$Theme['table-size']}}" id="tbl_busy_orders">
                 <thead>
                     <tr>
                         <th class="text-center">Order No</th>
                         <th class="text-center">Ordered Date</th>
+                        <th class="text-center">Customer Name</th>
                         <th class="text-center">Amount</th>
                         <th class="text-center noExport">Action</th>
                     </tr>
@@ -101,65 +102,33 @@
                     User:$('#lstUser').val(),
                     Status:$('#lstStatus').val()
                 }
-                {{--Table=$('#tbl_busy_orders').dataTable({--}}
-                {{--    "bProcessing": true,--}}
-                {{--    deferRender: true,--}}
-				{{--    responsive: true,--}}
-                {{--    dom: 'Bfrtip',--}}
-                {{--    "searching": true,--}}
-                {{--    "info": false,--}}
-                {{--    "order": [[ 0, "desc" ]],--}}
-                {{--    "iDisplayLength": 10,--}}
-                {{--    "lengthMenu": [[10, 25, 50,100,250, 500, -1], [10, 25, 50,100,250, 500, "All"]],--}}
-                {{--    "bServerSide": true,--}}
-                {{--    createdRow: function (row, data, index) {--}}
-                {{--        $(row).addClass('btnDetails');--}}
-                {{--        $(row).attr('id',data[0]);--}}
-                {{--        /*let t2=$(row).children()[0];--}}
-                {{--        let t=data[0].split('-');--}}
-                {{--        t2.innerHTML="#"+t[1].replace(/^0+/, '');*/--}}
-                {{--    },--}}
-                {{--    "ajax": {"url":"{{url('/')}}/admin/busy/data?_token="+$('meta[name=_token]').attr('content'),"headers":{ 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },data:data ,"type": "POST"},--}}
-                {{--    columns: [--}}
-                {{--        {data: 'DT_RowIndex'},--}}
-                {{--        {data: 'vchno'},--}}
-                {{--        {data: 'Date'},--}}
-                {{--        {data: 'VchSalePurcAmt'},--}}
-                {{--        {data: 'action', orderable: false},--}}
-                {{--//         'id' => (int) $row['vchCode'],--}}
-                {{--//     'vchno' => trim((string) $row['vchno']),--}}
-                {{--// 'Date' => Carbon::parse($row['Date'])->format('d-M-Y'),--}}
-                {{--//     'VchSalePurcAmt' => (float) $row['VchSalePurcAmt'],--}}
-                {{--    ],--}}
-                {{--    buttons: [--}}
-                {{--        'pageLength'--}}
-                {{--        @if($crud['excel']==1) ,{extend: 'excel',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif--}}
-                {{--        @if($crud['copy']==1) ,{extend: 'copy',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif--}}
-                {{--        @if($crud['csv']==1) ,{extend: 'csv',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif--}}
-                {{--        @if($crud['print']==1) ,{extend: 'print',className:"{{$Theme['button-size']}}",footer: true,title:  "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif--}}
-                {{--        @if($crud['pdf']==1) ,{extend: 'pdf',className:"{{$Theme['button-size']}}",footer: true,title:  "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif--}}
-                {{--    ],--}}
-                {{--});--}}
                 Table = $('#tbl_busy_orders').DataTable({
                     "columnDefs": [
                         {"className": "dt-center", "targets": "_all"}
                     ],
                     processing: true,
                     serverSide: true,
+                    dom: 'Bfrtip',
                     ajax: {
                         url: '{{ route("admin.busy.view") }}',
                         type: 'GET'
                     },
                     columns: [
-                        // {data: 'DT_RowIndex'},
-                        // {data: 'name'},
-                        // {data: 'action', orderable: false},
-                        // {data: 'DT_RowIndex'},
                         {data: 'vchno'},
                         {data: 'Date'},
+                        {data: 'name'},
                         {data: 'VchSalePurcAmt'},
                         {data: 'action', orderable: false},
-                    ]
+                    ],
+                    order: [],
+                    buttons: [
+                        'pageLength',
+                        {extend: 'excel',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}},
+                        {extend: 'copy',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}},
+                        {extend: 'csv',className:"{{$Theme['button-size']}}",footer: true,title: "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}},
+                        {extend: 'print',className:"{{$Theme['button-size']}}",footer: true,title:  "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}},
+                        {extend: 'pdf',className:"{{$Theme['button-size']}}",footer: true,title:  "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}}
+                    ],
                 });
             }
             $('#btnReload').click(function(){

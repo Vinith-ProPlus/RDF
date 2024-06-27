@@ -34,6 +34,9 @@
             border-color: green;
             outline: 0;
         }
+        thead td {
+            font-weight: bold;
+        }
     </style>
 <div class="container-fluid">
 	<div class="page-header">
@@ -169,7 +172,7 @@
                             <div class="table-responsive">
                             <table class="table table-sm no-footer dtr-inline" id="orderDetailsTable">
                                 <thead>
-                                <tr>
+                                <tr class="bold">
                                     <td>S.No</td>
                                     <td>Product Image</td>
                                     <td>Product Name</td>
@@ -186,7 +189,7 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td><img src="{{ $product->productImageUrl ?? '-' }}" width="150" height="150" alt="Product Image"></td>
-                                        <td>{{ $product->ProductName ?? '-' }}</td>
+                                        <td>{{ $product->ProductName ?? '-' }} - {{ $product->Unit ?? '-' }}</td>
                                         <td>{{ $product->Qty ?? '-' }}</td>
                                         <td>{{ $product->SRate ?? '-' }}</td>
                                         <td>{{ $product->Amount ?? '-' }}</td>

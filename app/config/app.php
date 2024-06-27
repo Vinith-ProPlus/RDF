@@ -49,9 +49,14 @@ return [
     'FIREBASE_APP_ID' => env('FIREBASE_APP_ID', ''),
     'FIREBASE_MEASUREMENT_ID' => env('FIREBASE_MEASUREMENT_ID', ''),
 
-//    TEXT LOCAL
+//  TEXT LOCAL
     'TEXT_LOCAL_API_KEY' => env('TEXT_LOCAL_API_KEY', ''),
     'TEXT_LOCAL_SENDER_NAME' => env('TEXT_LOCAL_SENDER_NAME', ''),
+
+//  Busy Billing
+    'BUSY_URL' => env('BUSY_URL', 'http://localhost:981'),
+    'BUSY_USERNAME' => env('BUSY_USERNAME', 'a'),
+    'BUSY_PASSWORD' => env('BUSY_PASSWORD', 'a'),
 
     /*
     |--------------------------------------------------------------------------
