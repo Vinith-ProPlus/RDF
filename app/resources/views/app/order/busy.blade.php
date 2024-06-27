@@ -15,6 +15,9 @@
     tbody td{
         text-align: center !important;
     }
+    #tbl_busy_orders_length select {
+        width: 70px !important;
+    }
 </style>
 <div class="card container-fluid mt-100 pt-40">
     @if($crud['add']==1)
@@ -24,49 +27,49 @@
             </div>
         </div>
     @endif
-    <div class="row d-flex justify-content-center mb-10 d-none">
-        <div class="col-sm-1 text-center fw-700 fs-16 pt-30">
-            Filter
-        </div>
-        <div class="col-sm-2">
-            <div class="form-group text-center mh-60">
-                <label style="margin-bottom:0px;">From Date</label>
-                <input type="date" class="form-control" id="dtpFromDate" value="{{date('Y-m-d',strtotime('-30 days'))}}">
-            </div>
-        </div>
-        <div class="col-sm-2">
-            <div class="form-group text-center mh-60">
-                <label style="margin-bottom:0px;">To Date</label>
-                <input type="date" class="form-control" id="dtpToDate" value="{{date('Y-m-d')}}">
-            </div>
-        </div>
-        <div class="col-sm-2">
-            <div class="form-group text-center mh-60">
-                <label style="margin-bottom:0px;">User</label>
-                <select class="form-control select2" id="lstUser">
-                    <option value="">All Users</option>
+{{--    <div class="row d-flex justify-content-center mb-10 d-none">--}}
+{{--        <div class="col-sm-1 text-center fw-700 fs-16 pt-30">--}}
+{{--            Filter--}}
+{{--        </div>--}}
+{{--        <div class="col-sm-2">--}}
+{{--            <div class="form-group text-center mh-60">--}}
+{{--                <label style="margin-bottom:0px;">From Date</label>--}}
+{{--                <input type="date" class="form-control" id="dtpFromDate" value="{{date('Y-m-d',strtotime('-30 days'))}}">--}}
+{{--            </div>--}}
+{{--        </div>--}}
+{{--        <div class="col-sm-2">--}}
+{{--            <div class="form-group text-center mh-60">--}}
+{{--                <label style="margin-bottom:0px;">To Date</label>--}}
+{{--                <input type="date" class="form-control" id="dtpToDate" value="{{date('Y-m-d')}}">--}}
+{{--            </div>--}}
+{{--        </div>--}}
+{{--        <div class="col-sm-2">--}}
+{{--            <div class="form-group text-center mh-60">--}}
+{{--                <label style="margin-bottom:0px;">User</label>--}}
+{{--                <select class="form-control select2" id="lstUser">--}}
+{{--                    <option value="">All Users</option>--}}
 {{--                    @foreach($customers as $customer)--}}
 {{--                        <option value="{{ $customer->CustomerID }}">{{ $customer->CustomerName ?? $customer->nick_name ?? $customer->MobileNo1 }}</option>--}}
 {{--                    @endforeach--}}
-                </select>
-            </div>
-        </div>
-        <div class="col-sm-2">
-            <div class="form-group text-center mh-60">
-                <label style="margin-bottom:0px;">Status</label>
-                <select class="form-control" id="lstStatus">
-                    <option value="">All</option>
+{{--                </select>--}}
+{{--            </div>--}}
+{{--        </div>--}}
+{{--        <div class="col-sm-2">--}}
+{{--            <div class="form-group text-center mh-60">--}}
+{{--                <label style="margin-bottom:0px;">Status</label>--}}
+{{--                <select class="form-control" id="lstStatus">--}}
+{{--                    <option value="">All</option>--}}
 {{--                    <option value="Payment Pending">Payment Pending</option>--}}
-                    <option value="Order Confirmed">Order Confirmed</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Delivered">Delivered</option>
-                </select>
-            </div>
-        </div>
-    </div>
+{{--                    <option value="Order Confirmed">Order Confirmed</option>--}}
+{{--                    <option value="Shipped">Shipped</option>--}}
+{{--                    <option value="Delivered">Delivered</option>--}}
+{{--                </select>--}}
+{{--            </div>--}}
+{{--        </div>--}}
+{{--    </div>--}}
     <div class="row" style="margin-bottom:80px;">
         <div class="col-sm-12">
-            <table class="table {{$Theme['table-size']}}" id="tblorders">
+            <table class="table {{$Theme['table-size']}}" id="tbl_busy_orders">
                 <thead>
                     <tr>
                         <th class="text-center">Order No</th>
@@ -98,7 +101,7 @@
                     User:$('#lstUser').val(),
                     Status:$('#lstStatus').val()
                 }
-                {{--Table=$('#tblorders').dataTable({--}}
+                {{--Table=$('#tbl_busy_orders').dataTable({--}}
                 {{--    "bProcessing": true,--}}
                 {{--    deferRender: true,--}}
 				{{--    responsive: true,--}}
@@ -137,7 +140,7 @@
                 {{--        @if($crud['pdf']==1) ,{extend: 'pdf',className:"{{$Theme['button-size']}}",footer: true,title:  "{{$PageTitle}}","action": DataTableExportOption,exportOptions: {columns: "thead th:not(.noExport)"}} @endif--}}
                 {{--    ],--}}
                 {{--});--}}
-                Table = $('#tblorders').DataTable({
+                Table = $('#tbl_busy_orders').DataTable({
                     "columnDefs": [
                         {"className": "dt-center", "targets": "_all"}
                     ],
@@ -160,7 +163,7 @@
                 });
             }
             $('#btnReload').click(function(){
-                $('#tblorders').DataTable().ajax.reload();
+                $('#tbl_busy_orders').DataTable().ajax.reload();
             });
             $('#lstStatus').change(function(){
                 init_DataTable();

@@ -42,7 +42,7 @@
 				<ol class="breadcrumb">
 					<li class="breadcrumb-item"><a href="{{ url('/') }}" data-original-title="" title=""><i class="f-16 fa fa-home"></i></a></li>
 					<li class="breadcrumb-item"><a href="{{url('/')}}/admin/busy">Busy Orders</a></li>
-{{--                    <li class="breadcrumb-item">{{ ($EditData->TrackStatus === "Order Confirmed") ? 'Update' : 'View' }}</li>--}}
+                    <li class="breadcrumb-item">View</li>
 				</ol>
 			</div>
 		</div>
@@ -50,9 +50,9 @@
 </div>
 <div class="container-fluid">
 	<div class="row d-flex justify-content-center">
-		<div class="col-12 col-sm-12 col-lg-12">
+		<div class="col-8 col-sm-8 col-lg-8">
 			<div class="card">
-				<div class="card-header text-center"><h5 class="mt-10">Busy Bill</h5></div>
+				<div class="card-header text-center"><h5 class="mt-10">Busy Bill - {{ $EditData->OrderNo ?? '' }}</h5></div>
 				<div class="card-body">
                     <div class="row">
                         <div class="col-sm-12">
@@ -114,7 +114,7 @@
                             <div class="col-sm-12 mt-20">
                                 <div class="form-group">
                                     <label for="lstCOType"><b>Busy Sale ID :</b></label>
-                                    <label>{{ $EditData->BusySaleID ?? 'Not Updated' }}</label>
+                                    <label>{{ $EditData->BusySaleID }}</label>
                                 </div>
                             </div>
 {{--                        @endif--}}
@@ -131,7 +131,7 @@
                             <div class="table-responsive">
                             <table class="table table-sm no-footer dtr-inline" id="orderDetailsTable">
                                 <thead>
-                                <tr>
+                                <tr style="font-weight: 600;">
                                     <td>S.No</td>
                                     <td>Product Name</td>
                                     <td>Qty</td>

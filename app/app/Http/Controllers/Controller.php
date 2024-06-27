@@ -154,7 +154,7 @@ class Controller extends BaseController
 //        }
 
         while (empty($data)) {
-            $data = BusyIntegration::runCustomQuery("SELECT TOP 10 t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt FROM tran1 as t WHERE t.vchtype=9 ORDER BY t.vchCode DESC");
+            $data = BusyIntegration::runCustomQuery("SELECT TOP $request->length t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt FROM tran1 as t WHERE t.vchtype=9 ORDER BY t.vchCode DESC");
 
             // If $data is still empty, retry after a short delay
             if (empty($data)) {
