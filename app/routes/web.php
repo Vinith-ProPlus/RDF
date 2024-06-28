@@ -10,6 +10,7 @@ use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\SocialController;
 use App\Http\Controllers\web\OrderController;
 use App\Http\Controllers\web\SupportController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Route;
 
@@ -196,6 +197,14 @@ Route::group(['prefix'=>'admin'],function (){
 });
 require __DIR__.'/auth.php';
 
+Route::get('/about/{slug}', function ($slug) {
+    $page = DB::Table('tbl_page_content')->where('slug', $slug)->select('PageName', 'PageContent')->first();
+    if ($page) {
+        return view('about', compact('page'));
+    } else {
+        return view('errors.404');
+    }
+});
 Route::get('/cmail', [\App\Http\Controllers\Controller::class, 'order_confirmation_mail']);
 Route::get('/smail', [\App\Http\Controllers\Controller::class, 'order_shipment_mail']);
 Route::get('/generate-packing-label/{OrderID}', [OrderController::class, 'generatePackingLabel'])->name('generatePackingLabel');
