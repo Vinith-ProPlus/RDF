@@ -21,9 +21,15 @@ class MasterController extends Controller
 
 //    General Data
     public function latestMobileVersion(){
+        $data = MobileUpdate::first();
+        if($data){
+            $data->forceUpdate = $data->update_type === "Force" ? 1 : 0;
+            $data->Android = in_array($data->update_to, ['Android and IOS', 'Android']) ? 1 : 0;
+            $data->IOS = in_array($data->update_to, ['Android and IOS', 'IOS']) ? 1 : 0;
+        }
         return [
             'status' => true,
-            'data' => MobileUpdate::first(),
+            'data' => $data,
         ];
     }
     public function getGender(request $req){
