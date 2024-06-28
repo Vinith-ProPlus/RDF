@@ -619,7 +619,7 @@ class OrderController extends Controller{
                 $address3 = ''; // Set a default or empty value
             }
             $date = $reader->value('Sale.Date')->first();
-            $subTotal = $reader->value('Sale.ItemEntries.ItemDetail.Amt')->first();
+            $subTotal = $reader->value('Sale.tmpCostOfGoods')->first();
             $discountAmount = $reader->xpathValue('//BSDetail[BSName="Discount"]/Amt')->first();
             $shippingCharge = $reader->xpathValue('//BSDetail[BSName="Shipping Charge"]/Amt')->first() ?? 0;
             $totalAmount = $reader->value('Sale.tmpTotalAmt')->first();
