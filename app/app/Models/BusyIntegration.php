@@ -38,7 +38,9 @@ class BusyIntegration extends Model
         $error = curl_error($curl);
         curl_close($curl);
         if ($error) {
+            \Log::info("CURL Response: $response");
             \Log::error("CURL Error: $error");
+            return false;
         } else {
             \Log::info("CURL Response: $response");
         }

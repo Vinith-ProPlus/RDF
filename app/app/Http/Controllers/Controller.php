@@ -140,12 +140,21 @@ class Controller extends BaseController
     public function BusyTableView(Request $request){
         libxml_use_internal_errors(true);
         $data = BusyIntegration::runCustomQuery("SELECT TOP $request->length t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt, m.name FROM tran1 AS t INNER JOIN master1 AS m ON t.MasterCode1 = m.code WHERE t.vchtype = 9 ORDER BY t.vchCode DESC");
-        while (empty($data)) {
+        $maxRetries = 3;
+        $retryCount = 0;
+        while (empty($data) && $retryCount < $maxRetries) {
             $data = BusyIntegration::runCustomQuery("SELECT TOP $request->length t.vchCode, t.vchno, t.Date, t.VchSalePurcAmt, m.name FROM tran1 AS t INNER JOIN master1 AS m ON t.MasterCode1 = m.code WHERE t.vchtype = 9 ORDER BY t.vchCode DESC");
             if (empty($data)) {
                 usleep(5000);
+                logger($retryCount);
+                $retryCount++;
             }
         }
+
+        if (empty($data)) {
+            $data = '<?xml version="1.0" encoding="UTF-8"?><root></root>';
+        }
+
         if (!mb_check_encoding($data, 'UTF-8')) {
             $data = mb_convert_encoding($data, 'UTF-8');
         }
