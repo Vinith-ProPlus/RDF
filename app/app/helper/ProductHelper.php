@@ -205,8 +205,8 @@ class ProductHelper {
                         "CID"=>$result[0]->CID,
                         "SCID"=>$result[0]->SCID,
                         "UID"=>$result[0]->UID,
-//                        "TaxType"=>$result[0]->TaxType,
-//                        "TaxID"=>$result[0]->TaxID,
+                       "TaxType"=>$result[0]->TaxType,
+                       "TaxID"=>$result[0]->TaxID,
                         "PRate"=>$result[0]->PRate,
                         "SRate"=>$result[0]->SRate,
 //                        "Decimals"=>$result[0]->Decimals,
@@ -247,8 +247,8 @@ class ProductHelper {
                         "CID"=>$result[0]->CID,
                         "SCID"=>$result[0]->SCID,
                         "UID"=>$result[0]->UID,
-//                        "TaxType"=>$result[0]->TaxType,
-//                        "TaxID"=>$result[0]->TaxID,
+                       "TaxType"=>$result[0]->TaxType,
+                       "TaxID"=>$result[0]->TaxID,
                         "PRate"=>$result[0]->PRate,
                         "SRate"=>$result[0]->SRate,
 //                        "Decimals"=>$result[0]->Decimals,
@@ -623,11 +623,11 @@ class ProductHelper {
         $ValidDB['UOM']['WHERE'][] = array("COLUMN" => "DFlag", "CONDITION" => "=", "VALUE" => 0);
         $ValidDB['UOM']['WHERE'][] = array("COLUMN" => "ActiveStatus", "CONDITION" => "=", "VALUE" => 'Active');
         //Tax
-//		$ValidDB['Tax']['TABLE']="tbl_tax";
-//		$ValidDB['Tax']['ErrMsg']="Tax does not exist";
-//		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"TaxID","CONDITION"=>"=","VALUE"=>$req->TaxID);
-//		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
-//		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
+		$ValidDB['Tax']['TABLE']="tbl_tax";
+		$ValidDB['Tax']['ErrMsg']="Tax does not exist";
+		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"TaxID","CONDITION"=>"=","VALUE"=>$req->TaxID);
+		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"DFlag","CONDITION"=>"=","VALUE"=>0);
+		$ValidDB['Tax']['WHERE'][]=array("COLUMN"=>"ActiveStatus","CONDITION"=>"=","VALUE"=>'Active');
         $rules = array(
             'ProductName' => ['required', 'min:2', 'max:150', new ValidUnique(array("TABLE" => "tbl_products", "WHERE" => " ProductName='" . $req->ProductName . "'  and ProductID<>'" . $req->ProductID . "' "), "This Product Name is already taken.")],
             'SKU' => ['required', 'min:2', 'max:50', new ValidUnique(array("TABLE" => "tbl_products", "WHERE" => " SKU='" . $req->SKU . "'  and ProductID<>'" . $req->ProductID . "' "), "This SKU is already taken.")],
@@ -636,8 +636,8 @@ class ProductHelper {
             'Category' => ['required', new ValidDB($ValidDB['Category'])],
             'SubCategory' => ['required', new ValidDB($ValidDB['SubCategory'])],
             'UID' => ['required', new ValidDB($ValidDB['UOM'])],
-//			'TaxID'=>['required',new ValidDB($ValidDB['Tax'])],
-//			'TaxType'=>'required|in:Include,Exclude',
+			'TaxID'=>['required',new ValidDB($ValidDB['Tax'])],
+			'TaxType'=>'required|in:Include,Exclude',
             'RegularPrice' => 'required|numeric|min:0',
             'SalesPrice' => 'required|numeric|min:0',
 //			'Decimals'=>'required|in:auto, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9',
@@ -701,8 +701,8 @@ class ProductHelper {
                 "CID" => $req->Category,
                 "SCID" => $req->SubCategory,
                 "UID" => $req->UID,
-//				"TaxType"=>$req->TaxType,
-//				"TaxID"=>$req->TaxID,
+				"TaxType"=>$req->TaxType,
+				"TaxID"=>$req->TaxID,
                 "PRate" => $req->RegularPrice,
                 "SRate" => $req->SalesPrice,
 //				"Decimals"=>$req->Decimals,

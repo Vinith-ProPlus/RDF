@@ -507,16 +507,16 @@
                                         @if($OtherCruds['uom']['add']==1)  <button class="btn btn-outline-dark {{$Theme['button-size']}}" id="btnAddUOM" title="add new UoM" ><i class="fa fa-plus"></i></button> @endif
                                     </div>
                                 </div>
-                                <div class="row mt-20 d-none">
+                                <div class="row mt-20">
                                     <div class="col-4 col-lg-2 d-flex align-items-center"><div >Tax  <span class="required"> * </span></div></div>
                                     <div class="col-6 col-lg-8">
                                         <div class="input-group">
                                             <select class="form-control {{$Theme['input-size']}} select2" id="lstTax" data-selected="<?php if($isEdit){ echo $data->TaxID;} ?>">
                                                 <option value="">Select a Tax</option>
                                             </select>
-                                            <select class="form-control" id="lstTaxType">
-                                                <option value="Exclude" @if($isEdit) @if($data->TaxType=="Exclude") selected @endif @endif >Exclude</option>
+                                            <select class="form-control" id="lstTaxType" disabled>
                                                 <option value="Include" @if($isEdit) @if($data->TaxType=="Include") selected @endif @endif>Include</option>
+                                                <option value="Exclude" {{-- @if($isEdit) @if($data->TaxType=="Exclude") selected @endif @endif --}} >Exclude</option>
                                             </select>
                                         </div>
                                         <div class="errors err-sm" id="lstTax-err"></div>
@@ -585,7 +585,7 @@
                                             <option value="Active"   @if($isEdit) @if($data->ActiveStatus=="Active") selected @endif @endif>Active</option>
                                             <option value="Inactive"   @if($isEdit) @if($data->ActiveStatus=="Inactive") selected @endif @endif>Inactive</option>
                                         </select>
-                                        <div class="errors err-sm" id="lstTax-err"></div>
+                                        <div class="errors err-sm" id="lstActiveStatus-err"></div>
                                     </div>
                                     <div class="col-1 col-lg-2 d-flex align-items-center">
                                     </div>
@@ -941,7 +941,7 @@
             CKEDITOR.replace( 'DescriptionEditor' );
             showTabs();
             getCategoryType();
-            // getTax();
+            getTax();
             getUOM();
             // getStages();
             @if($isEdit)
@@ -1687,31 +1687,31 @@
             });
             $('#lstSubCategory').select2();
         };
-        {{--const getTax=async()=>{--}}
-        {{--    $('#lstTax').select2('destroy');--}}
-        {{--    $('#lstTax option').remove();--}}
-        {{--    $('#lstTax').append('<option value="" selected>Select a Tax</option>');--}}
-        {{--    $.ajax({--}}
-        {{--        type:"post",--}}
-        {{--        url:"{{url('/')}}/admin/master/product/products/get/tax",--}}
-        {{--        headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },--}}
-        {{--        dataType:"json",--}}
-        {{--        async:true,--}}
-        {{--        error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},--}}
-        {{--        complete: function(e, x, settings, exception){},--}}
-        {{--        success:function(response){--}}
-        {{--            for(let Item of response){--}}
-        {{--                let selected="";--}}
-        {{--                if(Item.TaxID==$('#lstTax').attr('data-selected')){selected="selected";}--}}
-        {{--                $('#lstTax').append('<option '+selected+' data-value="'+Item.TaxPercentage+'" value="'+Item.TaxID+'">'+Item.TaxName+' ( '+NumberFormat(Item.TaxPercentage,"percentage")+'% ) </option>');--}}
-        {{--            }--}}
-        {{--            if($('#lstTax').val()!=""){--}}
-        {{--                $('#lstTax').trigger('click');--}}
-        {{--            }--}}
-        {{--        }--}}
-        {{--    });--}}
-        {{--    $('#lstTax').select2();--}}
-        {{--};--}}
+        const getTax=async()=>{ console.log(1);
+            $('#lstTax').select2('destroy');
+            $('#lstTax option').remove();
+            $('#lstTax').append('<option value="" selected>Select a Tax</option>');
+            $.ajax({
+                type:"post",
+                url:"{{url('/')}}/admin/master/product/products/get/tax",
+                headers: { 'X-CSRF-Token' : $('meta[name=_token]').attr('content') },
+                dataType:"json",
+                async:true,
+                error:function(e, x, settings, exception){ajaxErrors(e, x, settings, exception);},
+                complete: function(e, x, settings, exception){},
+                success:function(response){
+                    for(let Item of response){
+                        let selected="";
+                        if(Item.TaxID==$('#lstTax').attr('data-selected')){selected="selected";}
+                        $('#lstTax').append('<option '+selected+' data-value="'+Item.TaxPercentage+'" value="'+Item.TaxID+'">'+Item.TaxName+' ( '+NumberFormat(Item.TaxPercentage,"percentage")+'% ) </option>');
+                    }
+                    if($('#lstTax').val()!=""){
+                        $('#lstTax').trigger('click');
+                    }
+                }
+            });
+            $('#lstTax').select2();
+        };
         {{--const getStages=async()=>{--}}
         {{--    $('#lstStages').select2('destroy');--}}
         {{--    $('#lstStages option').remove();--}}
@@ -1798,8 +1798,8 @@
             formData.CategoryType=$('#lstCategoryType').val();
             formData.Category=$('#lstCategory').val();
             formData.SubCategory=$('#lstSubCategory').val();
-            // formData.TaxType=$('#lstTaxType').val();
-            // formData.TaxID=$('#lstTax').val();
+            formData.TaxType=$('#lstTaxType').val();
+            formData.TaxID=$('#lstTax').val();
             formData.UID=$('#lstUOM').val();
             // formData.Decimals=$('#lstDecimal').val();
             // formData.TaxPercentage=$('#lstTax option:selected').attr('data-value');
@@ -1863,12 +1863,12 @@
             if(data.Brand==""){
                 $('#lstBrand-err').html('Brand is required');status=false;isGeneral=true;
             }
-            // if(data.TaxType==""){
-            //     $('#lstTaxType-err').html('Tax Type is required');status=false;isGeneral=true;
-            // }
-            // if(data.TaxID==""){
-            //     $('#lstTax-err').html('Tax is required');status=false;isGeneral=true;
-            // }
+            if(data.TaxType==""){
+                $('#lstTaxType-err').html('Tax Type is required');status=false;isGeneral=true;
+            }
+            if(data.TaxID==""){
+                $('#lstTax-err').html('Tax is required');status=false;isGeneral=true;
+            }
             if(data.UID==""){
                 $('#lstUOM-err').html('Unit of measurement is required');status=false;isGeneral=true;
             }
@@ -2091,8 +2091,8 @@
                                     if(key=="CategoryType"){$('#txtCategoryType-err').html(KeyValue);}
                                     if(key=="Category"){$('#txtCategory-err').html(KeyValue);}
                                     if(key=="SubCategory"){$('#lstSubCategory-err').html(KeyValue);}
-                                    // if(key=="TaxType"){$('#lstTaxType-err').html(KeyValue);}
-                                    // if(key=="TaxID"){$('#lstTax-err').html(KeyValue);}
+                                    if(key=="TaxType"){$('#lstTaxType-err').html(KeyValue);}
+                                    if(key=="TaxID"){$('#lstTax-err').html(KeyValue);}
                                     if(key=="UID"){$('#lstUOM-err').html(KeyValue);}
                                     // if(key=="Decimals"){$('#lstDecimal-err').html(KeyValue);}
                                     if(key=="RegularPrice"){$('#txtRegularPrice-err').html(KeyValue);}

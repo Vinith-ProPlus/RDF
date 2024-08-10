@@ -29,7 +29,7 @@ class TaxController extends Controller{
     public function __construct(){
 		$this->ActiveMenuName=activeMenuNames::Tax->value;
 		$this->PageTitle="Tax";
-        $this->middleware('auth');    
+        $this->middleware('auth');
 		$this->middleware(function ($request, $next) {
 			$this->UserID=auth()->user()->UserID;
 			$this->general=new general($this->UserID,$this->ActiveMenuName);
@@ -313,18 +313,17 @@ class TaxController extends Controller{
 			$columns = array(
 				array( 'db' => 'TaxID', 'dt' => '0' ),
 				array( 'db' => 'TaxName', 'dt' => '1' ),
-				array( 'db' => 'TaxPercentage', 'dt' => '2','formatter' => function( $d, $row ) { return Helper::NumberFormat($d,$this->Settings['percentage-decimals']);} ),
-				array( 
-						'db' => 'ActiveStatus', 
-						'dt' => '3',
-						'formatter' => function( $d, $row ) {
-							if($d=="Active"){
-								return "<span class='badge badge-success m-1'>Active</span>";
-							}else{
-								return "<span class='badge badge-danger m-1'>Inactive</span>";
-							}
-						} 
-                    ),
+				array( 'db' => 'TaxPercentage', 'dt' => '2','formatter' => function( $d, $row ) { return Helper::NumberFormat($d,$this->Settings['PERCENTAGE-DECIMALS']);} ),
+				array( 'db' => 'ActiveStatus', 
+					'dt' => '3',
+					'formatter' => function( $d, $row ) {
+						if($d=="Active"){
+							return "<span class='badge badge-success m-1'>Active</span>";
+						}else{
+							return "<span class='badge badge-danger m-1'>Inactive</span>";
+						}
+					} 
+				),
 				array( 
 					'db' => 'TaxID', 
 					'dt' => '4',
@@ -332,7 +331,7 @@ class TaxController extends Controller{
 						$html='<button type="button" data-id="'.$d.'" class="btn btn-outline-success btn-sm  m-2 btnRestore"> <i class="fa fa-repeat" aria-hidden="true"></i> </button>';
 						return $html;
 					} 
-			)
+				)
 			);
 			$data=array();
 			$data['POSTDATA']=$request;
