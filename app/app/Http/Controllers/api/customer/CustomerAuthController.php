@@ -1619,6 +1619,10 @@ class CustomerAuthController extends Controller{
                     "UpdatedBy" => $CustomerID
                 ]);
 
+                if($customer->IsGoogleReviewed == 0){
+                    $customer->update(['IsAskGoogleReview' => 1]);
+                }
+
                 $Title = "Order Delivered";
                 $Message = "Your Order delivered successfully";
                 Helper::saveNotification($CustomerID, $Title, $Message, 'Order', $OrderID);
@@ -1767,5 +1771,29 @@ class CustomerAuthController extends Controller{
             ->where('PC.PID', $postalCodeID)
             ->first();
         return [$orderDetails, $logo, $companyDetails, $locationDetails];
+    }
+
+    public function googleReviewDecision(Request $request)
+    {
+        $customer = $request->auth_customer;
+        $validatedData = Validator::make($request->all(), [
+            'decision' => 'required|string'
+        ]);
+        if ($validatedData->fails()) {
+            return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
+        }
+        DB::beginTransaction();
+        try {
+            $customer->update([
+                'IsAskGoogleReview' => 0,
+                'IsGoogleReviewed' => $request->decision == "true" ? 1 : 0
+            ]);
+            DB::commit();
+            return $this->successResponse($customer, "Google Review Decision saved Successfully.");
+        } catch (Exception $e) {
+            logger("Error in CustomerAuthController@googleReviewDecision : ".$e);
+            DB::rollBack();
+            return $this->errorResponse($e->getMessage(), "Failed to save the Google review decision", 500);
+        }
     }
 }

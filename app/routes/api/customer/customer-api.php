@@ -67,6 +67,9 @@ Route::middleware([AuthenticateWithToken::class])->group(function () {
     Route::post('/review/create', [CustomerAuthController::class, 'createReview']);
     Route::post('/review/like/create', [CustomerAuthController::class, 'saveReviewLike']);
 
+//    Google Review
+    Route::post('customer/google/review/decision', [CustomerAuthController::class, 'googleReviewDecision']);
+
 //    Check Coupon
     Route::post('/customer/check-coupon', [MasterController::class, 'checkCoupon']);
 

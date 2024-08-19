@@ -494,6 +494,8 @@ class CustomerAPIController extends Controller{
     public function customerHomeScreen(Request $request)
     {
         try {
+            $IsAskGoogleReview = optional($request->auth_customer)->IsAskGoogleReview;
+            $IsGoogleReviewed = optional($request->auth_customer)->IsGoogleReviewed;
             $lang = optional($request->auth_customer)->language ?? 'en';
             $CustomerID = $request->auth_customer->CustomerID;
             $response = $this->getHomeScreenBannerAndCategories($lang);
@@ -574,6 +576,12 @@ class CustomerAPIController extends Controller{
                 return $Product;
             });
             $response->products = $Products;
+            if($IsAskGoogleReview && !$IsGoogleReviewed) {
+                $response->AskReview = true;
+                $response->ReviewUrl = config('app.GOOGLE_REVIEW_URL');
+            } else {
+                $response->AskReview = false;
+            }
             return $this->successResponse($response, "Customer Home screen data fetched Successfully");
         } catch (Exception $e) {
             logger($e);

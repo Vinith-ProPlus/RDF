@@ -33,6 +33,8 @@ class Customer extends Model
         "otp_verified",
         "api_token",
         "fcmToken",
+        "IsAskGoogleReview",
+        "IsGoogleReviewed",
         "CreatedBy",
         "CreatedOn",
         "UpdatedBy",

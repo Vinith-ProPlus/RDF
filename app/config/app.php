@@ -58,6 +58,9 @@ return [
     'BUSY_USERNAME' => env('BUSY_USERNAME', 'a'),
     'BUSY_PASSWORD' => env('BUSY_PASSWORD', 'a'),
 
+//  Google Review
+    'GOOGLE_REVIEW_URL' => env('GOOGLE_REVIEW_URL', ''),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
