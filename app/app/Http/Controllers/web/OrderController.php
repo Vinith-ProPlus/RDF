@@ -533,15 +533,42 @@ class OrderController extends Controller{
             $FormData['ActiveMenuName'] = $this->ActiveMenuName;
             $FormData['PageTitle'] = $this->PageTitle;
             $FormData['isEdit'] = true;
+            $CompanyStateID = DB::table('tbl_company_settings')->where('KeyName', 'StateID')->value('KeyValue');
+            $CompanyState = DB::table($this->generalDB.'tbl_states')->where('StateID', $CompanyStateID)->value('StateName');
+            $taxes = [];
             $orderDetails = Order::with('orderDetails')
                 ->where('OrderID', $OrderID)
                 ->get();
-            $orderDetails->transform(function ($order) {
+            $orderDetails->transform(function ($order) use ($CompanyState, &$taxes) {
+                $isIGST = !($order->State == $CompanyState);
                 if ($order->orderDetails) {
-                    $order->orderDetails->transform(function ($detail) {
+                    $order->orderDetails->transform(function ($detail) use ($isIGST, &$taxes) {
                         $detail->PRate = Helper::addRupeesSymbol($detail->PRate);
                         $detail->SRate = Helper::addRupeesSymbol($detail->SRate);
                         $detail->Amount = Helper::addRupeesSymbol($detail->Amount);
+
+                        $detail->TaxPercentage = $detail->TaxPercentage ? $detail->TaxPercentage . "%" : "0%";
+
+                        $taxPercentage = $detail->TaxPercentage;
+
+                        if (!isset($taxes[$taxPercentage])) {
+                            $taxes[$taxPercentage] = $isIGST
+                                ? ['IGST' => 0, 'Total' => 0]
+                                : ['SGST' => 0, 'CGST' => 0, 'Total' => 0];
+                        }
+
+                        $taxAmount = $detail->TaxAmount;
+                        if ($isIGST) {
+                            $taxes[$taxPercentage]['IGST'] += $taxAmount;
+                        } else {
+                            $halfTaxAmount = $taxAmount / 2;
+                            $taxes[$taxPercentage]['SGST'] += $halfTaxAmount;
+                            $taxes[$taxPercentage]['CGST'] += $halfTaxAmount;
+                        }
+                        $taxes[$taxPercentage]['Total'] += $taxAmount;
+
+                        $detail->TaxAmount = Helper::formatAmount($detail->TaxAmount);
+                        $detail->AmountExcludeTax = Helper::formatAmount($detail->AmountExcludeTax);
 
                         if ($detail->ProductVariationID) {
                             $productUnit = DB::table('tbl_products_variation')
@@ -569,6 +596,8 @@ class OrderController extends Controller{
                         return $detail;
                     });
                 }
+
+                $order->taxes = $taxes;
                 $order->SubTotal = Helper::addRupeesSymbol($order->SubTotal);
                 $order->DiscountAmount = Helper::addRupeesSymbol($order->DiscountAmount);
                 $order->ShippingCharge = Helper::addRupeesSymbol($order->ShippingCharge);
@@ -581,6 +610,9 @@ class OrderController extends Controller{
                 });
                 return $order;
             });
+
+            logger("orderDetails");
+            logger($orderDetails);
             $FormData['EditData'] = $orderDetails;
             if (count($FormData['EditData']) > 0) {
                 return view('app.order.create', $FormData);

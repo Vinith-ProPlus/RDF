@@ -756,6 +756,7 @@ class CustomerAuthController extends Controller{
             $Cart = DB::table('tbl_customer_cart as C')
                 ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
                 ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
+                ->join('tbl_tax as T', 'T.TaxID', '=', 'P.TaxID')
                 ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
                 ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
                 ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
@@ -785,6 +786,7 @@ class CustomerAuthController extends Controller{
                     'U.UCode',
                     'U.UID',
                     'PSC.PSCID',
+                    'T.TaxPercentage',
                     'PV.SKU as variation_SKU',
                     'PV.PRate as variation_PRate',
                     'PV.SRate as variation_SRate'
@@ -800,7 +802,9 @@ class CustomerAuthController extends Controller{
                 $item->PRate = round($item->PRate, 2);
                 $item->SRate = round($item->SRate, 2);
                 $product_rate = $item->SRate * $item->Qty;
+                $item->TaxAmount = round(($product_rate * $item->TaxPercentage) / (100 + $item->TaxPercentage), 2);
                 $item->PTotalRate = round($product_rate, 2);
+                $item->PTotalRateExcludeTax = round($product_rate - $item->TaxAmount, 2);
                 $subTotalAmount += $product_rate;
                 unset($item->variation_SKU, $item->variation_PRate, $item->variation_SRate);
             }
@@ -901,8 +905,11 @@ class CustomerAuthController extends Controller{
                             'Qty' => $item->Qty,
                             'PRate' => $item->PRate,
                             'SRate' => $item->SRate,
+                            'TaxPercentage' => $item->TaxPercentage,
+                            'TaxAmount' => $item->TaxAmount,
                             'UOMID' => $item->UID,
                             'Amount' => $item->PTotalRate,
+                            'AmountExcludeTax' => $item->PTotalRateExcludeTax,
                             'CreatedOn' => date('Y-m-d'),
                             'CreatedBy' => $CustomerID,
                         ];
@@ -1132,15 +1139,6 @@ class CustomerAuthController extends Controller{
     {
         DB::beginTransaction();
         try {
-            $lang = optional($request->auth_customer)->language ?? 'en';
-            $customer = $request->auth_customer;
-            $coupon_code = $request->coupon_code;
-            $CustomerID = $customer->CustomerID;
-            $DiscountPer = Helper::formatAmount(0);
-            $coupon_value = 0;
-            $subTotalAmount = 0;
-            $grandTotalAmount = 0;
-            $shipping_charge = 0;
             $validatedData = Validator::make($request->all(), [
                 'ProductID' => 'required|string|exists:tbl_products,ProductID',
                 'ProductVariationID' => 'nullable|string|exists:tbl_products_variation,VariationID',
@@ -1150,6 +1148,16 @@ class CustomerAuthController extends Controller{
             if ($validatedData->fails()) {
                 return $this->errorResponse($validatedData->errors(), 'Validation Error', 422);
             }
+
+            $lang = optional($request->auth_customer)->language ?? 'en';
+            $customer = $request->auth_customer;
+            $coupon_code = $request->coupon_code;
+            $CustomerID = $customer->CustomerID;
+            $DiscountPer = Helper::formatAmount(0);
+            $coupon_value = 0;
+            $subTotalAmount = 0;
+            $grandTotalAmount = 0;
+            $shipping_charge = 0;
 
             $ProductID = $request->ProductID;
             $ProductVariationID = $request->ProductVariationID;
@@ -1161,6 +1169,7 @@ class CustomerAuthController extends Controller{
             $Cart = DB::table('tbl_temp_customer_cart as C')
                 ->leftJoin('tbl_products_variation as PV', 'PV.VariationID', 'C.ProductVariationID')
                 ->join('tbl_products as P', 'P.ProductID', '=', 'C.ProductID')
+                ->join('tbl_tax as T', 'T.TaxID', '=', 'P.TaxID')
                 ->join('tbl_product_category_type as PCT', 'PCT.PCTID', '=', 'P.CTID')
                 ->join('tbl_product_category as PC', 'PC.PCID', '=', 'P.CID')
                 ->join('tbl_product_subcategory as PSC', 'PSC.PSCID', '=', 'P.SCID')
@@ -1193,6 +1202,7 @@ class CustomerAuthController extends Controller{
                     'U.UCode',
                     'U.UID',
                     'PSC.PSCID',
+                    'T.TaxPercentage',
                     'PV.SKU as variation_SKU',
                     'PV.PRate as variation_PRate',
                     'PV.SRate as variation_SRate')
@@ -1207,7 +1217,9 @@ class CustomerAuthController extends Controller{
                 $item->PRate = round($item->PRate,2);
                 $item->SRate = round($item->SRate,2);
                 $product_rate = $item->SRate * $item->Qty;
+                $item->TaxAmount = round(($product_rate * $item->TaxPercentage) / (100 + $item->TaxPercentage), 2);
                 $item->PTotalRate = round($product_rate,2);
+                $item->PTotalRateExcludeTax = round($product_rate - $item->TaxAmount, 2);
                 $subTotalAmount += $product_rate;
                 unset($item->variation_SKU, $item->variation_PRate, $item->variation_SRate);
             }
@@ -1251,15 +1263,15 @@ class CustomerAuthController extends Controller{
                 }
             }
 
-            if ($SAddress) {
-                $SAddress->ReceiverName = Helper::translate($SAddress->ReceiverName, $lang);
-                $SAddress->StateName = json_decode($SAddress->StateNameInTranslation)->$lang ?? Helper::translate($SAddress->StateName, $lang);
-                $SAddress->DistrictName = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? Helper::translate($SAddress->DistrictName, $lang);
-                $SAddress->CityName = json_decode($SAddress->CityNameInTranslation)->$lang ?? Helper::translate($SAddress->CityName, $lang);
-                $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
-                $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
-                unset($SAddress->StateNameInTranslation, $SAddress->DistrictNameInTranslation, $SAddress->CityNameInTranslation);
-            }
+//            if ($SAddress) {
+//                $SAddress->ReceiverName = Helper::translate($SAddress->ReceiverName, $lang);
+//                $SAddress->StateName = json_decode($SAddress->StateNameInTranslation)->$lang ?? Helper::translate($SAddress->StateName, $lang);
+//                $SAddress->DistrictName = json_decode($SAddress->DistrictNameInTranslation)->$lang ?? Helper::translate($SAddress->DistrictName, $lang);
+//                $SAddress->CityName = json_decode($SAddress->CityNameInTranslation)->$lang ?? Helper::translate($SAddress->CityName, $lang);
+//                $SAddress->CompleteAddress = Helper::translate($SAddress->CompleteAddress, $lang);
+//                $SAddress->AddressType = Helper::translate($SAddress->AddressType, $lang);
+//                unset($SAddress->StateNameInTranslation, $SAddress->DistrictNameInTranslation, $SAddress->CityNameInTranslation);
+//            }
             $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value,2);
 
             if ($SAddress && ($grandTotalAmount > 0)) {
@@ -1303,8 +1315,11 @@ class CustomerAuthController extends Controller{
                             'Qty' => $item->Qty,
                             'PRate' => $item->PRate,
                             'SRate' => $item->SRate,
+                            'TaxPercentage' => $item->TaxPercentage,
+                            'TaxAmount' => $item->TaxAmount,
                             'UOMID' => $item->UID,
                             'Amount' => $item->PTotalRate,
+                            'AmountExcludeTax' => $item->PTotalRateExcludeTax,
                             'CreatedOn' => date('Y-m-d'),
                             'CreatedBy' => $CustomerID,
                         ];
@@ -1347,6 +1362,9 @@ class CustomerAuthController extends Controller{
         $translation = $language->translations ? json_decode($language->translations->value) : new \stdClass();
         $customer = $request->auth_customer;
         $CustomerID = $customer->CustomerID;
+        $CompanyStateID = DB::table('tbl_company_settings')->where('KeyName', 'StateID')->value('KeyValue');
+        $CompanyState = DB::table($this->generalDB.'tbl_states')->where('StateID', $CompanyStateID)->value('StateName');
+        $taxes = [];
         if($request->has('OrderID') && $request->OrderID){
             try {
                 $CustomerID = $request->auth_customer->CustomerID;
@@ -1354,21 +1372,38 @@ class CustomerAuthController extends Controller{
                     ->where('CreatedBy', $CustomerID)
                     ->where('OrderID', $request->OrderID)
                     ->get();
-                $orderDetails->transform(function ($order) use ($lang, $translation) {
-                    $order->City = Helper::translate($order->City, $lang);
-                    $order->District = Helper::translate($order->District, $lang);
-                    $order->State = Helper::translate($order->State, $lang);
-                    $order->CompleteAddress = Helper::translate($order->CompleteAddress, $lang);
-                    $order->DiscountType = $translation->{$order->DiscountType} ?? Helper::translate($order->DiscountType, $lang);
-                    $order->TrackStatus = $translation->{$order->TrackStatus} ?? Helper::translate($order->TrackStatus, $lang);
-                    $order->PaymentStatus = $translation->{$order->paymentStatus} ?? Helper::translate($order->paymentStatus, $lang);
-                    $order->StatusInLang = Helper::translate($order->Status, $lang);
+                $orderDetails->transform(function ($order) use ($lang, $translation, $CompanyState, &$taxes) {
+
+                    $isIGST = !($order->State == $CompanyState);
+
                     if ($order->orderDetails) {
-                        $order->orderDetails->transform(function ($detail) use ($lang) {
+                        $order->orderDetails->transform(function ($detail) use ($lang, &$taxes, $isIGST) {
                             $detail->ProductName = json_decode($detail->ProductNameInTranslation)->$lang ?? $detail->ProductName;
                             $detail->PRate = Helper::formatAmount($detail->PRate);
                             $detail->SRate = Helper::formatAmount($detail->SRate);
                             $detail->Amount = Helper::formatAmount($detail->Amount);
+                            $detail->TaxPercentage = $detail->TaxPercentage ? $detail->TaxPercentage . "%" : "0%";
+
+                            $taxPercentage = $detail->TaxPercentage;
+
+                            if (!isset($taxes[$taxPercentage])) {
+                                $taxes[$taxPercentage] = $isIGST
+                                    ? ['IGST' => 0, 'Total' => 0]
+                                    : ['SGST' => 0, 'CGST' => 0, 'Total' => 0];
+                            }
+
+                            $taxAmount = $detail->TaxAmount;
+                            if ($isIGST) {
+                                $taxes[$taxPercentage]['IGST'] += $taxAmount;
+                            } else {
+                                $halfTaxAmount = $taxAmount / 2;
+                                $taxes[$taxPercentage]['SGST'] += $halfTaxAmount;
+                                $taxes[$taxPercentage]['CGST'] += $halfTaxAmount;
+                            }
+                            $taxes[$taxPercentage]['Total'] += $taxAmount;
+
+                            $detail->TaxAmount = Helper::formatAmount($detail->TaxAmount);
+                            $detail->AmountExcludeTax = Helper::formatAmount($detail->AmountExcludeTax);
 
                             if ($detail->ProductVariationID) {
                                 $productUnit = DB::table('tbl_products_variation')
@@ -1415,6 +1450,31 @@ class CustomerAuthController extends Controller{
                             return $detail;
                         });
                     }
+
+                    foreach ($taxes as &$tax) {
+                        if (isset($tax['IGST'])) {
+                            $tax['IGST'] = Helper::formatAmount($tax['IGST']);
+                        }
+                        if (isset($tax['SGST'])) {
+                            $tax['SGST'] = Helper::formatAmount($tax['SGST']);
+                        }
+                        if (isset($tax['CGST'])) {
+                            $tax['CGST'] = Helper::formatAmount($tax['CGST']);
+                        }
+                        $tax['Total'] = Helper::formatAmount($tax['Total']);
+                    }
+
+                    unset($tax);
+
+                    $order->taxes = $taxes;
+                    $order->City = Helper::translate($order->City, $lang);
+                    $order->District = Helper::translate($order->District, $lang);
+                    $order->State = Helper::translate($order->State, $lang);
+                    $order->CompleteAddress = Helper::translate($order->CompleteAddress, $lang);
+                    $order->DiscountType = $translation->{$order->DiscountType} ?? Helper::translate($order->DiscountType, $lang);
+                    $order->TrackStatus = $translation->{$order->TrackStatus} ?? Helper::translate($order->TrackStatus, $lang);
+                    $order->PaymentStatus = $translation->{$order->paymentStatus} ?? Helper::translate($order->paymentStatus, $lang);
+                    $order->StatusInLang = Helper::translate($order->Status, $lang);
                     $order->SubTotal = Helper::formatAmount($order->SubTotal);
                     $order->DiscountAmount = Helper::formatAmount($order->DiscountAmount);
                     $order->ShippingCharge = Helper::formatAmount($order->ShippingCharge);
@@ -1424,8 +1484,8 @@ class CustomerAuthController extends Controller{
                     $order->orderTrackDetails->sortBy('orderBy');
                     $order->orderTrackDetails->transform(function ($orderTrack) use ($lang, $translation) {
                         $orderTrack->StatusDate = $orderTrack->StatusDate ? Helper::translate(Carbon::parse($orderTrack->StatusDate)->format('D, M d, Y'), $lang) : null;
-                        $orderTrack->Description = $translation->{$orderTrack->Description} ??Helper::translate($orderTrack->Description, $lang);
-                        $orderTrack->Status = $translation->{$orderTrack->Status} ??Helper::translate($orderTrack->Status, $lang);
+                        $orderTrack->Description = $translation->{$orderTrack->Description} ?? Helper::translate($orderTrack->Description, $lang);
+                        $orderTrack->Status = $translation->{$orderTrack->Status} ?? Helper::translate($orderTrack->Status, $lang);
                         return $orderTrack;
                     });
                     return $order;

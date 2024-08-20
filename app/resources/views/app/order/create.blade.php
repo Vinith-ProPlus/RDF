@@ -225,6 +225,72 @@
                                 </tbody>
                             </table>
                             </div>
+
+                            <div class="row col-sm-12 text-center">
+                                <div class="col-sm-2"></div>
+                                <div class="col-sm-8 mt-20 text-center">
+                                    <div class="text-center"><h6>Tax Details</h6></div>
+                                    <table class="table table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th>Tax Percentage</th>
+                                            <?php
+                                            $hasSGST = $hasCGST = $hasIGST = false;
+
+                                            foreach ($EditData[0]->taxes as $taxDetails) {
+                                                if (isset($taxDetails['SGST'])) $hasSGST = true;
+                                                if (isset($taxDetails['CGST'])) $hasCGST = true;
+                                                if (isset($taxDetails['IGST'])) $hasIGST = true;
+                                            }
+
+                                            if ($hasSGST) echo "<th>SGST</th>";
+                                            if ($hasCGST) echo "<th>CGST</th>";
+                                            if ($hasIGST) echo "<th>IGST</th>";
+                                            ?>
+                                            <th>Total</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <?php
+                                        $totals = ['SGST' => 0, 'CGST' => 0, 'IGST' => 0, 'Total' => 0];
+
+                                        foreach ($EditData[0]->taxes as $taxPercentage => $taxDetails) {
+                                            $sgst = isset($taxDetails['SGST']) ? (float)$taxDetails['SGST'] : 0;
+                                            $cgst = isset($taxDetails['CGST']) ? (float)$taxDetails['CGST'] : 0;
+                                            $igst = isset($taxDetails['IGST']) ? (float)$taxDetails['IGST'] : 0;
+                                            $total = isset($taxDetails['Total']) ? (float)$taxDetails['Total'] : 0;
+
+                                            $totals['SGST'] += $sgst;
+                                            $totals['CGST'] += $cgst;
+                                            $totals['IGST'] += $igst;
+                                            $totals['Total'] += $total;
+
+                                            echo "<tr>";
+                                            echo "<td>{$taxPercentage}</td>";
+                                            if ($hasSGST) echo "<td>" . ($sgst > 0 ? "₹ " . number_format($sgst, 2) : '-') . "</td>";
+                                            if ($hasCGST) echo "<td>" . ($cgst > 0 ? "₹ " . number_format($cgst, 2) : '-') . "</td>";
+                                            if ($hasIGST) echo "<td>" . ($igst > 0 ? "₹ " . number_format($igst, 2) : '-') . "</td>";
+                                            echo "<td>" . ($total > 0 ? "₹ " . number_format($total, 2) : '-') . "</td>";
+                                            echo "</tr>";
+                                        }
+                                        ?>
+                                        </tbody>
+                                        <tfoot>
+                                        <tr>
+                                            <th>Total</th>
+                                            <?php
+                                            if ($hasSGST) echo "<th>" . ($totals['SGST'] > 0 ? "₹ " . number_format($totals['SGST'], 2) : '-') . "</th>";
+                                            if ($hasCGST) echo "<th>" . ($totals['CGST'] > 0 ? "₹ " . number_format($totals['CGST'], 2) : '-') . "</th>";
+                                            if ($hasIGST) echo "<th>" . ($totals['IGST'] > 0 ? "₹ " . number_format($totals['IGST'], 2) : '-') . "</th>";
+                                            ?>
+                                            <th><?php echo $totals['Total'] > 0 ? "₹ " . number_format($totals['Total'], 2) : '₹ 0.00'; ?></th>
+                                        </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <div class="col-sm-2"></div>
+                            </div>
+
                         </div>
                     </div>
 				</div>

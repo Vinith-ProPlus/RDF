@@ -6,3 +6,11 @@ ALTER TABLE `tbl_customer` ADD `IsGoogleReviewed` BOOLEAN NOT NULL DEFAULT FALSE
 ALTER TABLE `tbl_customer` ADD `IsAskGoogleReview` BOOLEAN NOT NULL DEFAULT FALSE AFTER `fcmToken`;
 
 UPDATE `tbl_customer` SET `IsAskGoogleReview`='0', `IsGoogleReviewed`='0';
+
+240820
+
+ALTER TABLE `tbl_order_details` ADD `TaxPercentage` FLOAT NOT NULL DEFAULT '0' AFTER `SRate`, ADD `TaxAmount` FLOAT NOT NULL DEFAULT '0' AFTER `TaxPercentage`, ADD `AmountExcludeTax` FLOAT NOT NULL DEFAULT '0' AFTER `Amount`;
+
+ALTER TABLE `tbl_order_details` ADD `SRateExcludeTax` FLOAT NULL DEFAULT NULL AFTER `SRate`;
+
+INSERT INTO `tbl_page_content` (`CID`, `Slug`, `PageName`, `PageContent`, `PageContentInTranslation`, `ActiveStatus`, `DFlag`, `CreatedOn`, `UpdatedOn`, `DeletedOn`, `CreatedBy`, `UpdatedBy`, `DeletedBy`) VALUES ('CMS2023-000005', 'return-policy', 'Return Policy', '<p><strong><span style=\\\"font-size:11pt\\\">Currently, we don’t accept any returns or replacements for any products and refunds will not be provided once after the purchase. Carefully read the description before buying the product. </span></strong></p>', '{}', '1', '0', '2023-03-01 23:30:22', '2024-05-08 12:07:03', NULL, NULL, 'U2023-0000001', NULL);
