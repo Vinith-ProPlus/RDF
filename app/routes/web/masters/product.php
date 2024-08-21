@@ -3,6 +3,7 @@
 use App\Http\Controllers\web\masters\product\AttributesController;
 use App\Http\Controllers\web\masters\product\BrandsController;
 use App\Http\Controllers\web\masters\product\CouponController;
+use App\Http\Controllers\web\masters\product\DeliveryChargeRuleController;
 use App\Http\Controllers\web\masters\product\ProductCategoryController;
 use App\Http\Controllers\web\masters\product\ProductCategoryTypeController;
 use App\Http\Controllers\web\masters\product\ProductsController;
@@ -47,6 +48,8 @@ Route::group(['prefix'=>'coupon'],function (){
         Route::post('/trash-data', 'TrashTableView');
     });
 });
+
+Route::resource('delivery-charge-rules', DeliveryChargeRuleController::class);
 
 Route::group(['prefix'=>'category'],function (){
     Route::controller(ProductCategoryController::class)->group(function () {
