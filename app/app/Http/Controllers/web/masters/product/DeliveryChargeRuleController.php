@@ -5,9 +5,9 @@ namespace App\Http\Controllers\web\masters\product;
 use App\enums\activeMenuNames;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DeliveryChargeRuleRequest;
 use App\Models\DeliveryChargeRule;
 use App\Models\general;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DeliveryChargeRuleController extends Controller
@@ -50,14 +50,8 @@ class DeliveryChargeRuleController extends Controller
         return view('app.master.product.delivery_charge_rules.index', $FormData, compact('rules'));
     }
 
-    public function store(Request $request)
+    public function store(DeliveryChargeRuleRequest $request)
     {
-        $request->validate([
-            'min_order_value' => 'required|numeric|min:0',
-            'max_order_value' => 'required|numeric|gt:min_order_value',
-            'delivery_charge' => 'required|numeric|min:0',
-        ]);
-
         DB::beginTransaction();
         try {
             DeliveryChargeRule::create($request->all());
@@ -68,5 +62,24 @@ class DeliveryChargeRuleController extends Controller
             DB::rollback();
             return redirect()->route('delivery-charge-rules.index')->with('error', 'An error occurred: ' . $e->getMessage());
         }
+    }
+
+    public function edit($id)
+    {
+        $rule = DeliveryChargeRule::findOrFail($id);
+        return response()->json($rule);
+    }
+
+    public function update(DeliveryChargeRuleRequest $request, DeliveryChargeRule $deliveryChargeRule)
+    {
+        $deliveryChargeRule->update($request->all());
+        return redirect()->route('delivery-charge-rules.index')->with('success', 'Rule updated successfully.');
+    }
+
+    public function destroy($id)
+    {
+        $rule = DeliveryChargeRule::findOrFail($id);
+        $rule->delete();
+        return response()->json(['status' => true, 'message' => 'Rule deleted successfully.']);
     }
 }
