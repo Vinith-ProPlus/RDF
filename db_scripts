@@ -35,3 +35,14 @@ CREATE TABLE tbl_delivery_charge_rules (
 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+240822
+
+INSERT INTO `tbl_menus` (`MID`, `Slug`, `MenuName`, `ActiveName`, `Icon`, `PageUrl`, `ParentID`, `Level`, `hasSubMenu`, `Ordering`, `isCheckSetting`, `SettingsName`, `DefaultOrdering`,
+`ActiveStatus`, `DFlag`, `UpdatedOn`, `UpdatedBy`) VALUES ('M2023-0000050', 'delivery-charge-rules', 'Delivery Charges', 'Delivery Charges', NULL, 'admin/master/product/delivery-charge-rules',
+ 'M2023-0000011', 'L002', '0', '9', '0', NULL, '2', '1', '0', '2022-12-07 06:49:35', NULL);
+
+  INSERT INTO `tbl_cruds` (`MID`, `add`, `view`, `edit`, `delete`, `copy`, `excel`, `csv`, `print`, `pdf`, `restore`, `showpwd`) VALUES ('M2023-0000050', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '0');
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+

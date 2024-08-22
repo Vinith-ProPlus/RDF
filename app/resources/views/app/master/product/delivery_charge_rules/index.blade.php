@@ -21,7 +21,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="text-center flex-grow-1 mb-0">Create/Update Rules</h5>
-                    <button id="hide-form" class="btn btn-danger">Close</button>
+
                 </div>
                 <div class="card-body">
                     <form id="delivery-charge-form" action="{{ route('delivery-charge-rules.store') }}" method="POST">
@@ -64,7 +64,7 @@
                             </div>
                             <div class="col-sm-6 d-flex justify-content-center align-items-center mt-30">
                                 <button type="submit" class="btn btn-primary mr-20">Save</button>
-                                <button type="button" id="clear-form" class="btn btn-secondary">Clear</button>
+                                <button type="button" id="hide-form" class="btn btn-danger">Close</button>
                             </div>
                         </div>
                     </form>
@@ -111,8 +111,11 @@
                 $('.invalid-feedback').text('');
                 $('.form-control').removeClass('is-invalid');
                 $('#form-container input').val('');
-                $('input[name="_token"]').val('{{ csrf_token() }}');
                 $(this).hide();
+                $('#delivery-charge-form').attr('action', "{{ route('delivery-charge-rules.store') }}");
+                $('#form-id').val('');
+                $('input[name="_token"]').val('{{ csrf_token() }}');
+                $('input[name="_method"]').val('POST');
                 $('button[type="submit"]').text('Save');
                 $('#form-container').show();
             });
@@ -196,8 +199,7 @@
                 "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
                 buttons: ['pageLength'],
                 columnDefs: [
-                    {"className": "dt-center", "targets": 2},
-                    {"className": "dt-center", "targets": 3}
+                    {"className": "dt-center", "targets": 3, "sorting": false}
                 ]
             });
 
