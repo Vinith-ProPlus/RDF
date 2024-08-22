@@ -44,5 +44,11 @@ INSERT INTO `tbl_menus` (`MID`, `Slug`, `MenuName`, `ActiveName`, `Icon`, `PageU
 
   INSERT INTO `tbl_cruds` (`MID`, `add`, `view`, `edit`, `delete`, `copy`, `excel`, `csv`, `print`, `pdf`, `restore`, `showpwd`) VALUES ('M2023-0000050', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '0');
 
+INSERT INTO `tbl_settings` (`SLNO`, `KeyName`, `KeyValue`, `SType`, `Description`, `UpdatedOn`, `UpdatedBy`, `UKey`)
+VALUES ('25', 'free_delivery_in_coimbatore_for_above', '0', 'number', 'Customer order free delivery charge limit for Coimbatore', '2024-06-07 17:56:37', 'U2023-0000001', 'QX51sPyQlSBpXudUYRzgNceFREYfaQX5w5TcSM');
+
+  UPDATE `tbl_settings` SET `SType` = 'number' WHERE `tbl_settings`.`SLNO` = 23;
+  UPDATE `tbl_settings` SET `SType` = 'number' WHERE `tbl_settings`.`SLNO` = 24;
+
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

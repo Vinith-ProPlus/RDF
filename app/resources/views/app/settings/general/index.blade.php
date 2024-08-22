@@ -103,24 +103,24 @@
 										</div>
 									</div>
 									<div class="form-row mt-20">
-										<div class="col-sm-6 d-flex align-items-center"><b>Delivery Charge :</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Default Delivery Charge :</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<div class="form-group">
-													<input type="number" step="1" class="form-control" min="0" id="txtDeliveryCharge" value="{{ $Settings['delivery_charge'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
+													<input type="number" step="1" class="form-control" min="0" id="txtDefaultDeliveryCharge" value="{{ $Settings['delivery_charge'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
 												</div>
-												<div class="errors" id="txtDeliveryCharge-err"></div>
+												<div class="errors" id="txtDefaultDeliveryCharge-err"></div>
 											</div>
 										</div>
 									</div>
 									<div class="form-row mt-20">
-										<div class="col-sm-6 d-flex align-items-center"><b>Delivery Charge for Coimbatore:</b></div>
+										<div class="col-sm-6 d-flex align-items-center"><b>Free Delivery in Coimbatore For Above:</b></div>
 										<div class="col-sm-6">
 											<div class="form-group">
 												<div class="form-group">
-													<input type="number" step="1" class="form-control" min="0" id="txtDeliveryChargeForCoimbatore" value="{{ $Settings['delivery_charge_for_coimbatore'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
+													<input type="number" step="1" class="form-control" min="0" id="txtFreeDeliveryInCoimbatoreForAbove" value="{{ $Settings['free_delivery_in_coimbatore_for_above'] ?? 0 }}" @if($crud['edit']==false) disabled @endif>
 												</div>
-												<div class="errors" id="txtDeliveryChargeForCoimbatore-err"></div>
+												<div class="errors" id="txtFreeDeliveryInCoimbatoreForAbove-err"></div>
 											</div>
 										</div>
 									</div>
@@ -234,8 +234,8 @@
 				formData.append('PRICE-DECIMALS',$('#lstPrice').val());
 				formData.append('PERCENTAGE-DECIMALS',$('#lstPercentage').val());
 				formData.append('upload-limit',$('#txtImgUploadSize').val()+$('#lstImgUploadSizeType').val());
-				formData.append('delivery_charge',$('#txtDeliveryCharge').val());
-				formData.append('delivery_charge_for_coimbatore',$('#txtDeliveryChargeForCoimbatore').val());
+				formData.append('delivery_charge',$('#txtDefaultDeliveryCharge').val());
+				formData.append('free_delivery_in_coimbatore_for_above',$('#txtFreeDeliveryInCoimbatoreForAbove').val());
 				// formData.append('home-page-loading-text',$('#txtLoadingText').val());
 				// formData.append('home-page-loading-text-font-size',$('#lstLoadingTextSize').val());
             }
@@ -270,7 +270,6 @@
 					success:function(response){
 						document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
 						if(response.status==true){
-
 							toastr.success(response.message, "Success", {
 								positionClass: "toast-top-right",
 								containerId: "toast-top-right",

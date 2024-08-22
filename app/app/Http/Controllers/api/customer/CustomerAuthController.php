@@ -10,6 +10,7 @@ use App\Mail\OrderMail;
 use App\Models\Coupon;
 use App\Models\CustomerCart;
 use App\Models\CustomerOrderTrack;
+use App\Models\DeliveryChargeRule;
 use App\Models\Language;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -293,13 +294,23 @@ class CustomerAuthController extends Controller{
                 'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
             ->first();
 
-        if (($subTotalAmount > 0)) {
-            if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
-                $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+        if ($subTotalAmount > 0) {
+            $free_shipping_above_rate = round(DB::table('tbl_settings')->where('KeyName', 'free_delivery_in_coimbatore_for_above')->pluck('KeyValue')->first() ?? 0, 2);
+            if (isset($SAddress->DistrictName) && $SAddress->DistrictName === "Coimbatore" && $subTotalAmount > $free_shipping_above_rate) {
+                $shipping_charge = 0;
             } else {
-                $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                $deliveryChargeRule = DeliveryChargeRule::where('min_order_value', '<=', $subTotalAmount)
+                    ->where('max_order_value', '>=', $subTotalAmount)
+                    ->first();
+
+                if ($deliveryChargeRule) {
+                    $shipping_charge = round($deliveryChargeRule->delivery_charge ?? 0, 2);
+                } else {
+                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                }
             }
         }
+
         if ($coupon_value > $subTotalAmount) {
             $coupon_value = $subTotalAmount;
         }
@@ -842,11 +853,20 @@ class CustomerAuthController extends Controller{
                     'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
                 ->first();
 
-            if (($subTotalAmount > 0)) {
-                if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
-                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+            if ($subTotalAmount > 0) {
+                $free_shipping_above_rate = round(DB::table('tbl_settings')->where('KeyName', 'free_delivery_in_coimbatore_for_above')->pluck('KeyValue')->first() ?? 0, 2);
+                if (isset($SAddress->DistrictName) && $SAddress->DistrictName === "Coimbatore" && $subTotalAmount > $free_shipping_above_rate) {
+                    $shipping_charge = 0;
                 } else {
-                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                    $deliveryChargeRule = DeliveryChargeRule::where('min_order_value', '<=', $subTotalAmount)
+                        ->where('max_order_value', '>=', $subTotalAmount)
+                        ->first();
+
+                    if ($deliveryChargeRule) {
+                        $shipping_charge = round($deliveryChargeRule->delivery_charge ?? 0, 2);
+                    } else {
+                        $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                    }
                 }
             }
             $grandTotalAmount = round(($subTotalAmount + $shipping_charge) - $coupon_value, 2);
@@ -1088,24 +1108,33 @@ class CustomerAuthController extends Controller{
                     $coupon_value = $coupon->value;
                 }
             }
-            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID',$customer->CustomerID)
-                ->where('CA.DFlag',0)->where('CA.isDefault',1)
-                ->leftJoin($this->generalDB.'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
-                ->leftJoin($this->generalDB.'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
-                ->leftJoin($this->generalDB.'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
-                ->leftJoin($this->generalDB.'tbl_states as S', 'S.StateID', 'D.StateID')
-                ->leftJoin($this->generalDB.'tbl_countries as C','C.CountryID','S.CountryID')
-                ->orderBy('CA.CreatedOn','desc')
+            $SAddress = DB::table('tbl_customer_address as CA')->where('CA.CustomerID', $customer->CustomerID)
+                ->where('CA.DFlag', 0)->where('CA.isDefault', 1)
+                ->leftJoin($this->generalDB . 'tbl_postalcodes as PC', 'PC.PID', 'CA.PostalCodeID')
+                ->leftJoin($this->generalDB . 'tbl_cities as CI', 'CI.CityID', 'CA.CityID')
+                ->leftJoin($this->generalDB . 'tbl_districts as D', 'D.DistrictID', 'PC.DistrictID')
+                ->leftJoin($this->generalDB . 'tbl_states as S', 'S.StateID', 'D.StateID')
+                ->leftJoin($this->generalDB . 'tbl_countries as C', 'C.CountryID', 'S.CountryID')
+                ->orderBy('CA.CreatedOn', 'desc')
                 ->select('CA.AID', 'CA.ReceiverName', 'CA.ReceiverEmail', 'CA.ReceiverMobile', 'CA.Address', 'CA.isDefault', 'CA.StateID',
                     'S.StateName', 'S.StateNameInTranslation', 'CA.DistrictID', 'D.DistrictName', 'D.DistrictNameInTranslation', 'CA.CityID',
-                    'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
+                    'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress', 'CA.AddressType')
                 ->first();
 
-            if(($subTotalAmount > 0)){
-                if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
-                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+            if ($subTotalAmount > 0) {
+                $free_shipping_above_rate = round(DB::table('tbl_settings')->where('KeyName', 'free_delivery_in_coimbatore_for_above')->pluck('KeyValue')->first() ?? 0, 2);
+                if (isset($SAddress->DistrictName) && $SAddress->DistrictName === "Coimbatore" && $subTotalAmount > $free_shipping_above_rate) {
+                    $shipping_charge = 0;
                 } else {
-                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                    $deliveryChargeRule = DeliveryChargeRule::where('min_order_value', '<=', $subTotalAmount)
+                        ->where('max_order_value', '>=', $subTotalAmount)
+                        ->first();
+
+                    if ($deliveryChargeRule) {
+                        $shipping_charge = round($deliveryChargeRule->delivery_charge ?? 0, 2);
+                    } else {
+                        $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
+                    }
                 }
             }
 
@@ -1255,13 +1284,22 @@ class CustomerAuthController extends Controller{
                     'CI.CityName', 'CI.CityNameInTranslation', 'CA.PostalCodeID', 'PC.PostalCode', 'CA.CompleteAddress','CA.AddressType')
                 ->first();
 
-            if(($subTotalAmount > 0)){
-                if (isset($SAddress->DistrictName) && ($SAddress->DistrictName === "Coimbatore")) {
-                    $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge_for_coimbatore')->pluck('KeyValue')->first() ?? 0, 2);
+            if ($subTotalAmount > 0) {
+            $free_shipping_above_rate = round(DB::table('tbl_settings')->where('KeyName', 'free_delivery_in_coimbatore_for_above')->pluck('KeyValue')->first() ?? 0, 2);
+            if (isset($SAddress->DistrictName) && $SAddress->DistrictName === "Coimbatore" && $subTotalAmount > $free_shipping_above_rate) {
+                $shipping_charge = 0;
+            } else {
+                $deliveryChargeRule = DeliveryChargeRule::where('min_order_value', '<=', $subTotalAmount)
+                    ->where('max_order_value', '>=', $subTotalAmount)
+                    ->first();
+
+                if ($deliveryChargeRule) {
+                    $shipping_charge = round($deliveryChargeRule->delivery_charge ?? 0, 2);
                 } else {
                     $shipping_charge = round(DB::table('tbl_settings')->where('KeyName', 'delivery_charge')->pluck('KeyValue')->first() ?? 0, 2);
                 }
             }
+        }
 
 //            if ($SAddress) {
 //                $SAddress->ReceiverName = Helper::translate($SAddress->ReceiverName, $lang);
