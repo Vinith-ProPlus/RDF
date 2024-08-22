@@ -621,18 +621,16 @@ class CustomerAPIController extends Controller{
     public function sendOtpSms(string $otp, Request $request): void
     {
         $TextLocal = new TextLocal();
-        $message = urlencode("Thank you for registering with us.. Your OTP is $otp. Happy Shopping! www.royaldryfruits.com");
+//        $message = urlencode("Thank you for registering with us... Your OTP is $otp. Happy Shopping! www.royaldryfruits.com");
+        $message = "You are trying to change your mobile number in the RPC software. Please enter $otp code to verify your request.";
 
         $textMsgResponse = $TextLocal->sendOTP($request->mobile_no, $message);
-        if ($textMsgResponse['error']) {
+        if (!$textMsgResponse["status"]) {
             $response['error'] = 1;
             $response['message'] = $textMsgResponse['message'];
-
             info($response['message']);
             info('ERROR FOUND');
             throw new Exception($response['message']);
-        } else {
-            info('NO ERROR FOUND');
         }
     }
 
