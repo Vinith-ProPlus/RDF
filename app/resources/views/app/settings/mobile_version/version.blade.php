@@ -44,14 +44,14 @@
                                 <div class="col-sm-6 my-2">
                                     <div class="form-group">
                                         <label for="txtCurrentVersion">Current Version</label>
-                                        <input type="number" class="form-control {{$Theme['input-size']}}" id="txtCurrentVersion" value="{{$EditData->current_version ?? 0}}" readonly>
+                                        <input type="text" class="form-control version-input {{$Theme['input-size']}}" id="txtCurrentVersion" value="{{$EditData->current_version ?? 0}}">
                                         <div class="errors" id="txtCurrentVersion-err"></div>
                                     </div>
                                 </div>
                                 <div class="col-sm-6 my-2">
                                     <div class="form-group">
                                         <label for="txtNewVersion">New Version<span class="required"> * </span></label>
-                                        <input type="number" class="form-control {{$Theme['input-size']}}" id="txtNewVersion" value="{{$EditData->new_version ?? 0}}">
+                                        <input type="text" class="form-control version-input {{$Theme['input-size']}}" id="txtNewVersion" value="{{$EditData->new_version ?? 0}}">
                                         <div class="errors" id="txtNewVersion-err"></div>
                                     </div>
                                 </div>
@@ -272,6 +272,10 @@
     <!-- Image Crop Script End -->
     <script>
         $(document).ready(function(){
+            $(".version-input").on("keyup", function() {
+                var cleanedValue = $(this).val().replace(/[^0-9.]/g, '');
+                $(this).val(cleanedValue);
+            });
 
             const formValidation=()=>{
                 $('.errors').html('');
