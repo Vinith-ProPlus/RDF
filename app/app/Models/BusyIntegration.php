@@ -156,11 +156,10 @@ class BusyIntegration extends Model
             $xml .= '<VchSeriesName>Main</VchSeriesName>';
             $xml .= '<Date>' . date('d-m-Y', strtotime($order->OrderDate)) . '</Date>'; // Format the date as needed
             $xml .= '<VchType>9</VchType>';
-            $xml .= '<StockUpdationDate>' . date('d-m-Y', strtotime($order->OrderDate)) . '</StockUpdationDate>'; // Same date as OrderDate for simplicity
-            $xml .= '<STPTName>Local-Exempt</STPTName>';
+            $xml .= '<StockUpdationDate>' . date('d-m-Y', strtotime($order->OrderDate)) . '</StockUpdationDate>';
+            $xml .= '<STPTName>' . ($order->isIGST ? 'Central' : 'Local') . '-TaxIncl.</STPTName>';
             $xml .= '<MasterName1>' . $order->CustomerName . ' - ' . $order->MobileNo1 . '</MasterName1>';
             $xml .= '<MasterName2>Main Store</MasterName2><TranCurName>Rs.</TranCurName><InputType>1</InputType>';
-//            $xml .= '<BillingDetails><PartyName>'. $order->CustomerName .'</PartyName><Address1>'. $order->CompleteAddress .'</Address1></BillingDetails>';
             $xml .= '<BillingDetails><PartyName>' . $order->CustomerName . ' - ' . $order->MobileNo1 . '</PartyName><Address1>' . $order->Address . '</Address1>';
             $xml .= '<Address2>' . $order->City . ', ' . $order->District . ',</Address2><Address3>' . $order->State . ' - ' . $order->PostalCode . '</Address3>';
             $xml .= '<tmpStateName>' . $order->State . '</tmpStateName><tmpAreaName>' . $order->District . '</tmpAreaName><tmpPINCode>' . $order->PostalCode . '</tmpPINCode></BillingDetails>';
@@ -179,7 +178,22 @@ class BusyIntegration extends Model
                 $xml .= '<Price>' . $detail->SRate . '</Price>';
                 $xml .= '<ListPrice>' . $detail->PRate . '</ListPrice>';
                 $xml .= '<Amt>' . $detail->Amount . '</Amt>';
-                $xml .= '<NettAmount>' . $detail->Amount . '</NettAmount>';
+                $xml .= '<NettAmount>' . round($detail->Amount - $detail->TaxAmount, 2) . '</NettAmount>';
+
+                $xml .= '<ItemTaxCategory>GST '. $detail->TaxPercentage . '</ItemTaxCategory>';
+
+                $xml .= '<STAmount>' . $detail->TaxAmount . '</STAmount>';
+
+                if($order->isIGST){
+                    $xml .= '<STPercent>' . intval($detail->TaxPercentage) . '</STPercent>';
+                    $xml .= '<TaxBeforeSurcharge>' . $detail->TaxAmount . '</TaxBeforeSurcharge>';
+                } else {
+                    $xml .= '<STPercent>' . intval($detail->TaxPercentage) / 2 . '</STPercent>';
+                    $xml .= '<TaxBeforeSurcharge>' . round($detail->TaxAmount / 2, 2) . '</TaxBeforeSurcharge>';
+                    $xml .= '<STPercent1>' . intval($detail->TaxPercentage) / 2 . '</STPercent1>';
+                    $xml .= '<TaxBeforeSurcharge1>' . round($detail->TaxAmount / 2, 2) . '</TaxBeforeSurcharge1>';
+                }
+
                 $xml .= '<MC>Main Store</MC>';
                 $xml .= '<ItemSerialNoEntries/><ParamStockEntries/><BatchEntries/><RecType>2</RecType></ItemDetail>';
             }
@@ -246,10 +260,14 @@ class BusyIntegration extends Model
             $busy_username = config('app.BUSY_USERNAME');
             $busy_password = config('app.BUSY_PASSWORD');
             $order = Order::with('orderDetails')->where('OrderID', $OrderID)->first();
+            $generalDB=Helper::getGeneralDB();
+            $CompanyStateID = DB::table('tbl_company_settings')->where('KeyName', 'StateID')->value('KeyValue');
+            $CompanyState = DB::table($generalDB.'tbl_states')->where('StateID', $CompanyStateID)->value('StateName');
             $order->CustomerName = Helper::translate($order->CustomerName, 'en');
             $order->City = Helper::translate($order->City, 'en');
             $order->District = Helper::translate($order->District, 'en');
             $order->State = Helper::translate($order->State, 'en');
+            $order->isIGST = !($order->State == $CompanyState);
             if ($order->orderDetails) {
                 $order->orderDetails->transform(function ($detail) {
                     if ($detail->ProductVariationID) {
@@ -302,6 +320,7 @@ class BusyIntegration extends Model
             $response = curl_exec($curl);
             curl_close($curl);
             if (($response !== "") && ($response !== false)) {
+                unset($order->isIGST);
                 $order->update(['BusySaleID' => $response]);
             }
         }

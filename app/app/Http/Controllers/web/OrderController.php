@@ -648,7 +648,7 @@ class OrderController extends Controller{
             try {
                 $address3 = $reader->value('Sale.BillingDetails.Address3')->first();
             } catch (\VeeWee\Xml\Exception\RuntimeException $e) {
-                $address3 = ''; // Set a default or empty value
+                $address3 = '';
             }
             $date = $reader->value('Sale.Date')->first();
             $subTotal = $reader->value('Sale.tmpCostOfGoods')->first();
@@ -658,18 +658,35 @@ class OrderController extends Controller{
             $completeAddress = "{$address1}, {$address2}, {$address3}";
 
             $itemDetails = [];
+            $taxes = [];
             $items = $reader->value('Sale.ItemEntries.ItemDetail')->get();
-            for ($i = 0; $i < count($items); $i++) {
-                $item = $items[$i];
+            foreach ($items as $item) {
                 $itemName = $item['ItemName'];
                 $qty = $item['Qty'];
                 $price = $item['Price'];
+                $gstPercent = $item['STPercent'] ? $item['STPercent'] * 2 : 0;
+                $gstAmount = $item['STAmount'] ?? 0;
 
-                // Create an object for each item and add it to the array
+                if (isset($item['TaxBeforeSurcharge1']) && isset($item['TaxBeforeSurcharge'])) {
+                    if (!isset($taxes[$gstPercent])) {
+                        $taxes[$gstPercent] = ['SGST' => 0, 'CGST' => 0, 'Total' => 0];
+                    }
+                    $taxes[$gstPercent]['SGST'] += $item['TaxBeforeSurcharge'];
+                    $taxes[$gstPercent]['CGST'] += $item['TaxBeforeSurcharge1'];
+                    $taxes[$gstPercent]['Total'] += $gstAmount;
+                } else {
+                    if (!isset($taxes[$gstPercent])) {
+                        $taxes[$gstPercent] = ['IGST' => 0, 'Total' => 0];
+                    }
+                    $taxes[$gstPercent]['IGST'] += $item['TaxBeforeSurcharge'] ?? 0;
+                    $taxes[$gstPercent]['Total'] += $gstAmount;
+                }
                 $itemDetail = new \stdClass();
                 $itemDetail->ProductName = $itemName;
                 $itemDetail->Qty = $qty;
                 $itemDetail->SRate = $price;
+//                $itemDetail->GSTPercent = $gstPercent;
+//                $itemDetail->GSTAmount = $gstAmount;
                 $itemDetail->Amount = $qty * $price;
 
                 $itemDetails[] = $itemDetail;
@@ -684,14 +701,17 @@ class OrderController extends Controller{
                 'DiscountAmount' => $discountAmount,
                 'ShippingCharge' => $shippingCharge,
                 'TotalAmount' => $totalAmount,
-                'BusySaleID' => $BusyID, // Static value as per provided example
+                'BusySaleID' => $BusyID,
                 'productCount' => count($itemDetails),
                 'orderDetails' => $itemDetails,
+                'taxes' => $taxes, // Add the taxes to the order object
             ];
+
             if ($order->orderDetails) {
                 foreach($order->orderDetails as $detail) {
                     $detail->SRate = Helper::addRupeesSymbol($detail->SRate);
                     $detail->Amount = Helper::addRupeesSymbol($detail->Amount);
+//                    $detail->GSTAmount = Helper::addRupeesSymbol($detail->GSTAmount);
                 }
             }
             $order->SubTotal = Helper::addRupeesSymbol($order->SubTotal);
@@ -700,7 +720,8 @@ class OrderController extends Controller{
             $order->TotalAmountInString = Helper::addRupeesSymbol($order->TotalAmount);
             $order->OrderDate = Carbon::parse($order->OrderDate)->format('D, M d, Y');
             $FormData['EditData'] = $order;
-                return view('app.order.busy_show', $FormData);
+
+            return view('app.order.busy_show', $FormData);
         } elseif ($this->general->isCrudAllow($this->CRUD, "view")) {
             return Redirect::to('/admin/master/product/coupon');
         } else {

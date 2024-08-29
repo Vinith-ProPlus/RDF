@@ -255,10 +255,10 @@
                                         $totals = ['SGST' => 0, 'CGST' => 0, 'IGST' => 0, 'Total' => 0];
 
                                         foreach ($EditData[0]->taxes as $taxPercentage => $taxDetails) {
-                                            $sgst = isset($taxDetails['SGST']) ? (float)$taxDetails['SGST'] : 0;
-                                            $cgst = isset($taxDetails['CGST']) ? (float)$taxDetails['CGST'] : 0;
-                                            $igst = isset($taxDetails['IGST']) ? (float)$taxDetails['IGST'] : 0;
-                                            $total = isset($taxDetails['Total']) ? (float)$taxDetails['Total'] : 0;
+                                            $sgst = isset($taxDetails['SGST']) ? round($taxDetails['SGST'],2) : 0;
+                                            $cgst = isset($taxDetails['CGST']) ? round($taxDetails['CGST'],2) : 0;
+                                            $igst = isset($taxDetails['IGST']) ? round($taxDetails['IGST'],2) : 0;
+                                            $total = isset($taxDetails['Total']) ? round($taxDetails['Total'],2) : 0;
 
                                             $totals['SGST'] += $sgst;
                                             $totals['CGST'] += $cgst;
