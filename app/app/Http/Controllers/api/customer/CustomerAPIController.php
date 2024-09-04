@@ -57,7 +57,7 @@ class CustomerAPIController extends Controller{
                 }
                 $oldCustomer = $customer->replicate();
                 $otp = Random::generate(4, '0-9');
-//                $this->sendOtpSms($otp, $request);
+                $this->sendOtpSms($otp, $request);
                 $customer->update(["otp" => $otp, "otp_verified"=> false]);
 
                 $logData = array(
@@ -78,7 +78,7 @@ class CustomerAPIController extends Controller{
                     "otp" => $otp,
                     "CreatedOn" => now()
                 ];
-//                $this->sendOtpSms($otp, $request);
+                $this->sendOtpSms($otp, $request);
                 $customer = Customer::create($data);
                 $logData = array(
                     "Description" => "New Customer Created",
@@ -621,8 +621,8 @@ class CustomerAPIController extends Controller{
     public function sendOtpSms(string $otp, Request $request): void
     {
         $TextLocal = new TextLocal();
-//        $message = urlencode("Thank you for registering with us... Your OTP is $otp. Happy Shopping! www.royaldryfruits.com");
-        $message = "You are trying to change your mobile number in the RPC software. Please enter $otp code to verify your request.";
+        $message = "Your Royal Dry Fruits OTP for login is $otp. Please enter this code to proceed.";
+//        $message = "You are trying to change your mobile number in the RPC software. Please enter $otp code to verify your request.";
 
         $textMsgResponse = $TextLocal->sendOTP($request->mobile_no, $message);
         if (!$textMsgResponse["status"]) {
