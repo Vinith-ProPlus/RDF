@@ -27,6 +27,7 @@ Route::post('/login', [CustomerAPIController::class, 'login']);
 Route::post('/otp_verification', [CustomerAPIController::class, 'OtpVerification']);
 Route::get('/guest/translation/{page}/{lang}', [LanguageAPIController::class, 'guestTranslations']);
 Route::middleware([AuthenticateWithToken::class])->group(function () {
+    Route::post('/customer/payment/gateway/details', [CustomerAPIController::class, 'paymentGatewayDetails']);
     Route::post('/customer/homeScreen', [CustomerAPIController::class, 'customerHomeScreen']);
     Route::post('/customer/translation', [LanguageAPIController::class, 'customerTranslations']);
     Route::post('/update/nick_name', [CustomerAPIController::class, 'updateNickName']);

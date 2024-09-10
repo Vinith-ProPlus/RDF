@@ -649,4 +649,15 @@ class CustomerAPIController extends Controller{
             return [];
         }
     }
+
+    public function paymentGatewayDetails(Request $request)
+    {
+        return response()->json([
+            'merchantId' => config('app.PHONEPE_MERCHANT_ID'),
+            'transactionId' => Str::uuid()->toString(),
+            'Merchanuserid' => $request->auth_customer->CustomerID,
+            'salt_key' => config('app.PHONEPE_SALT_KEY')
+        ]);
+    }
+
 }

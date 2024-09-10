@@ -53,6 +53,10 @@ return [
     'TEXT_LOCAL_API_KEY' => env('TEXT_LOCAL_API_KEY', ''),
     'TEXT_LOCAL_SENDER_NAME' => env('TEXT_LOCAL_SENDER_NAME', ''),
 
+//  PhonePe Credentials
+    'PHONEPE_MERCHANT_ID' => env('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT'),
+    'PHONEPE_SALT_KEY' => env('PHONEPE_SALT_KEY', '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399'),
+
 //  Busy Billing
     'BUSY_URL' => env('BUSY_URL', 'http://localhost:981'),
     'BUSY_USERNAME' => env('BUSY_USERNAME', 'a'),
