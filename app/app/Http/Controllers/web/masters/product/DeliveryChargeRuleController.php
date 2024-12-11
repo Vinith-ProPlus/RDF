@@ -56,7 +56,7 @@ class DeliveryChargeRuleController extends Controller
         try {
             DeliveryChargeRule::create($request->all());
             DB::commit();
-            return redirect()->route('delivery-charge-rules.index')->with('success', 'Rule added successfully.');
+            return redirect()->route('delivery-charge-rules.index')->with('success', 'Delivery Charge Rule added successfully.');
         } catch (\Exception $e) {
             logger("Error in DeliveryChargeRuleController@store: " . $e->getMessage());
             DB::rollback();
@@ -73,7 +73,7 @@ class DeliveryChargeRuleController extends Controller
     public function update(DeliveryChargeRuleRequest $request, DeliveryChargeRule $deliveryChargeRule)
     {
         $deliveryChargeRule->update($request->all());
-        return redirect()->route('delivery-charge-rules.index')->with('success', 'Rule updated successfully.');
+        return redirect()->route('delivery-charge-rules.index')->with('success', 'Delivery Charge Rule updated successfully.');
     }
 
     public function destroy($id)
