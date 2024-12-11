@@ -75,7 +75,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="text-center flex-grow-1 mb-0">Existing Delivery Charge Rules</h4>
-            <button id="show-form" class="btn btn-success">Create New Rule</button>
+            <button id="show-form" class="btn btn-outline-success btn-air-success btn-sm">Create New Rule</button>
         </div>
 
         <table class="table" id="tblDeliveryChargeRules">
@@ -94,8 +94,8 @@
                     <td>₹{{ $rule->max_order_value }}</td>
                     <td>₹{{ $rule->delivery_charge }}</td>
                     <td>
-                        <button class="btn btn-sm btn-warning btnEdit" data-id="{{ $rule->id }}">Edit</button>
-                        <button class="btn btn-sm btn-danger btnDelete" data-id="{{ $rule->id }}">Delete</button>
+                        <button class="btn btn-outline-success btn-sm mr-10 btnEdit" data-id="{{ $rule->id }}"><i class="fa fa-pencil"></i></button>
+                        <button class="btn btn-outline-danger btn-sm btnDelete" data-id="{{ $rule->id }}"><i class="fa fa-trash" aria-hidden="true"></i></button>
                     </td>
                 </tr>
             @endforeach
