@@ -24,7 +24,7 @@ class DeliveryChargeRuleController extends Controller
 
     public function __construct()
     {
-        $this->ActiveMenuName = activeMenuNames::Coupon->value;
+        $this->ActiveMenuName = activeMenuNames::DeliveryCharges->value;
         $this->PageTitle = "Delivery Charge Rule";
         $this->middleware('auth');
         $this->FileTypes = Helper::getFileTypes(array("category" => array("Images")));

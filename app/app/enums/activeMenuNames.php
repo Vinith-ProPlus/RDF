@@ -45,4 +45,5 @@ enum activeMenuNames: string
     case Departments = "Departments";
     case Coupon = "Coupon";
     case Orders = "Orders";
+    case DeliveryCharges = "Delivery Charges";
 }
