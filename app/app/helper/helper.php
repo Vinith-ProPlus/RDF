@@ -811,10 +811,6 @@ class helper{
             ->pluck('fcmToken')
             ->filter()
             ->toArray();
-
-        // Add a test token for fallback or testing
-        $result[] = "d7ryTj8yQ4mwvgdfFLggUO:APA91bGqUw-ARJtzSTy6WR1Os7ctWLv3ANgxUO-WwDDafjwjfwe2-CZoba0EZiSxsbFMoJF6bZH3_ffPRUsX7I_ZJAR4XUFGmiJRapqBdPkTFjWpZ-xELjM";
-
         if (empty($result)) return 'No valid tokens found.';
 
         $serviceAccountPath = storage_path('app/firebase/firebase_credentials.json');
