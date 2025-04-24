@@ -45,6 +45,20 @@
 		<link rel="stylesheet" type="text/css" href="{{url('/')}}/assets/css/loader.css?r={{date('YmdHis')}}">
 		<link rel="stylesheet" type="text/css" href="{{url('/')}}/assets/css/custom.css?r={{date('YmdHis')}}">
 		<link rel="stylesheet" type="text/css" href="{{url('/')}}/assets/css/custom-n.css?r={{date('YmdHis')}}">
+        <!-- Pusher JS -->
+        <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+        <script>
+            // Enable pusher logging - don't include this in production
+            Pusher.logToConsole = true;
+
+            var pusher = new Pusher('9bd5114064ba82338ee1', {
+                cluster: 'ap2'
+            });
+            var channel = pusher.subscribe('my-channel-{{$UInfo->ID}}');
+            channel.bind('my-event', function(data) {
+                alert(JSON.stringify(data));
+            });
+        </script>
 		<style>
 			<?php
 				$bodyCss='';
