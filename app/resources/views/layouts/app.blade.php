@@ -47,18 +47,32 @@
 		<link rel="stylesheet" type="text/css" href="{{url('/')}}/assets/css/custom-n.css?r={{date('YmdHis')}}">
         <!-- Pusher JS -->
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
-        <script>
-            // Enable pusher logging - don't include this in production
-            Pusher.logToConsole = true;
+{{--        <script>--}}
+{{--            // Enable pusher logging - don't include this in production--}}
+{{--            Pusher.logToConsole = true;--}}
 
-            var pusher = new Pusher('9bd5114064ba82338ee1', {
-                cluster: 'ap2'
-            });
-            var channel = pusher.subscribe('my-channel-{{$UInfo->ID}}');
-            channel.bind('my-event', function(data) {
-                alert(JSON.stringify(data));
-            });
-        </script>
+{{--            var pusher = new Pusher('9bd5114064ba82338ee1', {--}}
+{{--                cluster: 'ap2'--}}
+{{--            });--}}
+{{--            var channel = pusher.subscribe('my-channel-{{$UInfo->ID}}');;--}}
+{{--            channel.bind('my-event', function(data) {--}}
+{{--                if (Notification.permission === "granted") {--}}
+{{--                    new Notification("New Notification", {--}}
+{{--                        body: data.message || "You receive a new Order!",--}}
+{{--                        icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
+{{--                    });--}}
+{{--                } else if (Notification.permission !== "denied") {--}}
+{{--                    Notification.requestPermission().then(permission => {--}}
+{{--                        if (permission === "granted") {--}}
+{{--                            new Notification("New Notification", {--}}
+{{--                                body: data.message || "You receive a new Order!",--}}
+{{--                                icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
+{{--                            });--}}
+{{--                        }--}}
+{{--                    });--}}
+{{--                }--}}
+{{--            });--}}
+{{--        </script>--}}
 		<style>
 			<?php
 				$bodyCss='';
@@ -102,21 +116,22 @@
 						</div>
 					</div>
 					<div class="nav-right col pull-right right-menu">
-						<ul class="nav-menus"><!--
-							<li>
-								<a class="text-dark" href="#!" onclick="javascript:toggleFullScreen()">
-									<i data-feather="maximize"></i>
-								</a>
-							</li>-->
-{{--							<li>--}}
-{{--								<span>--}}
-{{--									<select id="lstFinancialYear" class="form-control multiselect" data-selected="{{$FY->FYID}}">--}}
-{{--									</select>--}}
-{{--								</span>--}}
-{{--							</li>--}}
+						<ul class="nav-menus">
 							<li class="theme-setting">
 								<i data-feather="settings"></i>
 							</li>
+                            <!-- Bell Icon for Notifications -->
+                            <li class="onhover-dropdown px-0">
+                                <span class="notification-icon">
+                                    <i data-feather="bell"></i>
+                                    <span id="notification-dot" class="notification-dot" style="display:none;"></span> <!-- Red dot -->
+                                </span>
+
+                                <!-- Notification Dropdown -->
+                                <ul id="notification-dropdown" class="profile-dropdown onhover-show-div">
+                                    <!-- Dynamic notifications will be appended here -->
+                                </ul>
+                            </li>
 							<li class="onhover-dropdown px-0">
 								<span class="d-flex user-header">
 									<img class="me-2 rounded-circle img-35" src="{{url('/')}}/{{$UInfo->ProfileImage}}" alt="">
@@ -597,7 +612,122 @@
 
         <script src="{{url('/')}}/assets/plugins/ckeditor/ckeditor.js"></script>
         <script src="{{url('/')}}/assets/plugins/ckeditor/custom.js"></script>
-		<script>/*
+        <div class="nav-right col pull-right right-menu">
+            <ul class="nav-menus">
+                <li class="theme-setting">
+                    <i data-feather="settings"></i>
+                </li>
+
+                <!-- Bell Icon for Notifications -->
+                <li class="onhover-dropdown px-0">
+            <span class="notification-icon">
+                <i data-feather="bell"></i>
+                <span id="notification-dot" class="notification-dot" style="display:none;"></span> <!-- Red dot -->
+            </span>
+
+                    <!-- Notification Dropdown -->
+                    <ul id="notification-dropdown" class="profile-dropdown onhover-show-div">
+                        <!-- Dynamic notifications will be appended here -->
+                    </ul>
+                </li>
+
+                <li class="onhover-dropdown px-0">
+            <span class="d-flex user-header">
+                <img class="me-2 rounded-circle img-35" src="{{url('/')}}/{{$UInfo->ProfileImage}}" alt="">
+                <span class="flex-grow-1">
+                    <span class="f-12 f-w-600">{{$UInfo->Name}}</span>
+                    <span class="d-block">{{$UInfo->RoleName}}</span>
+                </span>
+            </span>
+                    <ul class="profile-dropdown onhover-show-div">
+                        <li><a href="{{url('/')}}/admin/users-and-permissions/profile"><i data-feather="user"> </i>Profile</a></li>
+                        <li><a href="{{url('/')}}/admin/users-and-permissions/change-password/"><i data-feather="user"> </i>Password Change</a></li>
+                        <li class="btnLogout"><i data-feather="log-in"></i>Logout </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">@csrf</form>
+        </div>
+
+        <!-- Include Pusher -->
+        <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+        <script>
+            let notifications = []; // Array to hold the latest notifications
+            const maxNotifications = 10; // Only show the latest 10 notifications
+
+            // Setup Pusher to listen for notifications
+            Pusher.logToConsole = true;
+
+            var pusher = new Pusher('9bd5114064ba82338ee1', {
+                cluster: 'ap2'
+            });
+            var channel = pusher.subscribe('my-channel-{{$UInfo->ID}}');
+            {{--channel.bind('my-event', function(data) {--}}
+            {{--    if (Notification.permission === "granted") {--}}
+            {{--        new Notification("New Notification", {--}}
+            {{--            body: data.message || "You receive a new Order!",--}}
+            {{--            icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
+            {{--        });--}}
+            {{--    } else if (Notification.permission !== "denied") {--}}
+            {{--        Notification.requestPermission().then(permission => {--}}
+            {{--            if (permission === "granted") {--}}
+            {{--                new Notification("New Notification", {--}}
+            {{--                    body: data.message || "You receive a new Order!",--}}
+            {{--                    icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
+            {{--                });--}}
+            {{--            }--}}
+            {{--        });--}}
+            {{--    }--}}
+            {{--});--}}
+
+            channel.bind('my-event', function(data) {
+                // Append the new notification message
+                debugger
+                if (notifications.length >= maxNotifications) {
+                    notifications.shift(); // Remove the oldest notification
+                }
+
+                // Add the new notification to the array
+                notifications.push(data.message);
+                showBrowserNotification(data.message);
+
+                // Update the notification dropdown UI
+                updateNotificationDropdown();
+
+                // Show the red dot if there are new notifications
+                document.getElementById('notification-dot').style.display = 'inline-block';
+            });
+
+            // Function to update the notification dropdown UI
+            function updateNotificationDropdown() {
+                const dropdown = document.getElementById('notification-dropdown');
+                dropdown.innerHTML = ''; // Clear the dropdown
+
+                // Loop through the notifications and append them
+                notifications.forEach(function(notification) {
+                    const notificationItem = document.createElement('li');
+                    notificationItem.innerHTML = `<a href="{{url('/admin/orders')}}"> ${notification} </a>`;
+                    dropdown.appendChild(notificationItem);
+                });
+            }
+
+            // Show a notification on the client-side (optional)
+            function showBrowserNotification(message) {
+                if (Notification.permission === "granted") {
+                    new Notification("New Notification", {
+                        body: message || "You received a new order!",
+                        icon: "{{url('/')}}/{{$Company['Logo']}}"  // Ensure the image URL is correct
+                    });
+                }
+            }
+
+            // Request permission for notifications
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+        </script>
+        <script>/*
 			$(document).ready(function(){
 				if ('WebSocket' in window) {
 					webSocket = new WebSocket(url);

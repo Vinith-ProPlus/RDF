@@ -2,20 +2,17 @@
 
 namespace App\Http\Controllers\api\customer;
 
+use App\Events\NewOrderNotification;
 use App\Http\Controllers\Controller;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\JsonResponse as JsonResponseAlias;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Input;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Redirect;
-use DB;
-use Auth;
+use Illuminate\Support\Facades\DB;
 use Helper;
-use Laravel\Passport\RefreshToken;
-use Laravel\Passport\Token;
-use ValidUnique;
-use ValidDB;
-use DocNum;
-use docTypes;
+use App\Models\DocNum;
+use App\enums\docTypes;
 use logs;
 
 class CustomerTransactionAPIController extends Controller{
@@ -39,7 +36,12 @@ class CustomerTransactionAPIController extends Controller{
 		});
     }
 
-    public function PlaceOrder(Request $req){
+    /**
+     * @param Request $req
+     * @return JsonResponse
+     */
+    public function PlaceOrder(Request $req): JsonResponseAlias
+    {
         DB::beginTransaction();
         $status=false;
         $CustomerID=$this->ReferID;
@@ -124,15 +126,26 @@ class CustomerTransactionAPIController extends Controller{
         }catch(Exception $e) {
             $status=false;
         }
-        if($status==true){
+        if($status){
             DB::commit();
             DocNum::updateInvNo("Quote-Enquiry");
             DB::table('tbl_customer_cart')->where('CustomerID',$CustomerID)->delete();
+
+            // 🔔 Notify Super Admins
+            $superAdminRole = DB::table('tbl_user_roles')->where('RoleName', 'Super Admin')->first('RoleID');
+            $superAdminIds = DB::table('users')->where('RoleID', $superAdminRole->RoleID)->pluck('id');
+
+            $Customer = DB::table('tbl_customer')->where('CustomerID', $CustomerID)->first('nick_name');
+
+            foreach ($superAdminIds as $adminId) {
+                event(new NewOrderNotification("New order placed by {$Customer->nick_name}", $adminId));
+            }
+
             return response()->json(['status' => true,'message' => "Order Placed Successfully"]);
-        }else{
-            DB::rollback();
-            return response()->json(['status' => false,'message' => "Order Placing Failed!"]);
         }
+
+        DB::rollback();
+        return response()->json(['status' => false,'message' => "Order Placing Failed!"]);
     }
 
     public function getQuoteEnquiry(Request $req){
@@ -141,12 +154,12 @@ class CustomerTransactionAPIController extends Controller{
             $query->where('Status',$req->Status);
         }
         $QuoteEnq=$query->get();
-        
+
         foreach($QuoteEnq as $quote){
             $quote->ProductData = DB::table($this->logDB.'tbl_enquiry_details')->where('EnqID',$quote->EnqID)->get();
         }
         return response()->json(['status' => true,'data' => $QuoteEnq]);
     }
-    
+
 
 }
