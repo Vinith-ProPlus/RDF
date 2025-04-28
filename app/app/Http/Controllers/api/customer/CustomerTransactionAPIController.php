@@ -130,17 +130,6 @@ class CustomerTransactionAPIController extends Controller{
             DB::commit();
             DocNum::updateInvNo("Quote-Enquiry");
             DB::table('tbl_customer_cart')->where('CustomerID',$CustomerID)->delete();
-
-            // 🔔 Notify Super Admins
-            $superAdminRole = DB::table('tbl_user_roles')->where('RoleName', 'Super Admin')->first('RoleID');
-            $superAdminIds = DB::table('users')->where('RoleID', $superAdminRole->RoleID)->pluck('id');
-
-            $Customer = DB::table('tbl_customer')->where('CustomerID', $CustomerID)->first('nick_name');
-
-            foreach ($superAdminIds as $adminId) {
-                event(new NewOrderNotification("New order placed by {$Customer->nick_name}", $adminId));
-            }
-
             return response()->json(['status' => true,'message' => "Order Placed Successfully"]);
         }
 

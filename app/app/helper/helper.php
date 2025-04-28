@@ -1,5 +1,6 @@
 <?php
 namespace App\helper;
+use App\Events\NewOrderNotification;
 use App\Models\DocNum;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -918,6 +919,18 @@ class helper{
         } catch (\Exception $e) {
             logger($e);
             return $sourceText;
+        }
+    }
+    public static function SendOrderNotification($CustomerID, $orderId): void
+    {
+        // 🔔 Notify Super Admins
+        $superAdminRole = DB::table('tbl_user_roles')->where('RoleName', 'Super Admin')->first('RoleID');
+        $superAdminIds = DB::table('users')->where('RoleID', $superAdminRole->RoleID)->pluck('id');
+
+        $Customer = DB::table('tbl_customer')->where('CustomerID', $CustomerID)->first('nick_name');
+
+        foreach ($superAdminIds as $adminId) {
+            event(new NewOrderNotification("New order placed by {$Customer->nick_name}", $adminId, $orderId));
         }
     }
 }

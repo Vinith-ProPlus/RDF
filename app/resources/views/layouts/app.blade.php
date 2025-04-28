@@ -121,15 +121,17 @@
 								<i data-feather="settings"></i>
 							</li>
                             <!-- Bell Icon for Notifications -->
-                            <li class="onhover-dropdown px-0">
-                                <span class="notification-icon">
+                            <li class="onhover-dropdown px-0 b-0">
+                                <span class="notification-icon" style="position: relative;">
                                     <i data-feather="bell"></i>
-                                    <span id="notification-dot" class="notification-dot" style="display:none;"></span> <!-- Red dot -->
+                                    <span id="notification-dot" class="notification-dot" style="display:none; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background-color: red; border-radius: 50%;"></span> <!-- Red dot -->
                                 </span>
 
                                 <!-- Notification Dropdown -->
                                 <ul id="notification-dropdown" class="profile-dropdown onhover-show-div">
-                                    <!-- Dynamic notifications will be appended here -->
+                                    <li id="no-notifications">
+                                        <a href="javascript:void(0);" style="pointer-events: none; color: #999;">No Notifications</a>
+                                    </li>
                                 </ul>
                             </li>
 							<li class="onhover-dropdown px-0">
@@ -155,7 +157,6 @@
 				</div>
 			</div>
 			<div class="page-body-wrapper sidebar-icon">
-				<nav-menus></nav-menus>
 				<header class="main-nav">
 					<nav>
 						<div class="main-navbar">
@@ -619,26 +620,28 @@
                 </li>
 
                 <!-- Bell Icon for Notifications -->
-                <li class="onhover-dropdown px-0">
-            <span class="notification-icon">
-                <i data-feather="bell"></i>
-                <span id="notification-dot" class="notification-dot" style="display:none;"></span> <!-- Red dot -->
-            </span>
+                <li class="onhover-dropdown px-0 b-0">
+                    <span class="notification-icon" style="position: relative;">
+                        <i data-feather="bell"></i>
+                        <span id="notification-dot" class="notification-dot" style="display:none; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background-color: red; border-radius: 50%;"></span> <!-- Red dot -->
+                    </span>
 
                     <!-- Notification Dropdown -->
                     <ul id="notification-dropdown" class="profile-dropdown onhover-show-div">
-                        <!-- Dynamic notifications will be appended here -->
+                        <li id="no-notifications">
+                            <a href="javascript:void(0);" style="pointer-events: none; color: #999;">No Notifications</a>
+                        </li>
                     </ul>
                 </li>
 
                 <li class="onhover-dropdown px-0">
-            <span class="d-flex user-header">
-                <img class="me-2 rounded-circle img-35" src="{{url('/')}}/{{$UInfo->ProfileImage}}" alt="">
-                <span class="flex-grow-1">
-                    <span class="f-12 f-w-600">{{$UInfo->Name}}</span>
-                    <span class="d-block">{{$UInfo->RoleName}}</span>
+                <span class="d-flex user-header">
+                    <img class="me-2 rounded-circle img-35" src="{{url('/')}}/{{$UInfo->ProfileImage}}" alt="">
+                    <span class="flex-grow-1">
+                        <span class="f-12 f-w-600">{{$UInfo->Name}}</span>
+                        <span class="d-block">{{$UInfo->RoleName}}</span>
+                    </span>
                 </span>
-            </span>
                     <ul class="profile-dropdown onhover-show-div">
                         <li><a href="{{url('/')}}/admin/users-and-permissions/profile"><i data-feather="user"> </i>Profile</a></li>
                         <li><a href="{{url('/')}}/admin/users-and-permissions/change-password/"><i data-feather="user"> </i>Password Change</a></li>
@@ -663,36 +666,29 @@
                 cluster: 'ap2'
             });
             var channel = pusher.subscribe('my-channel-{{$UInfo->ID}}');
-            {{--channel.bind('my-event', function(data) {--}}
-            {{--    if (Notification.permission === "granted") {--}}
-            {{--        new Notification("New Notification", {--}}
-            {{--            body: data.message || "You receive a new Order!",--}}
-            {{--            icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
-            {{--        });--}}
-            {{--    } else if (Notification.permission !== "denied") {--}}
-            {{--        Notification.requestPermission().then(permission => {--}}
-            {{--            if (permission === "granted") {--}}
-            {{--                new Notification("New Notification", {--}}
-            {{--                    body: data.message || "You receive a new Order!",--}}
-            {{--                    icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
-            {{--                });--}}
-            {{--            }--}}
-            {{--        });--}}
-            {{--    }--}}
-            {{--});--}}
 
             channel.bind('my-event', function(data) {
-                // Append the new notification message
-                debugger
+                // Each notification has a message and an orderId
+                const notification = {
+                    message: data.message,
+                    orderId: data.orderId
+                };
+
+                // Append the new notification message (with orderId)
                 if (notifications.length >= maxNotifications) {
                     notifications.shift(); // Remove the oldest notification
                 }
 
                 // Add the new notification to the array
-                notifications.push(data.message);
+                notifications.push(notification);
                 showBrowserNotification(data.message);
 
-                // Update the notification dropdown UI
+                const noNotificationElement = document.getElementById('no-notifications');
+                if (noNotificationElement) {
+                    noNotificationElement.remove(); // Remove the 'No Notification' message if there are new notifications
+                }
+
+                // Update the notification dropdown UI with the new notification
                 updateNotificationDropdown();
 
                 // Show the red dot if there are new notifications
@@ -707,7 +703,8 @@
                 // Loop through the notifications and append them
                 notifications.forEach(function(notification) {
                     const notificationItem = document.createElement('li');
-                    notificationItem.innerHTML = `<a href="{{url('/admin/orders')}}"> ${notification} </a>`;
+                    // Set the link for each notification to be the order-specific URL
+                    notificationItem.innerHTML = `<a href="{{url('/admin/orders/edit')}}/${notification.orderId}"> ${notification.message} </a>`;
                     dropdown.appendChild(notificationItem);
                 });
             }

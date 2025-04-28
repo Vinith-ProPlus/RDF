@@ -13,11 +13,13 @@ class NewOrderNotification implements ShouldBroadcast
 
     public $message;
     public $userId;
+    public $orderId;
 
-    public function __construct($message, $userId)
+    public function __construct($message, $userId, $orderId)
     {
         $this->message = $message;
         $this->userId = $userId;
+        $this->orderId = $orderId;
     }
 
     public function broadcastOn(): array

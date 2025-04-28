@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api\customer;
 
+use App\Events\NewOrderNotification;
 use App\helper\helper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
@@ -957,9 +958,9 @@ class CustomerAuthController extends Controller{
                 $orderDetail->SubTotal = Helper::formatAmount($orderDetail->SubTotal);
                 $orderDetail->PaymentStatus = Helper::translate($orderDetail->PaymentStatus, $lang);
                 return $this->successResponse($orderDetail, "Cart Order Created Successfully!");
-            } else {
-                return $this->errorResponse([], "Cart is Empty, Can't create Order", 422);
             }
+
+            return $this->errorResponse([], "Cart is Empty, Can't create Order", 422);
         } catch (Exception $e) {
             logger($e);
             DB::rollback();
@@ -1674,12 +1675,13 @@ class CustomerAuthController extends Controller{
                 $Title = "Order Place Successfully";
                 $Message = "Your Order placed successfully";
                 Helper::saveNotification($CustomerID, $Title, $Message, 'Order', $OrderID);
+                Helper::SendOrderNotification($CustomerID, $OrderID);
                 SaleRegisterInBusyJob::dispatchSync($OrderID);
                 DB::commit();
                 return $this->successResponse([], "Payment Status Successfully Updated");
-            } else {
-                return $this->errorResponse([], "Payment status already updated!.", 500);
             }
+
+            return $this->errorResponse([], "Payment status already updated!.", 500);
         } catch (Exception $e) {
             logger($e);
             DB::rollBack();
