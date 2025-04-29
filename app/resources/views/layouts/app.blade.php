@@ -613,45 +613,6 @@
 
         <script src="{{url('/')}}/assets/plugins/ckeditor/ckeditor.js"></script>
         <script src="{{url('/')}}/assets/plugins/ckeditor/custom.js"></script>
-        <div class="nav-right col pull-right right-menu">
-            <ul class="nav-menus">
-                <li class="theme-setting">
-                    <i data-feather="settings"></i>
-                </li>
-
-                <!-- Bell Icon for Notifications -->
-                <li class="onhover-dropdown px-0 b-0">
-                    <span class="notification-icon" style="position: relative;">
-                        <i data-feather="bell"></i>
-                        <span id="notification-dot" class="notification-dot" style="display:none; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background-color: red; border-radius: 50%;"></span> <!-- Red dot -->
-                    </span>
-
-                    <!-- Notification Dropdown -->
-                    <ul id="notification-dropdown" class="profile-dropdown onhover-show-div">
-                        <li id="no-notifications">
-                            <a href="javascript:void(0);" style="pointer-events: none; color: #999;">No Notifications</a>
-                        </li>
-                    </ul>
-                </li>
-
-                <li class="onhover-dropdown px-0">
-                <span class="d-flex user-header">
-                    <img class="me-2 rounded-circle img-35" src="{{url('/')}}/{{$UInfo->ProfileImage}}" alt="">
-                    <span class="flex-grow-1">
-                        <span class="f-12 f-w-600">{{$UInfo->Name}}</span>
-                        <span class="d-block">{{$UInfo->RoleName}}</span>
-                    </span>
-                </span>
-                    <ul class="profile-dropdown onhover-show-div">
-                        <li><a href="{{url('/')}}/admin/users-and-permissions/profile"><i data-feather="user"> </i>Profile</a></li>
-                        <li><a href="{{url('/')}}/admin/users-and-permissions/change-password/"><i data-feather="user"> </i>Password Change</a></li>
-                        <li class="btnLogout"><i data-feather="log-in"></i>Logout </li>
-                    </ul>
-                </li>
-            </ul>
-
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">@csrf</form>
-        </div>
 
         <!-- Include Pusher -->
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
