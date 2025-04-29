@@ -929,8 +929,9 @@ class helper{
 
         $Customer = DB::table('tbl_customer')->where('CustomerID', $CustomerID)->first('nick_name');
 
+        $CustomerName = $Customer->nick_name ?? 'Customer';
         foreach ($superAdminIds as $adminId) {
-            event(new NewOrderNotification("New order placed by {$Customer->nick_name}", $adminId, $orderId));
+            event(new NewOrderNotification("New order placed by {$CustomerName}", $adminId, $orderId));
         }
     }
 }

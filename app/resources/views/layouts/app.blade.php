@@ -47,32 +47,6 @@
 		<link rel="stylesheet" type="text/css" href="{{url('/')}}/assets/css/custom-n.css?r={{date('YmdHis')}}">
         <!-- Pusher JS -->
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
-{{--        <script>--}}
-{{--            // Enable pusher logging - don't include this in production--}}
-{{--            Pusher.logToConsole = true;--}}
-
-{{--            var pusher = new Pusher('9bd5114064ba82338ee1', {--}}
-{{--                cluster: 'ap2'--}}
-{{--            });--}}
-{{--            var channel = pusher.subscribe('my-channel-{{$UInfo->ID}}');;--}}
-{{--            channel.bind('my-event', function(data) {--}}
-{{--                if (Notification.permission === "granted") {--}}
-{{--                    new Notification("New Notification", {--}}
-{{--                        body: data.message || "You receive a new Order!",--}}
-{{--                        icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
-{{--                    });--}}
-{{--                } else if (Notification.permission !== "denied") {--}}
-{{--                    Notification.requestPermission().then(permission => {--}}
-{{--                        if (permission === "granted") {--}}
-{{--                            new Notification("New Notification", {--}}
-{{--                                body: data.message || "You receive a new Order!",--}}
-{{--                                icon: "{{url('/')}}/{{$Company['Logo']}}"--}}
-{{--                            });--}}
-{{--                        }--}}
-{{--                    });--}}
-{{--                }--}}
-{{--            });--}}
-{{--        </script>--}}
 		<style>
 			<?php
 				$bodyCss='';
@@ -661,11 +635,16 @@
                 const dropdown = document.getElementById('notification-dropdown');
                 dropdown.innerHTML = ''; // Clear the dropdown
 
-                // Loop through the notifications and append them
+                // Blade will render this as a string with a placeholder we'll replace in JS
+                const routeTemplate = `{{ route('admin.order.edit', ['ID' => '__ORDER_ID__']) }}`;
+
                 notifications.forEach(function(notification) {
                     const notificationItem = document.createElement('li');
-                    // Set the link for each notification to be the order-specific URL
-                    notificationItem.innerHTML = `<a href="{{url('/admin/orders/edit')}}/${notification.orderId}"> ${notification.message} </a>`;
+
+                    // Replace the placeholder with the actual order ID
+                    const orderUrl = routeTemplate.replace('__ORDER_ID__', notification.orderId);
+
+                    notificationItem.innerHTML = `<a href="${orderUrl}"> ${notification.message} </a>`;
                     dropdown.appendChild(notificationItem);
                 });
             }
@@ -673,7 +652,7 @@
             // Show a notification on the client-side (optional)
             function showBrowserNotification(message) {
                 if (Notification.permission === "granted") {
-                    new Notification("New Notification", {
+                    new Notification("New Order", {
                         body: message || "You received a new order!",
                         icon: "{{url('/')}}/{{$Company['Logo']}}"  // Ensure the image URL is correct
                     });

@@ -32,6 +32,10 @@ Route::get('/clear', function() {
     Artisan::call('view:clear');
     return "Cleared!";
 });
+Route::get('/pusher-notification-send', static function() {
+    return helper::SendOrderNotification(24, "O2025-00000001");
+});
+
 Route::get('/notification-test-send', function() {
     return helper::sendNotification(1,"Title","Message");
 });
