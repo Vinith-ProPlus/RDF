@@ -61,7 +61,7 @@ function Dropify(element, options) {
             'fileExtension': 'The file is not allowed ({{ value }} only).'
         },
         tpl: {
-            wrap:            '<div class="dropify-wrapper"></div>',
+            wrap:            '<div class="dropify-wrapper d-flex justify-content-center align-items-center text-center" style="height: 100%; width: 100%;"></div>',
             loader:          '<div class="dropify-loader"></div>',
             message:         '<div class="dropify-message"><span class="file-icon" /> <p>{{ default }}</p></div>',
             preview:         '<div class="dropify-preview"><span class="dropify-render"></span><div class="dropify-infos"><div class="dropify-infos-inner"><p class="dropify-infos-message">{{ replace }}</p></div></div></div>',
