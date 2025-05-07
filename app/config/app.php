@@ -50,9 +50,9 @@ return [
     'FIREBASE_APP_ID' => env('FIREBASE_APP_ID', ''),
     'FIREBASE_MEASUREMENT_ID' => env('FIREBASE_MEASUREMENT_ID', ''),
 
-// TEXT LOCAL
-    'TEXT_LOCAL_API_KEY' => env('TEXT_LOCAL_API_KEY', ''),
-    'TEXT_LOCAL_SENDER_NAME' => env('TEXT_LOCAL_SENDER_NAME', ''),
+// SMS Credentials
+    'SMS_API_KEY' => env('SMS_API_KEY', ''),
+    'SMS_SENDER_NAME' => env('SMS_SENDER_NAME', ''),
 
 //  PhonePe Credentials
     'PHONEPE_MERCHANT_ID' => env('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT'),

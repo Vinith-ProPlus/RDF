@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\web\logController;
 use App\Models\Customer;
 use App\Models\Language;
-use App\Models\TextLocal;
+use App\Models\SMS;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -620,17 +620,16 @@ class CustomerAPIController extends Controller{
      */
     public function sendOtpSms(string $otp, Request $request): void
     {
-        $TextLocal = new TextLocal();
+        $SMS = new SMS();
         $message = "Your Royal Dry Fruits OTP for login is $otp. Please enter this code to proceed.";
-//        $message = "You are trying to change your mobile number in the RPC software. Please enter $otp code to verify your request.";
 
-        $textMsgResponse = $TextLocal->sendOTP($request->mobile_no, $message);
+        $textMsgResponse = $SMS->sendOTP($request->mobile_no, $message);
         if (!$textMsgResponse["status"]) {
             $response['error'] = 1;
             $response['message'] = $textMsgResponse['message'];
             info($response['message']);
             info('ERROR FOUND');
-            throw new Exception($response['message']);
+            throw new \RuntimeException($response['message']);
         }
     }
 
