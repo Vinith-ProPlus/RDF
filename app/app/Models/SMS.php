@@ -32,6 +32,8 @@ class SMS extends Model
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'RoyalDryFruitsApp/1.0');
 
         $response = curl_exec($ch);
         curl_close($ch);
